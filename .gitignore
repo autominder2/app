@@ -1,0 +1,49 @@
+# ─── Secrets / Credentials ─────────────────────────────────────────────────
+local.properties
+*.keystore
+*.jks
+.env
+.env.*
+
+# ─── Google Services ────────────────────────────────────────────────────────
+google-services.json
+GoogleService-Info.plist
+
+# ─── Build Outputs ──────────────────────────────────────────────────────────
+/build
+**/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# ─── IDE / Android Studio ───────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+.DS_Store
+*.swp
+*.orig
+
+# ─── Gradle ─────────────────────────────────────────────────────────────────
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# ─── Kotlin / Java ──────────────────────────────────────────────────────────
+/out/
+*.class
+
+# ─── OS ─────────────────────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─── Logs ───────────────────────────────────────────────────────────────────
+*.log
+*.txt
+
+# ─── Misc ───────────────────────────────────────────────────────────────────
+.gradle-user-home/
+.kotlin/
+.agents/
