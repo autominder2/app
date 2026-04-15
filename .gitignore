@@ -39,11 +39,19 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# ─── Logs ───────────────────────────────────────────────────────────────────
+# ─── Logs & build output dumps ─────────────────────────────────────────────
 *.log
-*.txt
+build_*.txt
+build_*.log
+all_files*.txt
+test_out.txt
+findings.txt
 
-# ─── Misc ───────────────────────────────────────────────────────────────────
+
+# ─── Agent / social media / non-project files ──────────────────────────────
 .gradle-user-home/
 .kotlin/
 .agents/
+competitor_*.md
+*_reels_*.md
+
