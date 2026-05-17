@@ -173,6 +173,34 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                     }
             )
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Send feedback
+            Text(
+                text = stringResource(R.string.about_feedback_title),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.about_feedback_description),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
+                ),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val email = context.getString(R.string.about_feedback_email)
+                        val subject = context.getString(R.string.about_feedback_subject, BuildConfig.VERSION_NAME)
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                            data = android.net.Uri.parse("mailto:$email?subject=${android.net.Uri.encode(subject)}")
+                        }
+                        try { context.startActivity(intent) } catch (_: Exception) {}
+                    }
+            )
+
             Spacer(modifier = Modifier.weight(1f))
 
             // Copyright
