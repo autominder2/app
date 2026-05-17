@@ -57,7 +57,8 @@ fun FuelHistoryScreen(
                 uiState.entries.isEmpty() -> EmptyState(
                     title = stringResource(R.string.fuel_empty_history),
                     subtitle = "",
-                    icon = Icons.Default.LocalGasStation
+                    icon = Icons.Default.LocalGasStation,
+                    hint = stringResource(R.string.empty_fuel_hint)
                 )
                 else -> FuelHistoryList(
                     uiState = uiState,

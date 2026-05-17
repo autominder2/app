@@ -69,7 +69,8 @@ fun ServiceHistoryScreen(
                 is ServiceHistoryUiState.Loading -> LoadingState()
                 is ServiceHistoryUiState.Empty -> EmptyState(
                     title = stringResource(R.string.service_history_empty_title),
-                    subtitle = stringResource(R.string.service_history_empty_subtitle)
+                    subtitle = stringResource(R.string.service_history_empty_subtitle),
+                    hint = stringResource(R.string.empty_service_hint)
                 )
                 is ServiceHistoryUiState.Error -> ErrorState(
                     message = state.message,

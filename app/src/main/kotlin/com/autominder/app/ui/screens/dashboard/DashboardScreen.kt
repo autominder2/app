@@ -4,8 +4,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,6 +56,7 @@ import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.usecase.VehicleWithStatus
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
+import com.autominder.app.ui.components.FleetHealthScore
 import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.domain.util.DistanceUtil
@@ -106,7 +105,8 @@ fun DashboardScreen(
                     subtitle = stringResource(R.string.dashboard_no_vehicles_subtitle),
                     onAction = onNavigateToAddVehicle,
                     actionLabel = stringResource(R.string.action_add_vehicle),
-                    icon = Icons.Default.Commute
+                    icon = Icons.Default.Commute,
+                    hint = stringResource(R.string.dashboard_add_first_vehicle_hint)
                 )
                 is DashboardUiState.Error -> ErrorState(
                     message = state.message ?: stringResource(R.string.dashboard_error),
@@ -157,6 +157,12 @@ private fun DashboardContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        item(key = "health_score") {
+            FleetHealthScore(
+                vehicles = vehicles,
+                modifier = Modifier.animateItem()
+            )
+        }
         items(vehicles, key = { it.vehicle.id }) { vehicleWithStatus ->
             VehicleCard(
                 vehicleWithStatus = vehicleWithStatus,
@@ -182,7 +188,10 @@ private fun VehicleCard(
     }
     val cornerRadius by animateFloatAsState(
         targetValue = targetCornerDp,
-        animationSpec = tween(durationMillis = 400),
+        animationSpec = spring(
+            dampingRatio = 0.7f,
+            stiffness = Spring.StiffnessLow
+        ),
         label = "cardCorner"
     )
 
@@ -191,9 +200,9 @@ private fun VehicleCard(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .animateContentSize(
-                animationSpec = tween(
-                    durationMillis = 200,
-                    easing = EaseOutCubic
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
                 )
             ),
         shape = RoundedCornerShape(cornerRadius.dp),

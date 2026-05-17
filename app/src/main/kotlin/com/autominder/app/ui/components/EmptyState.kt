@@ -19,6 +19,7 @@ fun EmptyState(
     onAction: (() -> Unit)? = null,
     actionLabel: String? = null,
     icon: ImageVector? = null,
+    hint: String? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -59,6 +60,21 @@ fun EmptyState(
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             textAlign = TextAlign.Center
         )
+        if (hint != null) {
+            Spacer(Modifier.height(12.dp))
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            ) {
+                Text(
+                    text = hint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                )
+            }
+        }
         if (onAction != null) {
             Spacer(Modifier.height(24.dp))
             Button(onClick = onAction) {

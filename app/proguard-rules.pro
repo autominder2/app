@@ -44,6 +44,7 @@
 # ─── Play Billing ────────────────────────────────────────────
 -keep class com.android.billingclient.** { *; }
 -dontwarn com.android.billingclient.**
+-keep class com.autominder.app.billing.** { *; }
 
 # ─── Coil 3 ──────────────────────────────────────────────────
 -keep class coil3.** { *; }

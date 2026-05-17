@@ -275,4 +275,44 @@
     <!-- Accessibility -->
     <string name="cd_select_date">Select date</string>
     <string name="cd_vehicle_health">Vehicle health indicator</string>
+
+    <!-- Pro Paywall -->
+    <string name="paywall_title">Upgrade to AutoMinder Pro</string>
+    <string name="paywall_subtitle">Smarter maintenance. Zero ads. Your data backed up safely.</string>
+    <string name="paywall_yearly_price">$24.99 / year</string>
+    <string name="paywall_yearly_savings">Save 30% vs monthly • 7-day free trial</string>
+    <string name="paywall_monthly_price">$2.99 / month</string>
+    <string name="paywall_lifetime_price">$59.99 one-time • Pay once, own forever</string>
+    <string name="paywall_restore">Restore Purchases</string>
+    <string name="paywall_trial_info">Start your 7-day free trial. Cancel anytime. No charge until trial ends.</string>
+    <string name="paywall_feature_vehicles">Vehicles</string>
+    <string name="paywall_feature_reminders">Maintenance reminders</string>
+    <string name="paywall_feature_fuel_log">Fuel tracking</string>
+    <string name="paywall_feature_analytics">Cost analytics</string>
+    <string name="paywall_feature_charts">Fuel efficiency charts</string>
+    <string name="paywall_feature_backup">Cloud backup</string>
+    <string name="paywall_feature_export">PDF + CSV export</string>
+    <string name="paywall_feature_ad_free">Ad-free experience</string>
+    <string name="paywall_feature_widgets">Premium widgets</string>
+    <string name="paywall_unlimited">Unlimited</string>
+    <string name="paywall_pro_badge">PRO</string>
+    <string name="paywall_locked_feature">Unlock with Pro</string>
+
+    <!-- Pro Feature Gate -->
+    <string name="pro_gate_title">Pro Feature</string>
+    <string name="pro_gate_unlock">Upgrade to unlock this feature</string>
+
+    <!-- ASO — Play Store Metadata -->
+    <string name="aso_short_description">Smart car maintenance reminders, fuel tracking &amp; cost analytics</string>
+    <string name="aso_full_description">AutoMinder keeps your vehicles in top shape with intelligent maintenance reminders, fuel efficiency tracking, and cost analytics. Never miss an oil change, tire rotation, or brake service again.\n\nKey Features:\n• Smart maintenance reminders with dual triggers (date + odometer)\n• Fleet health score — see all your vehicles at a glance\n• Fuel efficiency tracking with trend analysis\n• Service cost analytics and reporting\n• Multiple vehicle support for the whole family\n• Home screen widgets for quick status checks\n• Privacy-first — your data stays on your device\n• Beautiful Material 3 design with dark mode support\n• Export service history as CSV or PDF\n• Notification reminders that respect your time</string>
+
+    <!-- Dashboard enhanced -->
+    <string name="dashboard_fleet_score">Fleet Score</string>
+    <string name="dashboard_add_first_vehicle_hint">Most users add their first vehicle in under 30 seconds</string>
+
+    <!-- Empty State Teaching -->
+    <string name="empty_service_hint">Your first service record will appear here. Logging takes 10 seconds.</string>
+    <string name="empty_fuel_hint">After 3 fill-ups, you\'ll see your fuel efficiency trends here.</string>
+    <string name="empty_reminders_hint">Add a reminder to stay ahead of maintenance.</string>
+    <string name="empty_mileage_hint">Record your odometer to track driving patterns over time.</string>
 </resources>
