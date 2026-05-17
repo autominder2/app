@@ -66,7 +66,6 @@ glance-material3            = { group = "androidx.glance", name = "glance-materi
 
 # Coil 3
 coil-compose                = { group = "io.coil-kt.coil3",              name = "coil-compose",               version.ref = "coil" }
-coil-network                = { group = "io.coil-kt.coil3",              name = "coil-network-okhttp",        version.ref = "coil" }
 
 # Ads + Billing
 admob                       = { group = "com.google.android.gms",       name = "play-services-ads",          version.ref = "admob" }

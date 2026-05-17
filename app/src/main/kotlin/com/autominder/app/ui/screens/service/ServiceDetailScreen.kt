@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -42,6 +43,7 @@ import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.domain.model.ServiceType
+import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
 import java.text.NumberFormat
@@ -118,7 +120,12 @@ fun ServiceDetailScreen(
                     message = uiState.error!!,
                     onRetry = {}
                 )
-                uiState.service != null -> ServiceDetailContent(
+                uiState.service == null -> EmptyState(
+                    title = stringResource(R.string.service_detail_not_found_title),
+                    subtitle = stringResource(R.string.service_detail_not_found_subtitle),
+                    icon = Icons.Default.Build
+                )
+                else -> ServiceDetailContent(
                     service = uiState.service!!
                 )
             }

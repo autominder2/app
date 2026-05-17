@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.util.DateFormatUtil
@@ -65,9 +66,13 @@ fun MileageLogScreen(
             )
         }
     ) { padding ->
-        if (uiState.isLoading) {
-            LoadingState()
-        } else {
+        when {
+            uiState.isLoading -> LoadingState()
+            uiState.loadError != null -> ErrorState(
+                message = uiState.loadError!!,
+                onRetry = { viewModel.onEvent(MileageLogUiEvent.Retry) }
+            )
+            else -> {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -121,6 +126,7 @@ fun MileageLogScreen(
 
                 // Bottom spacing
                 item { Spacer(modifier = Modifier.height(16.dp)) }
+            }
             }
         }
     }

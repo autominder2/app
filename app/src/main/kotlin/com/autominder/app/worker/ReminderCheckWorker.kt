@@ -113,8 +113,10 @@ class ReminderCheckWorker @AssistedInject constructor(
             Timber.d("ReminderCheckWorker: completed successfully")
             Result.success()
         } catch (e: Exception) {
-            Timber.e(e, "ReminderCheckWorker: failed")
-            Result.retry()
+            // Per CLAUDE.md cooldown rules: never retry-storm on partial notification failure.
+            // The next scheduled run (6h cadence) will pick up missed reminders cleanly.
+            Timber.e(e, "ReminderCheckWorker: failed; deferring to next scheduled run")
+            Result.success()
         }
     }
 

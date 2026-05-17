@@ -45,8 +45,15 @@
 -keep class com.android.billingclient.** { *; }
 -dontwarn com.android.billingclient.**
 
-# ─── Coil ────────────────────────────────────────────────────
+# ─── Coil 3 ──────────────────────────────────────────────────
+-keep class coil3.** { *; }
+-dontwarn coil3.**
 -dontwarn coil.**
+
+# ─── Glance AppWidget ────────────────────────────────────────
+-keep class androidx.glance.** { *; }
+-keep class * extends androidx.glance.appwidget.GlanceAppWidget
+-keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver
 
 # ─── Timber ──────────────────────────────────────────────────
 -dontwarn org.jetbrains.annotations.**

@@ -25,13 +25,15 @@ data class MileageLogUiState(
     val newOdometer: String = "",
     val newNotes: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val loadError: String? = null
 )
 
 sealed class MileageLogUiEvent {
     data class NewOdometerChanged(val odometer: String) : MileageLogUiEvent()
     data class NewNotesChanged(val notes: String) : MileageLogUiEvent()
     object AddClicked : MileageLogUiEvent()
+    object Retry : MileageLogUiEvent()
     data class DeleteLog(val log: MileageLogEntry) : MileageLogUiEvent()
 }
 
@@ -54,12 +56,12 @@ class MileageLogViewModel @Inject constructor(
 
     private fun loadLogs() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, loadError = null)
             mileageLogRepository.getLogsForVehicle(vehicleId)
                 .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to load mileage logs"
+                        loadError = e.message ?: "Failed to load mileage logs"
                     )
                 }
                 .collect { logs ->
@@ -76,6 +78,7 @@ class MileageLogViewModel @Inject constructor(
             is MileageLogUiEvent.NewOdometerChanged -> _uiState.value = _uiState.value.copy(newOdometer = event.odometer)
             is MileageLogUiEvent.NewNotesChanged -> _uiState.value = _uiState.value.copy(newNotes = event.notes)
             is MileageLogUiEvent.AddClicked -> addLog()
+            is MileageLogUiEvent.Retry -> loadLogs()
             is MileageLogUiEvent.DeleteLog -> deleteLog(event.log)
         }
     }

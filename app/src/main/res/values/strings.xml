@@ -153,6 +153,8 @@
     <string name="service_detail_cost">Cost</string>
     <string name="service_detail_shop">Shop</string>
     <string name="service_detail_notes">Notes</string>
+    <string name="service_detail_not_found_title">Service Not Found</string>
+    <string name="service_detail_not_found_subtitle">This service record may have been deleted.</string>
 
     <!-- Service History Screen -->
     <string name="service_history_title">Service History</string>

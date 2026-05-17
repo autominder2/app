@@ -13,7 +13,7 @@ import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.usecase.CalculateEfficiencyUseCase
-import com.autominder.app.domain.usecase.ExportServiceHistoryUseCase
+import com.autominder.app.data.export.ExportServiceHistoryUseCase
 import com.autominder.app.domain.usecase.StatusCalculator
 import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
