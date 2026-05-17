@@ -3,6 +3,9 @@ package com.autominder.app.ui.screens.dashboard
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -59,6 +62,8 @@ import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 @Composable
 fun DashboardScreen(
@@ -75,10 +80,10 @@ fun DashboardScreen(
             DashboardTopBar()
         },
         floatingActionButton = {
-            val haptic = androidx.compose.ui.hapticfeedback.LocalHapticFeedback.current
+            val haptic = LocalHapticFeedback.current
             ExtendedFloatingActionButton(
                 onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onNavigateToAddVehicle()
                 },
                 expanded = fabExtended,
@@ -175,9 +180,9 @@ private fun VehicleCard(
         ServiceStatus.DUE_SOON -> 16f
         else -> 28f
     }
-    val cornerRadius by androidx.compose.animation.core.animateFloatAsState(
+    val cornerRadius by animateFloatAsState(
         targetValue = targetCornerDp,
-        animationSpec = androidx.compose.animation.core.tween(durationMillis = 400),
+        animationSpec = tween(durationMillis = 400),
         label = "cardCorner"
     )
 
@@ -186,9 +191,9 @@ private fun VehicleCard(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .animateContentSize(
-                animationSpec = androidx.compose.animation.core.tween(
+                animationSpec = tween(
                     durationMillis = 200,
-                    easing = androidx.compose.animation.core.EaseOutCubic
+                    easing = EaseOutCubic
                 )
             ),
         shape = RoundedCornerShape(cornerRadius.dp),

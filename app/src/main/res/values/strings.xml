@@ -195,14 +195,14 @@
     <string name="about_developer_label">Developer</string>
     <string name="about_developer_name">AutoMinder Team</string>
     <string name="about_privacy_policy_label">Privacy Policy</string>
-    <string name="about_privacy_policy_url">https://autominder.app/privacy</string>
+    <string name="about_privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
     <string name="about_rate_title">Enjoying AutoMinder?</string>
     <string name="about_rate_description">Consider rating us on the Play Store to help others discover the app!</string>
     <string name="about_feedback_title">Send Feedback</string>
-    <string name="about_feedback_description">Found a bug or have a suggestion? We'd love to hear from you.</string>
+    <string name="about_feedback_description">Found a bug or have a suggestion? We\'d love to hear from you.</string>
     <string name="about_feedback_email">autominder2@gmail.com</string>
-    <string name="about_feedback_subject">AutoMinder Feedback \u2014 v%1$s</string>
-    <string name="about_copyright">\u00a9 %1$d AutoMinder. All rights reserved.</string>
+    <string name="about_feedback_subject">AutoMinder Feedback — v%1$s</string>
+    <string name="about_copyright">© %1$d AutoMinder. All rights reserved.</string>
 
     <!-- Onboarding Screen -->
     <string name="onboarding_welcome_title">Welcome to AutoMinder</string>
@@ -215,7 +215,7 @@
     <string name="onboarding_get_started">Get Started</string>
 
     <!-- Additional -->
-    <string name="privacy_policy_url">https://autominder.app/privacy</string>
+    <string name="privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
     <string name="support_email">support@autominder.app</string>
 
     <!-- Widget -->

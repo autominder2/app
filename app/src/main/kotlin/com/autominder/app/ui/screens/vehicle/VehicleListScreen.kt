@@ -48,6 +48,8 @@ import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,10 +75,10 @@ fun VehicleListScreen(
             )
         },
         floatingActionButton = {
-            val haptic = androidx.compose.ui.hapticfeedback.LocalHapticFeedback.current
+            val haptic = LocalHapticFeedback.current
             FloatingActionButton(
                 onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onNavigateToAddVehicle()
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
