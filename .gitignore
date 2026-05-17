@@ -52,6 +52,7 @@ findings.txt
 .gradle-user-home/
 .kotlin/
 .agents/
+.claude/
 competitor_*.md
 *_reels_*.md
 
