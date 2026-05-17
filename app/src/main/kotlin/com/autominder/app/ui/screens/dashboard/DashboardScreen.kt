@@ -51,6 +51,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.autominder.app.R
+import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.usecase.VehicleWithStatus
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
@@ -74,8 +75,12 @@ fun DashboardScreen(
             DashboardTopBar()
         },
         floatingActionButton = {
+            val haptic = androidx.compose.ui.hapticfeedback.LocalHapticFeedback.current
             ExtendedFloatingActionButton(
-                onClick = onNavigateToAddVehicle,
+                onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    onNavigateToAddVehicle()
+                },
                 expanded = fabExtended,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.action_add_vehicle)) },
@@ -165,6 +170,17 @@ private fun VehicleCard(
 ) {
     val vehicle = vehicleWithStatus.vehicle
 
+    val targetCornerDp = when (vehicleWithStatus.status) {
+        ServiceStatus.OVERDUE -> 8f
+        ServiceStatus.DUE_SOON -> 16f
+        else -> 28f
+    }
+    val cornerRadius by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = targetCornerDp,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 400),
+        label = "cardCorner"
+    )
+
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
@@ -175,7 +191,7 @@ private fun VehicleCard(
                     easing = androidx.compose.animation.core.EaseOutCubic
                 )
             ),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(cornerRadius.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column {

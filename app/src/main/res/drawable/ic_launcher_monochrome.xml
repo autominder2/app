@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Car silhouette with clock arc — monochrome for themed icons (Android 13+) -->
+    <!-- Car body -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M74,55 L68,41 C67,38 64,36 61,36 L47,36 C44,36 41,38 40,41 L34,55 L28,55 C26,55 24,57 24,59 L24,71 C24,73 26,75 28,75 L32,75 C32,78.3 34.7,81 38,81 C41.3,81 44,78.3 44,75 L64,75 C64,78.3 66.7,81 70,81 C73.3,81 76,78.3 76,75 L80,75 C82,75 84,73 84,71 L84,59 C84,57 82,55 80,55 Z M38,78 C36.3,78 35,76.7 35,75 C35,73.3 36.3,72 38,72 C39.7,72 41,73.3 41,75 C41,76.7 39.7,78 38,78 Z M70,78 C68.3,78 67,76.7 67,75 C67,73.3 68.3,72 70,72 C71.7,72 73,73.3 73,75 C73,76.7 71.7,78 70,78 Z M44,53 L48,41 L60,41 L64,53 Z" />
+    <!-- Clock arc (top-right) representing maintenance timing -->
+    <path
+        android:pathData="M71,28 A12,12 0 1,0 71,28.01"
+        android:strokeColor="#000000"
+        android:strokeWidth="2.5" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M71,20 L71,28 L77,28" />
+</vector>

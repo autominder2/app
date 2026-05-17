@@ -73,8 +73,12 @@ fun VehicleListScreen(
             )
         },
         floatingActionButton = {
+            val haptic = androidx.compose.ui.hapticfeedback.LocalHapticFeedback.current
             FloatingActionButton(
-                onClick = onNavigateToAddVehicle,
+                onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    onNavigateToAddVehicle()
+                },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {

@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.autominder.app.BuildConfig
@@ -11,11 +13,6 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 
-/**
- * Adaptive banner ad for Compose.
- * Only renders when ENABLE_ADS = true (release build).
- * Placement: bottom of Dashboard and VehicleDetail screens.
- */
 @Composable
 fun BannerAdView(
     adUnitId: String,
@@ -23,17 +20,21 @@ fun BannerAdView(
 ) {
     if (!BuildConfig.ENABLE_ADS) return
 
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+
     AndroidView(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(60.dp),
+        modifier = modifier.fillMaxWidth(),
         factory = { context ->
+            val adaptiveSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+                context,
+                screenWidthDp
+            )
             AdView(context).apply {
-                setAdSize(AdSize.BANNER)
+                setAdSize(adaptiveSize)
                 setAdUnitId(adUnitId)
                 loadAd(AdRequest.Builder().build())
             }
         },
-        update = { /* no-op: ad is loaded once in factory */ }
+        update = { /* ad loaded once in factory */ }
     )
 }

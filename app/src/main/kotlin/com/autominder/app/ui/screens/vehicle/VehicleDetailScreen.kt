@@ -445,7 +445,7 @@ private fun VehicleDetailContent(
                         }
                         Icon(
                             imageVector = Icons.Default.LocalGasStation,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.fuel_efficiency_label),
                             modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.tertiary
                         )
@@ -470,7 +470,7 @@ private fun VehicleDetailContent(
                         onClick = onAddServiceClick,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Build, contentDescription = stringResource(R.string.vehicle_detail_log_service), modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(stringResource(R.string.vehicle_detail_log_service))
                     }
@@ -478,7 +478,7 @@ private fun VehicleDetailContent(
                         onClick = onMileageLogClick,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Speed, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.vehicle_detail_mileage), modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(stringResource(R.string.vehicle_detail_mileage))
                     }
@@ -491,7 +491,7 @@ private fun VehicleDetailContent(
                         onClick = onAddFuelClick,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.LocalGasStation, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.LocalGasStation, contentDescription = stringResource(R.string.fuel_add_title), modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(stringResource(R.string.fuel_add_title))
                     }
@@ -499,7 +499,7 @@ private fun VehicleDetailContent(
                         onClick = onFuelHistoryClick,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.LocalGasStation, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.LocalGasStation, contentDescription = stringResource(R.string.fuel_history_title), modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(stringResource(R.string.fuel_history_title))
                     }
@@ -508,7 +508,7 @@ private fun VehicleDetailContent(
                     onClick = onExportClick,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.vehicle_detail_export), modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.vehicle_detail_export))
                 }

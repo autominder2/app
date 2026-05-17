@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -18,6 +22,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.autominder.app.ads.AdManager
 import com.autominder.app.ads.BannerAdView
@@ -100,16 +105,32 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val showBottomBar by remember {
+                    derivedStateOf {
+                        val route = navBackStackEntry?.destination?.route ?: ""
+                        route.contains(NavRoutes.Dashboard::class.qualifiedName.orEmpty()) ||
+                            route.contains(NavRoutes.VehicleList::class.qualifiedName.orEmpty()) ||
+                            route.contains(NavRoutes.Settings::class.qualifiedName.orEmpty())
+                    }
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = {
-                        Column {
-                            BottomNavBar(navController = navController)
-                            BannerAdView(
-                                adUnitId = bannerAdUnitId,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                        AnimatedVisibility(
+                            visible = showBottomBar,
+                            enter = slideInVertically(initialOffsetY = { it }),
+                            exit = slideOutVertically(targetOffsetY = { it })
+                        ) {
+                            Column {
+                                BottomNavBar(navController = navController)
+                                BannerAdView(
+                                    adUnitId = bannerAdUnitId,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 ) { innerPadding ->

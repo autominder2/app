@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme for dark mode — Compose handles the rest -->
+    <style name="Theme.AutoMinder" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Splash screen dark mode variant -->
+    <style name="Theme.AutoMinder.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background_dark</item>
+        <item name="postSplashScreenTheme">@style/Theme.AutoMinder</item>
+    </style>
+</resources>
