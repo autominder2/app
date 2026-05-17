@@ -38,4 +38,7 @@ interface VehicleDao {
      */
     @Query("UPDATE vehicles SET currentOdometer = :odometer, updatedAt = :nowMillis WHERE id = :id AND currentOdometer < :odometer")
     suspend fun updateOdometerIfHigher(id: Long, odometer: Int, nowMillis: Long = System.currentTimeMillis())
+
+    @Query("SELECT COUNT(*) FROM vehicles WHERE isArchived = 0")
+    suspend fun getActiveVehicleCount(): Int
 }

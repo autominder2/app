@@ -224,11 +224,15 @@
     <string name="support_email">support@autominder.app</string>
 
     <!-- Widget -->
-    <string name="widget_description">Shows your next vehicle maintenance reminder</string>
+    <string name="widget_description">Shows your fleet health score and next vehicle maintenance reminder</string>
     <string name="widget_next_service">Next Service</string>
     <string name="widget_all_caught_up">All caught up!</string>
     <string name="widget_due">Due: %1$s</string>
     <string name="widget_tap_to_open">Tap to open AutoMinder</string>
+    <string name="widget_health_score">Health</string>
+    <string name="widget_vehicles">%1$d vehicles</string>
+    <string name="widget_overdue_count">%1$d overdue</string>
+    <string name="widget_fleet_status">Fleet Status</string>
 
     <!-- Vehicle Detail — Export -->
     <string name="vehicle_detail_export">Export History</string>

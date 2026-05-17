@@ -74,4 +74,26 @@ interface ReminderDao {
         LIMIT 1
     """)
     suspend fun findActiveReminderByType(vehicleId: Long, serviceType: ServiceType): ReminderEntity?
+
+    @Query("""
+        SELECT COUNT(*) FROM reminders
+        WHERE isCompleted = 0
+          AND nextDueDate IS NOT NULL
+          AND nextDueDate < :now
+          AND (snoozeUntil IS NULL OR snoozeUntil < :now)
+    """)
+    suspend fun getOverdueCount(now: Long = System.currentTimeMillis()): Int
+
+    @Query("""
+        SELECT COUNT(*) FROM reminders
+        WHERE isCompleted = 0
+          AND nextDueDate IS NOT NULL
+          AND nextDueDate >= :now
+          AND nextDueDate < :soon
+          AND (snoozeUntil IS NULL OR snoozeUntil < :now)
+    """)
+    suspend fun getDueSoonCount(
+        now: Long = System.currentTimeMillis(),
+        soon: Long = System.currentTimeMillis() + 7L * 86_400_000L
+    ): Int
 }
