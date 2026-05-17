@@ -47,7 +47,6 @@ all_files*.txt
 test_out.txt
 findings.txt
 
-
 # ─── Agent / social media / non-project files ──────────────────────────────
 .gradle-user-home/
 .kotlin/
@@ -55,4 +54,3 @@ findings.txt
 .claude/
 competitor_*.md
 *_reels_*.md
-

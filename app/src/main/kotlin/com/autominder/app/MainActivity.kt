@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
                         val route = navBackStackEntry?.destination?.route ?: ""
                         route.contains(NavRoutes.Dashboard::class.qualifiedName.orEmpty()) ||
                             route.contains(NavRoutes.VehicleList::class.qualifiedName.orEmpty()) ||
+                            route.contains(NavRoutes.ServiceHistory::class.qualifiedName.orEmpty()) ||
                             route.contains(NavRoutes.Settings::class.qualifiedName.orEmpty())
                     }
                 }

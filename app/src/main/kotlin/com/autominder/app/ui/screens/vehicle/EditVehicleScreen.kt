@@ -54,7 +54,6 @@ import com.autominder.app.R
 import com.autominder.app.domain.util.DistanceUtil
 import androidx.compose.material3.SnackbarDuration
 import com.autominder.app.ui.components.LocalSnackbarHostState
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.autominder.app.ui.components.LoadingState
@@ -95,9 +94,13 @@ fun EditVehicleScreen(
                 duration = SnackbarDuration.Short
             )
             val activity = context as? MainActivity
-            val adManager = activity?.adManager
-            if (adManager != null && activity != null && adManager.shouldShowInterstitial()) {
-                adManager.showInterstitial(activity) { onNavigateBack() }
+            if (activity != null) {
+                val adManager = activity.adManager
+                if (adManager.shouldShowInterstitial()) {
+                    adManager.showInterstitial(activity) { onNavigateBack() }
+                } else {
+                    onNavigateBack()
+                }
             } else {
                 onNavigateBack()
             }

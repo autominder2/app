@@ -3,61 +3,62 @@ package com.autominder.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ─── AutoMinder Color Palette ────────────────────────────────────────────────
-// Automotive utility colors with high-contrast night mode support.
+// Racing Teal #006B5F — 2026 brand identity
+// Generated from M3 HCT color space with teal seed
 
-val PrimaryGreen = Color(0xFF4CAF82)
-val OnPrimaryGreen = Color(0xFF003822)
-val PrimaryContainerGreen = Color(0xFF00513A)
+// ─── Primary (Racing Teal) ──────────────────────────────────────────────────
+val PrimaryTeal = Color(0xFF006B5F)
+val OnPrimaryTeal = Color(0xFFFFFFFF)
+val PrimaryContainerLight = Color(0xFF9CF2E1)
+val OnPrimaryContainerLight = Color(0xFF00201C)
+val PrimaryContainerDark = Color(0xFF005048)
+val OnPrimaryContainerDark = Color(0xFF9CF2E1)
 
-val SecondaryAmber = Color(0xFFFFB74D)
-val OnSecondaryAmber = Color(0xFF3E2000)
+// ─── Secondary (Muted Teal-Gray) ────────────────────────────────────────────
+val SecondaryColor = Color(0xFF4A635E)
+val OnSecondaryColor = Color(0xFFFFFFFF)
+val SecondaryContainerLight = Color(0xFFCCE8E1)
+val OnSecondaryContainerLight = Color(0xFF06201B)
+val SecondaryContainerDark = Color(0xFF334B46)
+val OnSecondaryContainerDark = Color(0xFFCCE8E1)
 
-val ErrorRed = Color(0xFFFF6B6B)
-val OnErrorRed = Color(0xFF370001)
+// ─── Tertiary (Warm Amber-Gold for DUE_SOON) ────────────────────────────────
+val TertiaryColor = Color(0xFF7D5700)
+val OnTertiaryColor = Color(0xFFFFFFFF)
+val TertiaryContainerLight = Color(0xFFFFDEA6)
+val OnTertiaryContainerLight = Color(0xFF281900)
+val TertiaryContainerDark = Color(0xFF5C4000)
+val OnTertiaryContainerDark = Color(0xFFFFDEA6)
 
-val BackgroundDark = Color(0xFF0F1117)
-val SurfaceDark = Color(0xFF1C1F26)
-val OnBackgroundLight = Color(0xFFE2E4E9)
-val OnSurfaceLight = Color(0xFFD0D3DB)
-val SurfaceVariantDark = Color(0xFF272C38)
-val OutlineGrey = Color(0xFF4A5068)
+// ─── Error (OVERDUE urgency) ────────────────────────────────────────────────
+val ErrorColor = Color(0xFFBA1A1A)
+val OnErrorColor = Color(0xFFFFFFFF)
+val ErrorContainerLight = Color(0xFFFFDAD6)
+val OnErrorContainerLight = Color(0xFF410002)
+val ErrorContainerDark = Color(0xFF93000A)
+val OnErrorContainerDark = Color(0xFFFFDAD6)
 
-// Status Colors
-val StatusSuccess = Color(0xFF4CAF50)
-val StatusWarning = Color(0xFFFFC107)
-val StatusError = Color(0xFFF44336)
-val StatusSnoozed = Color(0xFF9E9E9E)
-val StatusOk = Color(0xFF2196F3)
+// ─── Surfaces (Light) ───────────────────────────────────────────────────────
+val SurfaceLight = Color(0xFFF5FBF8)
+val OnSurfaceLight = Color(0xFF171D1B)
+val SurfaceVariantLight = Color(0xFFDAE5E1)
+val OnSurfaceVariantLight = Color(0xFF3F4947)
+val SurfaceDimLight = Color(0xFFD5DBD8)
+val SurfaceContainerLight = Color(0xFFEFF5F2)
+val SurfaceContainerHighLight = Color(0xFFE9EFEC)
+val OutlineLight = Color(0xFF6F7976)
+val OutlineVariantLight = Color(0xFFBFC9C6)
 
-// ─── Light Mode Palette ─────────────────────────────────────────────────────
-val LightBackground      = Color(0xFFF8F9FC)
-val LightSurface         = Color(0xFFFFFFFF)
-val OnLightBackground    = Color(0xFF1C1B1F)
-val OnLightSurface       = Color(0xFF1C1B1F)
-val LightSurfaceVariant  = Color(0xFFE7E8EC)
-val LightOutline         = Color(0xFF79747E)
-val LightPrimaryContainer = Color(0xFFB8F0D5)
-val OnLightPrimaryContainer = Color(0xFF002113)
-val LightSecondaryContainer = Color(0xFFFFDDB3)
-val OnLightSecondaryContainer = Color(0xFF2B1700)
-val LightErrorContainer  = Color(0xFFFFDAD6)
-val OnLightErrorContainer = Color(0xFF410002)
+// ─── Surfaces (Dark) ────────────────────────────────────────────────────────
+val SurfaceDark = Color(0xFF0F1512)
+val OnSurfaceDark = Color(0xFFDEE4E0)
+val SurfaceVariantDark = Color(0xFF3F4945)
+val OnSurfaceVariantDark = Color(0xFFBFC9C6)
+val SurfaceDimDark = Color(0xFF0F1512)
+val SurfaceContainerDark = Color(0xFF1A201E)
+val SurfaceContainerHighDark = Color(0xFF252B28)
+val OutlineDark = Color(0xFF899390)
+val OutlineVariantDark = Color(0xFF3F4947)
 
-// ─── Dark Mode Containers ────────────────────────────────────────────
-val DarkPrimaryContainer     = Color(0xFF005235)
-val OnDarkPrimaryContainer   = Color(0xFFB8F0D5)
-val DarkSecondaryContainer   = Color(0xFF5C3D00)
-val OnDarkSecondaryContainer = Color(0xFFFFDDB3)
-val DarkErrorContainer       = Color(0xFF93000A)
-val OnDarkErrorContainer     = Color(0xFFFFDAD6)
-
-// ─── Tertiary (Cyan accent) ──────────────────────────────────────────
-val TertiaryBlue             = Color(0xFF80DEEA)
-val OnTertiaryBlue           = Color(0xFF003739)
-val TertiaryContainerDark    = Color(0xFF004F53)
-val OnTertiaryContainerDark  = Color(0xFF97F0F9)
-val TertiaryContainerLight   = Color(0xFFB2EBF2)
-val OnTertiaryContainerLight = Color(0xFF001F22)
-
-// ─── Scrim ───────────────────────────────────────────────────────────
+// ─── Scrim ──────────────────────────────────────────────────────────────────
 val Scrim = Color(0xFF000000)

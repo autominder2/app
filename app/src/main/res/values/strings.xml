@@ -263,4 +263,16 @@
     <!-- Dynamic Labels (unit-aware) -->
     <string name="label_current_odometer_dynamic">Current Odometer (%1$s)</string>
     <string name="vehicle_detail_due_at_dynamic">Due at: %1$s %2$s</string>
+
+    <!-- Archive Dialog -->
+    <string name="vehicle_detail_archive_title">Archive Vehicle</string>
+    <string name="vehicle_detail_archive_message">Are you sure you want to archive this vehicle? It will no longer appear on your dashboard.</string>
+
+    <!-- Dynamic Service Labels -->
+    <string name="add_service_odometer_dynamic">Odometer at Service (%1$s)</string>
+    <string name="mileage_log_odometer_dynamic">Odometer (%1$s)</string>
+
+    <!-- Accessibility -->
+    <string name="cd_select_date">Select date</string>
+    <string name="cd_vehicle_health">Vehicle health indicator</string>
 </resources>

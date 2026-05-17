@@ -103,7 +103,7 @@ fun AddFuelScreen(
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null)
+                        Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.cd_select_date))
                     }
                 }
             )

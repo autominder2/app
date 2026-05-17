@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,7 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -53,7 +54,6 @@ import com.autominder.app.R
 import com.autominder.app.domain.util.DistanceUtil
 import androidx.compose.material3.SnackbarDuration
 import com.autominder.app.ui.components.LocalSnackbarHostState
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.autominder.app.ui.theme.LocalDistanceUnit
@@ -94,9 +94,13 @@ fun AddVehicleScreen(
                 duration = SnackbarDuration.Short
             )
             val activity = context as? MainActivity
-            val adManager = activity?.adManager
-            if (adManager != null && activity != null && adManager.shouldShowInterstitial()) {
-                adManager.showInterstitial(activity) { onNavigateBack() }
+            if (activity != null) {
+                val adManager = activity.adManager
+                if (adManager.shouldShowInterstitial()) {
+                    adManager.showInterstitial(activity) { onNavigateBack() }
+                } else {
+                    onNavigateBack()
+                }
             } else {
                 onNavigateBack()
             }
@@ -109,7 +113,7 @@ fun AddVehicleScreen(
                 title = { Text(stringResource(R.string.add_vehicle_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
@@ -154,6 +158,7 @@ private fun AddVehicleForm(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)

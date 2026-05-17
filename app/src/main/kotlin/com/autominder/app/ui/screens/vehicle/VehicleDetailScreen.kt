@@ -146,7 +146,7 @@ fun VehicleDetailScreen(
                             androidx.compose.material3.AlertDialog(
                                 onDismissRequest = { showArchiveDialog = false },
                                 title = { Text(stringResource(R.string.action_archive)) },
-                                text = { Text("Are you sure you want to archive this vehicle? It will no longer appear on your dashboard.") },
+                                text = { Text(stringResource(R.string.vehicle_detail_archive_message)) },
                                 confirmButton = {
                                     TextButton(onClick = {
                                         showArchiveDialog = false
@@ -709,7 +709,7 @@ private fun HealthScoreCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.Build,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.cd_vehicle_health),
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
