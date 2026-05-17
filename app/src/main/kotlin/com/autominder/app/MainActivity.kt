@@ -26,16 +26,20 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.autominder.app.ads.AdManager
 import com.autominder.app.ads.BannerAdView
+import com.autominder.app.billing.SubscriptionManager
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.ui.components.BottomNavBar
 import com.autominder.app.ui.navigation.NavGraph
 import com.autominder.app.ui.navigation.NavRoutes
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import com.autominder.app.ui.theme.AutoMinderTheme
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+
+val LocalIsProUser = staticCompositionLocalOf { false }
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -45,6 +49,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var userPreferences: UserPreferences
+
+    @Inject
+    lateinit var subscriptionManager: SubscriptionManager
 
     private val _deepLinkEvents = kotlinx.coroutines.flow.MutableSharedFlow<Long>(extraBufferCapacity = 1)
 
@@ -70,13 +77,17 @@ class MainActivity : ComponentActivity() {
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = "system")
             val hasSeenOnboarding by userPreferences.hasSeenOnboarding.collectAsStateWithLifecycle(initialValue = true)
             val distanceUnit by userPreferences.distanceUnit.collectAsStateWithLifecycle(initialValue = "km")
+            val isProUser by subscriptionManager.isProUser.collectAsStateWithLifecycle()
             val darkTheme = when (themeMode) {
                 "light" -> false
                 "dark" -> true
                 else -> isSystemInDarkTheme()
             }
             AutoMinderTheme(darkTheme = darkTheme) {
-            CompositionLocalProvider(LocalDistanceUnit provides distanceUnit) {
+            CompositionLocalProvider(
+                LocalDistanceUnit provides distanceUnit,
+                LocalIsProUser provides isProUser
+            ) {
                 val navController = rememberNavController()
                 val bannerAdUnitId = remember {
                     getString(R.string.admob_banner_id)
@@ -127,10 +138,12 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Column {
                                 BottomNavBar(navController = navController)
-                                BannerAdView(
-                                    adUnitId = bannerAdUnitId,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                if (!isProUser) {
+                                    BannerAdView(
+                                        adUnitId = bannerAdUnitId,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
                         }
                     }

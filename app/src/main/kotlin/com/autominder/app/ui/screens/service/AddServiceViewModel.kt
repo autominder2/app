@@ -25,7 +25,7 @@ data class AddServiceUiState(
     val serviceType: ServiceType = ServiceType.OIL_CHANGE,
     val customLabel: String = "",
     val odometer: String = "",
-    val serviceDate: Long? = null,
+    val serviceDate: Long? = System.currentTimeMillis(),
     val cost: String = "",
     val shopName: String = "",
     val notes: String = "",
@@ -58,6 +58,17 @@ class AddServiceViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AddServiceUiState())
     val uiState: StateFlow<AddServiceUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
+            if (vehicle != null && _uiState.value.odometer.isEmpty()) {
+                val unit = userPreferences.distanceUnit.first()
+                val displayOdometer = DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit)
+                _uiState.value = _uiState.value.copy(odometer = displayOdometer.toString())
+            }
+        }
+    }
 
     fun onEvent(event: AddServiceUiEvent) {
         when (event) {

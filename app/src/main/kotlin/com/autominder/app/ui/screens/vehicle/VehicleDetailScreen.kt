@@ -77,9 +77,11 @@ import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.Vehicle
+import com.autominder.app.LocalIsProUser
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.ProFeatureGate
 import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.ui.util.DateFormatUtil
 import androidx.compose.material3.SnackbarDuration
@@ -100,6 +102,7 @@ fun VehicleDetailScreen(
     viewModel: VehicleDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isProUser = LocalIsProUser.current
     val context = LocalContext.current
     val snackbarHostState = LocalSnackbarHostState.current
     val scope = rememberCoroutineScope()
@@ -202,6 +205,7 @@ fun VehicleDetailScreen(
                         totalCostCents = uiState.totalCostCents,
                         yearCostCents = uiState.yearCostCents,
                         averageEfficiency = uiState.averageEfficiency,
+                        isProUser = isProUser,
                         onAddServiceClick = { onNavigateToAddService(v.id) },
                         onMileageLogClick = { onNavigateToMileageLog(v.id) },
                         onAddFuelClick = { onNavigateToAddFuel(v.id) },
@@ -258,6 +262,7 @@ private fun VehicleDetailContent(
     totalCostCents: Int,
     yearCostCents: Int,
     averageEfficiency: Double,
+    isProUser: Boolean,
     onAddServiceClick: () -> Unit,
     onMileageLogClick: () -> Unit,
     onAddFuelClick: () -> Unit,
@@ -369,13 +374,17 @@ private fun VehicleDetailContent(
             )
         }
 
-        // Cost summary
+        // Cost summary (Pro feature)
         if (totalCostCents > 0 || yearCostCents > 0) {
             item {
+                ProFeatureGate(
+                    isProUser = isProUser,
+                    onUpgradeClick = {},
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
                 ElevatedCard(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .fillMaxWidth(),
                     elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
                 ) {
                     Row(
@@ -409,16 +418,20 @@ private fun VehicleDetailContent(
                         }
                     }
                 }
+                } // ProFeatureGate
             }
         }
 
-        // Fuel Efficiency Card
+        // Fuel Efficiency Card (Pro feature)
         if (averageEfficiency > 0) {
             item {
+                ProFeatureGate(
+                    isProUser = isProUser,
+                    onUpgradeClick = {},
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
                 ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.elevatedCardColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer
                     )
@@ -451,6 +464,7 @@ private fun VehicleDetailContent(
                         )
                     }
                 }
+                } // ProFeatureGate
             }
         }
 

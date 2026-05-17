@@ -184,6 +184,11 @@
     <string name="settings_unit_mi">Miles (mi)</string>
     <string name="settings_about">About</string>
     <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_upgrade_title">Upgrade to Pro</string>
+    <string name="settings_upgrade_subtitle">Unlock analytics, charts, backup, export &amp; more</string>
+    <string name="settings_upgrade_button">Upgrade</string>
+    <string name="settings_pro_active">AutoMinder Pro</string>
+    <string name="settings_pro_active_subtitle">All premium features unlocked</string>
     <string name="settings_app_version">AutoMinder v%1$s</string>
 
     <!-- About Screen -->

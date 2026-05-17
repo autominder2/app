@@ -4,14 +4,19 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.domain.repository.IReminderRepository
+import com.autominder.app.domain.repository.IVehicleRepository
+import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -42,6 +47,8 @@ sealed class AddReminderUiEvent {
 @HiltViewModel
 class AddReminderViewModel @Inject constructor(
     private val reminderRepository: IReminderRepository,
+    private val vehicleRepository: IVehicleRepository,
+    private val userPreferences: UserPreferences,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -49,6 +56,46 @@ class AddReminderViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AddReminderUiState())
     val uiState: StateFlow<AddReminderUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
+            if (vehicle != null) {
+                val unit = userPreferences.distanceUnit.first()
+                val defaults = getDefaultIntervals(_uiState.value.serviceType)
+                val displayOdometer = DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit)
+                _uiState.value = _uiState.value.copy(
+                    dueKm = defaults.intervalKm?.let { (displayOdometer + it).toString() } ?: "",
+                    dueDateLong = defaults.intervalDays?.let {
+                        System.currentTimeMillis() + (it.toLong() * 86_400_000L)
+                    },
+                    intervalKm = defaults.intervalKm?.toString() ?: "",
+                    intervalDays = defaults.intervalDays?.toString() ?: ""
+                )
+            }
+        }
+    }
+
+    private fun getDefaultIntervals(type: ServiceType): DefaultInterval = when (type) {
+        ServiceType.OIL_CHANGE -> DefaultInterval(8000, 180)
+        ServiceType.TIRE_ROTATION -> DefaultInterval(10000, 180)
+        ServiceType.BRAKE_SERVICE -> DefaultInterval(40000, 730)
+        ServiceType.BATTERY -> DefaultInterval(null, 1095)
+        ServiceType.AIR_FILTER -> DefaultInterval(20000, 365)
+        ServiceType.CABIN_FILTER -> DefaultInterval(20000, 365)
+        ServiceType.TRANSMISSION -> DefaultInterval(60000, 730)
+        ServiceType.COOLANT -> DefaultInterval(40000, 730)
+        ServiceType.SPARK_PLUGS -> DefaultInterval(50000, 730)
+        ServiceType.TIMING_BELT -> DefaultInterval(100000, 1825)
+        ServiceType.WIPER_BLADES -> DefaultInterval(null, 365)
+        ServiceType.INSURANCE -> DefaultInterval(null, 365)
+        ServiceType.REGISTRATION -> DefaultInterval(null, 365)
+        ServiceType.INSPECTION -> DefaultInterval(null, 365)
+        ServiceType.EMISSIONS_TEST -> DefaultInterval(null, 365)
+        ServiceType.CUSTOM -> DefaultInterval(null, null)
+    }
+
+    private data class DefaultInterval(val intervalKm: Int?, val intervalDays: Int?)
 
     fun onEvent(event: AddReminderUiEvent) {
         when (event) {
@@ -58,8 +105,26 @@ class AddReminderViewModel @Inject constructor(
             is AddReminderUiEvent.DueDateChanged -> _uiState.value = _uiState.value.copy(dueDateLong = event.date)
             is AddReminderUiEvent.IntervalKmChanged -> _uiState.value = _uiState.value.copy(intervalKm = event.intervalKm)
             is AddReminderUiEvent.IntervalDaysChanged -> _uiState.value = _uiState.value.copy(intervalDays = event.intervalDays)
-            is AddReminderUiEvent.ServiceTypeChanged -> _uiState.value = _uiState.value.copy(serviceType = event.type)
+            is AddReminderUiEvent.ServiceTypeChanged -> onServiceTypeChanged(event.type)
             is AddReminderUiEvent.SaveClicked -> saveReminder()
+        }
+    }
+
+    private fun onServiceTypeChanged(type: ServiceType) {
+        val defaults = getDefaultIntervals(type)
+        viewModelScope.launch {
+            val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
+            val unit = userPreferences.distanceUnit.first()
+            val displayOdometer = vehicle?.let { DistanceUtil.kmToDisplay(it.currentOdometer, unit) } ?: 0
+            _uiState.value = _uiState.value.copy(
+                serviceType = type,
+                dueKm = defaults.intervalKm?.let { (displayOdometer + it).toString() } ?: "",
+                dueDateLong = defaults.intervalDays?.let {
+                    System.currentTimeMillis() + (it.toLong() * 86_400_000L)
+                },
+                intervalKm = defaults.intervalKm?.toString() ?: "",
+                intervalDays = defaults.intervalDays?.toString() ?: ""
+            )
         }
     }
 
