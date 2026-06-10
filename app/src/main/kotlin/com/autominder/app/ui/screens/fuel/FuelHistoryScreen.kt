@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +20,10 @@ import com.autominder.app.R
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.LocalSnackbarHostState
+import com.autominder.app.ui.components.SwipeToDeleteContainer
 import com.autominder.app.ui.util.DateFormatUtil
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +34,10 @@ fun FuelHistoryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val snackbarHostState = LocalSnackbarHostState.current
+    val scope = rememberCoroutineScope()
+    val deletedMessage = stringResource(R.string.fuel_entry_deleted)
+    val undoLabel = stringResource(R.string.action_undo)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -66,7 +72,19 @@ fun FuelHistoryScreen(
                 )
                 else -> FuelHistoryList(
                     uiState = uiState,
-                    onDelete = viewModel::deleteEntry
+                    onDelete = { entry ->
+                        viewModel.deleteEntry(entry)
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = deletedMessage,
+                                actionLabel = undoLabel,
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.undoDelete(entry)
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -88,11 +106,12 @@ private fun FuelHistoryList(
         }
 
         items(uiState.entries, key = { it.entry.id }) { item ->
-            FuelEntryCard(
-                item = item,
-                onDelete = onDelete,
+            SwipeToDeleteContainer(
+                onDelete = { onDelete(item.entry) },
                 modifier = Modifier.animateItem()
-            )
+            ) {
+                FuelEntryCard(item = item)
+            }
         }
     }
 }
@@ -127,7 +146,6 @@ private fun EfficiencyAtAGlance(average: Double) {
 @Composable
 private fun FuelEntryCard(
     item: FuelEntryWithEfficiency,
-    onDelete: (com.autominder.app.domain.model.FuelEntry) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currencyFormat = remember { NumberFormat.getCurrencyInstance() }
@@ -136,24 +154,13 @@ private fun FuelEntryCard(
         modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    DateFormatUtil.formatDate(item.entry.date.time),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = { onDelete(item.entry) }) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.action_cancel),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+            Text(
+                DateFormatUtil.formatDate(item.entry.date.time),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

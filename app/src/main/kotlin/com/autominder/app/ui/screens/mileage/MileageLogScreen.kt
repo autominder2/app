@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,8 +45,14 @@ import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.LocalSnackbarHostState
+import com.autominder.app.ui.components.SwipeToDeleteContainer
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.util.DateFormatUtil
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +62,10 @@ fun MileageLogScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val snackbarHostState = LocalSnackbarHostState.current
+    val scope = rememberCoroutineScope()
+    val deletedMessage = stringResource(R.string.mileage_entry_deleted)
+    val undoLabel = stringResource(R.string.action_undo)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -124,11 +133,24 @@ fun MileageLogScreen(
                     }
                 } else {
                     items(uiState.logs, key = { it.id }) { entry ->
-                        MileageLogCard(
-                            entry = entry,
-                            onDelete = { viewModel.onEvent(MileageLogUiEvent.DeleteLog(entry)) },
+                        SwipeToDeleteContainer(
+                            onDelete = {
+                                viewModel.onEvent(MileageLogUiEvent.DeleteLog(entry))
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = deletedMessage,
+                                        actionLabel = undoLabel,
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.onEvent(MileageLogUiEvent.UndoDelete(entry))
+                                    }
+                                }
+                            },
                             modifier = Modifier.animateItem()
-                        )
+                        ) {
+                            MileageLogCard(entry = entry)
+                        }
                     }
                 }
             }
@@ -201,7 +223,6 @@ private fun MileageInputSection(
 @Composable
 private fun MileageLogCard(
     entry: MileageLogEntry,
-    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -239,15 +260,6 @@ private fun MileageLogCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.service_detail_delete),
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                )
-            }
         }
     }
 }

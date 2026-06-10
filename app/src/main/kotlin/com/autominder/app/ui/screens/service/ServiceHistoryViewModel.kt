@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,7 +40,7 @@ sealed class ServiceHistoryUiState {
 
 @HiltViewModel
 class ServiceHistoryViewModel @Inject constructor(
-    serviceRepository: IServiceRepository,
+    private val serviceRepository: IServiceRepository,
     vehicleRepository: IVehicleRepository
 ) : ViewModel() {
 
@@ -84,4 +85,17 @@ class ServiceHistoryViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = ServiceHistoryUiState.Loading
         )
+
+    fun deleteService(service: Service) {
+        viewModelScope.launch {
+            serviceRepository.deleteService(service)
+        }
+    }
+
+    fun undoDelete(service: Service) {
+        viewModelScope.launch {
+            // DAO insert uses REPLACE, so re-inserting with the original id restores it
+            serviceRepository.insertService(service)
+        }
+    }
 }

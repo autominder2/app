@@ -35,6 +35,7 @@ sealed class MileageLogUiEvent {
     object AddClicked : MileageLogUiEvent()
     object Retry : MileageLogUiEvent()
     data class DeleteLog(val log: MileageLogEntry) : MileageLogUiEvent()
+    data class UndoDelete(val log: MileageLogEntry) : MileageLogUiEvent()
 }
 
 @HiltViewModel
@@ -80,6 +81,20 @@ class MileageLogViewModel @Inject constructor(
             is MileageLogUiEvent.AddClicked -> addLog()
             is MileageLogUiEvent.Retry -> loadLogs()
             is MileageLogUiEvent.DeleteLog -> deleteLog(event.log)
+            is MileageLogUiEvent.UndoDelete -> undoDelete(event.log)
+        }
+    }
+
+    private fun undoDelete(log: MileageLogEntry) {
+        viewModelScope.launch {
+            try {
+                // DAO insert uses REPLACE, so re-inserting with the original id restores it
+                mileageLogRepository.insertLog(log)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "Failed to restore log entry"
+                )
+            }
         }
     }
 

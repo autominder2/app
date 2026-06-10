@@ -49,13 +49,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,6 +88,7 @@ import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.ProFeatureGate
+import com.autominder.app.ui.components.QuickMileageSheet
 import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.ui.util.DateFormatUtil
 import androidx.compose.material3.SnackbarDuration
@@ -237,6 +242,15 @@ fun VehicleDetailScreen(
                         },
                         onEditReminder = { reminderId ->
                             onNavigateToEditReminder(reminderId)
+                        },
+                        onUpdateOdometer = { odometerKm ->
+                            viewModel.onEvent(VehicleDetailUiEvent.UpdateOdometer(odometerKm))
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = context.getString(R.string.odometer_updated),
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
                         }
                     )
                 }
@@ -260,6 +274,7 @@ private enum class ScreenState {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VehicleDetailContent(
     vehicle: Vehicle,
@@ -276,8 +291,28 @@ private fun VehicleDetailContent(
     onExportClick: () -> Unit,
     onMarkComplete: (Long) -> Unit,
     onSnooze: (Long) -> Unit,
-    onEditReminder: (Long) -> Unit
+    onEditReminder: (Long) -> Unit,
+    onUpdateOdometer: (Int) -> Unit
 ) {
+    var showMileageSheet by remember { mutableStateOf(false) }
+    val mileageSheetState = rememberModalBottomSheetState()
+    val distanceUnit = LocalDistanceUnit.current
+    val haptic = LocalHapticFeedback.current
+
+    if (showMileageSheet) {
+        QuickMileageSheet(
+            currentOdometer = DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit),
+            unitLabel = DistanceUtil.unitLabel(distanceUnit),
+            sheetState = mileageSheetState,
+            onDismiss = { showMileageSheet = false },
+            onUpdate = { newDisplayOdometer ->
+                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                onUpdateOdometer(DistanceUtil.displayToKm(newDisplayOdometer, distanceUnit))
+                showMileageSheet = false
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -357,15 +392,36 @@ private fun VehicleDetailContent(
 
         item { Spacer(modifier = Modifier.height(4.dp)) }
 
-        // Odometer
+        // Odometer — tap to update via quick sheet
         item {
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text(text = stringResource(R.string.vehicle_detail_odometer), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "${DistanceUtil.kmToDisplay(vehicle.currentOdometer, LocalDistanceUnit.current)} ${DistanceUtil.unitLabel(LocalDistanceUnit.current)}",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            Surface(
+                onClick = { showMileageSheet = true },
+                color = androidx.compose.ui.graphics.Color.Transparent,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = stringResource(R.string.vehicle_detail_odometer), style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.vehicle_detail_tap_to_update),
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Text(
+                        text = "${DistanceUtil.kmToDisplay(vehicle.currentOdometer, LocalDistanceUnit.current)} ${DistanceUtil.unitLabel(LocalDistanceUnit.current)}",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.vehicle_detail_tap_to_update),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 

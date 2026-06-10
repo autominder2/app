@@ -36,6 +36,13 @@ import com.autominder.app.R
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.LocalSnackbarHostState
+import com.autominder.app.ui.components.SwipeToDeleteContainer
+import com.autominder.app.domain.model.Service
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import com.autominder.app.ui.util.DateFormatUtil
 import java.util.Locale
@@ -48,6 +55,10 @@ fun ServiceHistoryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val snackbarHostState = LocalSnackbarHostState.current
+    val scope = rememberCoroutineScope()
+    val deletedMessage = stringResource(R.string.service_deleted)
+    val undoLabel = stringResource(R.string.action_undo)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -85,7 +96,20 @@ fun ServiceHistoryScreen(
                 )
                 is ServiceHistoryUiState.Success -> ServiceHistoryContent(
                     groups = state.groups,
-                    onServiceClick = onNavigateToServiceDetail
+                    onServiceClick = onNavigateToServiceDetail,
+                    onServiceDelete = { service ->
+                        viewModel.deleteService(service)
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = deletedMessage,
+                                actionLabel = undoLabel,
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.undoDelete(service)
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -96,7 +120,8 @@ fun ServiceHistoryScreen(
 @Composable
 private fun ServiceHistoryContent(
     groups: List<ServiceGroup>,
-    onServiceClick: (Long) -> Unit
+    onServiceClick: (Long) -> Unit,
+    onServiceDelete: (Service) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -122,11 +147,15 @@ private fun ServiceHistoryContent(
                 items = group.services,
                 key = { it.service.id }
             ) { serviceWithVehicle ->
-                ServiceHistoryCard(
-                    serviceWithVehicle = serviceWithVehicle,
-                    onClick = { onServiceClick(serviceWithVehicle.service.id) },
+                SwipeToDeleteContainer(
+                    onDelete = { onServiceDelete(serviceWithVehicle.service) },
                     modifier = Modifier.animateItem()
-                )
+                ) {
+                    ServiceHistoryCard(
+                        serviceWithVehicle = serviceWithVehicle,
+                        onClick = { onServiceClick(serviceWithVehicle.service.id) }
+                    )
+                }
             }
         }
     }

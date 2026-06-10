@@ -71,4 +71,11 @@ class FuelHistoryViewModel @Inject constructor(
             fuelRepository.deleteFuelEntry(entry)
         }
     }
+
+    fun undoDelete(entry: FuelEntry) {
+        viewModelScope.launch {
+            // DAO insert uses REPLACE, so re-inserting with the original id restores it
+            fuelRepository.insertFuelEntry(entry)
+        }
+    }
 }

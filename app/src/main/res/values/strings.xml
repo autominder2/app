@@ -331,4 +331,15 @@
 
     <!-- Service Detail Additions -->
     <string name="service_detail_receipt">Service Receipt</string>
+
+    <!-- Swipe to delete + undo -->
+    <string name="action_undo">Undo</string>
+    <string name="fuel_entry_deleted">Fuel entry deleted</string>
+    <string name="mileage_entry_deleted">Mileage entry deleted</string>
+    <string name="service_deleted">Service record deleted</string>
+    <string name="cd_swipe_delete">Swipe to delete</string>
+
+    <!-- Quick odometer update -->
+    <string name="odometer_updated">Odometer updated</string>
+    <string name="vehicle_detail_tap_to_update">Tap to update</string>
 </resources>

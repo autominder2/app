@@ -5,9 +5,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.Vehicle
+import com.autominder.app.domain.repository.IMileageLogRepository
 import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
@@ -51,6 +53,7 @@ sealed class VehicleDetailUiEvent {
     object ExportConsumed : VehicleDetailUiEvent()
     data class MarkReminderComplete(val reminderId: Long) : VehicleDetailUiEvent()
     data class SnoozeReminder(val reminderId: Long) : VehicleDetailUiEvent()
+    data class UpdateOdometer(val odometerKm: Int) : VehicleDetailUiEvent()
 }
 
 @HiltViewModel
@@ -59,6 +62,7 @@ class VehicleDetailViewModel @Inject constructor(
     private val reminderRepository: IReminderRepository,
     private val serviceRepository: IServiceRepository,
     private val fuelRepository: IFuelRepository,
+    private val mileageLogRepository: IMileageLogRepository,
     private val exportServiceHistory: ExportServiceHistoryUseCase,
     private val calculateEfficiency: CalculateEfficiencyUseCase,
     savedStateHandle: SavedStateHandle
@@ -142,6 +146,26 @@ class VehicleDetailViewModel @Inject constructor(
             is VehicleDetailUiEvent.ExportConsumed -> _actionState.update { it.copy(exportUri = null) }
             is VehicleDetailUiEvent.MarkReminderComplete -> markReminderComplete(event.reminderId)
             is VehicleDetailUiEvent.SnoozeReminder -> snoozeReminder(event.reminderId)
+            is VehicleDetailUiEvent.UpdateOdometer -> updateOdometer(event.odometerKm)
+        }
+    }
+
+    private fun updateOdometer(odometerKm: Int) {
+        viewModelScope.launch {
+            try {
+                vehicleRepository.updateOdometer(vehicleId, odometerKm)
+                mileageLogRepository.insertLog(
+                    MileageLogEntry(
+                        id = 0,
+                        vehicleId = vehicleId,
+                        odometer = odometerKm,
+                        loggedAt = System.currentTimeMillis(),
+                        notes = null
+                    )
+                )
+            } catch (e: Exception) {
+                _actionState.update { it.copy(error = e.message ?: "Failed to update odometer") }
+            }
         }
     }
 
