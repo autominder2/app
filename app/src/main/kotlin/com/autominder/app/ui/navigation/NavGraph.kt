@@ -1,10 +1,21 @@
 package com.autominder.app.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.autominder.app.ui.theme.Motion
 import com.autominder.app.ui.screens.about.AboutScreen
 import com.autominder.app.ui.screens.dashboard.DashboardScreen
 import com.autominder.app.ui.screens.mileage.MileageLogScreen
@@ -22,6 +33,43 @@ import com.autominder.app.ui.screens.vehicle.EditVehicleScreen
 import com.autominder.app.ui.screens.vehicle.VehicleDetailScreen
 import com.autominder.app.ui.screens.vehicle.VehicleListScreen
 
+// Forward navigation slides the new screen in from the right while the old one
+// recedes slightly; popping reverses it with a subtle scale-down so depth reads
+// correctly during predictive-back gestures.
+private val forwardEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    slideInHorizontally(
+        animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedDecelerate)
+    ) { it / 4 } + fadeIn(tween(Motion.DurationMedium))
+}
+
+private val forwardExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    slideOutHorizontally(
+        animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedAccelerate)
+    ) { -it / 8 } + fadeOut(tween(Motion.DurationShort))
+}
+
+private val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    slideInHorizontally(
+        animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedDecelerate)
+    ) { -it / 8 } + fadeIn(tween(Motion.DurationMedium))
+}
+
+private val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    slideOutHorizontally(
+        animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedAccelerate)
+    ) { it / 4 } + scaleOut(targetScale = 0.96f, animationSpec = tween(Motion.DurationMedium)) +
+        fadeOut(tween(Motion.DurationMedium))
+}
+
+// Switching bottom-nav tabs is a lateral move, not a push — pure crossfade.
+private val tabEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    fadeIn(tween(Motion.DurationShort))
+}
+
+private val tabExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    fadeOut(tween(Motion.DurationShort))
+}
+
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -30,10 +78,19 @@ fun NavGraph(
     NavHost(
         navController = navController,
         startDestination = NavRoutes.Dashboard,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = forwardEnter,
+        exitTransition = forwardExit,
+        popEnterTransition = popEnter,
+        popExitTransition = popExit
     ) {
         // ── Bottom Nav Tabs ────────────────────────────────────────────────
-        composable<NavRoutes.Dashboard> {
+        composable<NavRoutes.Dashboard>(
+            enterTransition = tabEnter,
+            exitTransition = tabExit,
+            popEnterTransition = tabEnter,
+            popExitTransition = tabExit
+        ) {
             DashboardScreen(
                 onNavigateToVehicleDetail = { vehicleId ->
                     navController.navigate(NavRoutes.VehicleDetail(vehicleId))
@@ -44,7 +101,12 @@ fun NavGraph(
             )
         }
 
-        composable<NavRoutes.VehicleList> {
+        composable<NavRoutes.VehicleList>(
+            enterTransition = tabEnter,
+            exitTransition = tabExit,
+            popEnterTransition = tabEnter,
+            popExitTransition = tabExit
+        ) {
             VehicleListScreen(
                 onNavigateToVehicleDetail = { vehicleId ->
                     navController.navigate(NavRoutes.VehicleDetail(vehicleId))
@@ -55,7 +117,12 @@ fun NavGraph(
             )
         }
 
-        composable<NavRoutes.ServiceHistory> {
+        composable<NavRoutes.ServiceHistory>(
+            enterTransition = tabEnter,
+            exitTransition = tabExit,
+            popEnterTransition = tabEnter,
+            popExitTransition = tabExit
+        ) {
             ServiceHistoryScreen(
                 onNavigateToServiceDetail = { serviceId ->
                     navController.navigate(NavRoutes.ServiceDetail(serviceId))
@@ -63,7 +130,12 @@ fun NavGraph(
             )
         }
 
-        composable<NavRoutes.Settings> {
+        composable<NavRoutes.Settings>(
+            enterTransition = tabEnter,
+            exitTransition = tabExit,
+            popEnterTransition = tabEnter,
+            popExitTransition = tabExit
+        ) {
             SettingsScreen(
                 onNavigateToAbout = {
                     navController.navigate(NavRoutes.About)
