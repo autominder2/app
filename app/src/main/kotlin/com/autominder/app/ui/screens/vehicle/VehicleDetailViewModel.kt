@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -170,11 +171,39 @@ class VehicleDetailViewModel @Inject constructor(
     private fun markReminderComplete(reminderId: Long) {
         viewModelScope.launch {
             try {
+                val reminder = reminderRepository.getReminderById(reminderId).firstOrNull()
                 reminderRepository.markCompleted(reminderId)
+                scheduleNextOccurrence(reminder)
             } catch (e: Exception) {
                 _actionState.value = _actionState.value.copy(error = e.message ?: "Failed to complete reminder")
             }
         }
+    }
+
+    private suspend fun scheduleNextOccurrence(reminder: Reminder?) {
+        if (reminder == null) return
+        val hasInterval = reminder.intervalKm != null || reminder.intervalDays != null
+        if (!hasInterval) return
+
+        val now = System.currentTimeMillis()
+        val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
+        val currentOdometer = vehicle?.currentOdometer ?: 0
+
+        val nextReminder = Reminder(
+            id = 0,
+            vehicleId = reminder.vehicleId,
+            serviceType = reminder.serviceType,
+            customLabel = reminder.customLabel,
+            intervalKm = reminder.intervalKm,
+            intervalDays = reminder.intervalDays,
+            nextDueOdometer = reminder.intervalKm?.let { currentOdometer + it },
+            nextDueDate = reminder.intervalDays?.let { now + (it.toLong() * 86_400_000L) },
+            notifyDaysBefore = reminder.notifyDaysBefore,
+            notes = reminder.notes,
+            createdAt = now,
+            updatedAt = now
+        )
+        reminderRepository.insertReminder(nextReminder)
     }
 
     private fun snoozeReminder(reminderId: Long) {

@@ -324,4 +324,11 @@
     <string name="empty_fuel_hint">After 3 fill-ups, you\'ll see your fuel efficiency trends here.</string>
     <string name="empty_reminders_hint">Add a reminder to stay ahead of maintenance.</string>
     <string name="empty_mileage_hint">Record your odometer to track driving patterns over time.</string>
+
+    <!-- Quick Mileage Sheet -->
+    <string name="quick_mileage_title">Quick Update</string>
+    <string name="quick_mileage_update">Update Odometer</string>
+
+    <!-- Service Detail Additions -->
+    <string name="service_detail_receipt">Service Receipt</string>
 </resources>
