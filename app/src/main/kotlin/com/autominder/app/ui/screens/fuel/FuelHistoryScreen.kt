@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,8 +31,10 @@ fun FuelHistoryScreen(
     viewModel: FuelHistoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.fuel_history_title), fontWeight = FontWeight.Bold) },
@@ -39,7 +42,8 @@ fun FuelHistoryScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
-                }
+                },
+                scrollBehavior = scrollBehavior
             )
         }
     ) { padding ->
@@ -76,15 +80,19 @@ private fun FuelHistoryList(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item {
+        item(key = "efficiency_summary") {
             EfficiencyAtAGlance(uiState.averageEfficiency)
         }
 
         items(uiState.entries, key = { it.entry.id }) { item ->
-            FuelEntryCard(item, onDelete)
+            FuelEntryCard(
+                item = item,
+                onDelete = onDelete,
+                modifier = Modifier.animateItem()
+            )
         }
     }
 }
@@ -119,12 +127,13 @@ private fun EfficiencyAtAGlance(average: Double) {
 @Composable
 private fun FuelEntryCard(
     item: FuelEntryWithEfficiency,
-    onDelete: (com.autominder.app.domain.model.FuelEntry) -> Unit
+    onDelete: (com.autominder.app.domain.model.FuelEntry) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val currencyFormat = remember { NumberFormat.getCurrencyInstance() }
 
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
