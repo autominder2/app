@@ -1,5 +1,6 @@
 package com.autominder.app.ui.screens.service
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,14 +14,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -47,11 +45,12 @@ import com.autominder.app.R
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
-import androidx.compose.material3.SnackbarDuration
-import com.autominder.app.ui.components.LocalSnackbarHostState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.LocalContext
+import com.autominder.app.ui.components.DiscardChangesDialog
+import com.autominder.app.ui.components.FormField
+import com.autominder.app.ui.components.SaveButton
+import com.autominder.app.ui.components.SaveButtonState
+import com.autominder.app.ui.components.ServiceTypeGrid
+import kotlinx.coroutines.delay
 import com.autominder.app.ui.util.DateFormatUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,18 +62,51 @@ fun AddServiceScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
     var showDatePicker by remember { mutableStateOf(false) }
-    var dropdownExpanded by remember { mutableStateOf(false) }
-    val snackbarHostState = LocalSnackbarHostState.current
-    val context = LocalContext.current
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    // Pre-filled defaults (date, odometer) don't count as edits
+    val hasUnsavedChanges = uiState.cost.isNotBlank() ||
+        uiState.notes.isNotBlank() ||
+        uiState.shopName.isNotBlank() ||
+        uiState.customLabel.isNotBlank()
+
+    val onBackRequest: () -> Unit = {
+        if (hasUnsavedChanges && !uiState.isSaved) {
+            showDiscardDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    BackHandler(enabled = hasUnsavedChanges && !uiState.isSaved) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        DiscardChangesDialog(
+            onDiscard = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onKeepEditing = { showDiscardDialog = false }
+        )
+    }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             keyboardController?.hide()
-            snackbarHostState.showSnackbar(
-                message = context.getString(R.string.service_logged_successfully),
-                duration = SnackbarDuration.Short
-            )
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            // The save button morphs to its Success state — let it register,
+            // then leave. The button itself is the confirmation.
+            delay(650)
             onNavigateBack()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) {
+            haptic.performHapticFeedback(HapticFeedbackType.Reject)
         }
     }
 
@@ -105,7 +137,7 @@ fun AddServiceScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.add_service_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onBackRequest) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
@@ -120,42 +152,20 @@ fun AddServiceScreen(
                 .verticalScroll(rememberScrollState())
                 .imePadding()
         ) {
-            Text(
-                text = stringResource(R.string.add_service_type_label),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
+            FormField(index = 0) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.add_service_type_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            ExposedDropdownMenuBox(
-                expanded = dropdownExpanded,
-                onExpandedChange = { dropdownExpanded = !dropdownExpanded }
-            ) {
-                OutlinedTextField(
-                    value = uiState.serviceType.label,
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                )
-
-                ExposedDropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false }
-                ) {
-                    ServiceType.entries.forEach { serviceType ->
-                        DropdownMenuItem(
-                            text = { Text(serviceType.label) },
-                            onClick = {
-                                viewModel.onEvent(AddServiceUiEvent.ServiceTypeChanged(serviceType))
-                                dropdownExpanded = false
-                            }
-                        )
-                    }
+                    ServiceTypeGrid(
+                        selected = uiState.serviceType,
+                        onSelected = { viewModel.onEvent(AddServiceUiEvent.ServiceTypeChanged(it)) }
+                    )
                 }
             }
 
@@ -173,64 +183,74 @@ fun AddServiceScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = uiState.odometer,
-                onValueChange = { viewModel.onEvent(AddServiceUiEvent.OdometerChanged(it)) },
-                label = { Text("Odometer at Service (${DistanceUtil.unitLabel(LocalDistanceUnit.current)})") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
+            FormField(index = 1) {
+                OutlinedTextField(
+                    value = uiState.odometer,
+                    onValueChange = { viewModel.onEvent(AddServiceUiEvent.OdometerChanged(it)) },
+                    label = { Text("Odometer at Service (${DistanceUtil.unitLabel(LocalDistanceUnit.current)})") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = uiState.serviceDate?.let {
-                    DateFormatUtil.formatDate(it)
-                } ?: "",
-                onValueChange = {},
-                label = { Text(stringResource(R.string.add_service_date_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.add_service_select_date))
+            FormField(index = 2) {
+                OutlinedTextField(
+                    value = uiState.serviceDate?.let {
+                        DateFormatUtil.formatDate(it)
+                    } ?: "",
+                    onValueChange = {},
+                    label = { Text(stringResource(R.string.add_service_date_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.add_service_select_date))
+                        }
                     }
-                }
-            )
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = uiState.cost,
-                onValueChange = { viewModel.onEvent(AddServiceUiEvent.CostChanged(it)) },
-                label = { Text(stringResource(R.string.add_service_cost_label)) },
-                placeholder = { Text(stringResource(R.string.add_service_cost_placeholder)) },
-                prefix = { Text(stringResource(R.string.add_service_cost_prefix)) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
+            FormField(index = 3) {
+                OutlinedTextField(
+                    value = uiState.cost,
+                    onValueChange = { viewModel.onEvent(AddServiceUiEvent.CostChanged(it)) },
+                    label = { Text(stringResource(R.string.add_service_cost_label)) },
+                    placeholder = { Text(stringResource(R.string.add_service_cost_placeholder)) },
+                    prefix = { Text(stringResource(R.string.add_service_cost_prefix)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = uiState.shopName,
-                onValueChange = { viewModel.onEvent(AddServiceUiEvent.ShopNameChanged(it)) },
-                label = { Text(stringResource(R.string.add_service_shop_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            FormField(index = 4) {
+                OutlinedTextField(
+                    value = uiState.shopName,
+                    onValueChange = { viewModel.onEvent(AddServiceUiEvent.ShopNameChanged(it)) },
+                    label = { Text(stringResource(R.string.add_service_shop_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = uiState.notes,
-                onValueChange = { viewModel.onEvent(AddServiceUiEvent.NotesChanged(it)) },
-                label = { Text(stringResource(R.string.add_service_notes_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
-            )
+            FormField(index = 5) {
+                OutlinedTextField(
+                    value = uiState.notes,
+                    onValueChange = { viewModel.onEvent(AddServiceUiEvent.NotesChanged(it)) },
+                    label = { Text(stringResource(R.string.add_service_notes_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
+            }
 
             if (uiState.error != null) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -243,13 +263,16 @@ fun AddServiceScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
+            SaveButton(
+                state = when {
+                    uiState.isSaved -> SaveButtonState.Success
+                    uiState.isLoading -> SaveButtonState.Saving
+                    else -> SaveButtonState.Idle
+                },
+                text = stringResource(R.string.add_service_save),
                 onClick = { viewModel.onEvent(AddServiceUiEvent.SaveClicked) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading
-            ) {
-                Text(if (uiState.isLoading) stringResource(R.string.add_service_saving) else stringResource(R.string.add_service_save))
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

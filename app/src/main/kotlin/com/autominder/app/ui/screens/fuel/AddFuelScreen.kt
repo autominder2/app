@@ -10,18 +10,21 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.autominder.app.R
-import com.autominder.app.ui.components.LocalSnackbarHostState
+import com.autominder.app.ui.components.DiscardChangesDialog
+import com.autominder.app.ui.components.SaveButton
+import com.autominder.app.ui.components.SaveButtonState
 import com.autominder.app.ui.util.DateFormatUtil
-import kotlinx.coroutines.launch
-import java.util.Date
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,21 +33,48 @@ fun AddFuelScreen(
     viewModel: AddFuelViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = LocalSnackbarHostState.current
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
     var showDatePicker by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    val hasUnsavedChanges = uiState.volume.isNotBlank() ||
+        uiState.cost.isNotBlank() ||
+        uiState.notes.isNotBlank()
+
+    val onBackRequest: () -> Unit = {
+        if (hasUnsavedChanges && !uiState.isSaved) {
+            showDiscardDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    BackHandler(enabled = hasUnsavedChanges && !uiState.isSaved) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        DiscardChangesDialog(
+            onDiscard = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onKeepEditing = { showDiscardDialog = false }
+        )
+    }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.fuel_entry_saved),
-                    duration = SnackbarDuration.Short
-                )
-            }
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            delay(650)
             onNavigateBack()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) {
+            haptic.performHapticFeedback(HapticFeedbackType.Reject)
         }
     }
 
@@ -53,7 +83,7 @@ fun AddFuelScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.fuel_add_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onBackRequest) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
@@ -124,21 +154,16 @@ fun AddFuelScreen(
                 )
             }
 
-            Button(
+            SaveButton(
+                state = when {
+                    uiState.isSaved -> SaveButtonState.Success
+                    uiState.isSaving -> SaveButtonState.Saving
+                    else -> SaveButtonState.Idle
+                },
+                text = stringResource(R.string.fuel_action_save),
                 onClick = viewModel::saveFuelEntry,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isSaving
-            ) {
-                if (uiState.isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(stringResource(R.string.fuel_action_save))
-                }
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 

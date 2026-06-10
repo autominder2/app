@@ -34,6 +34,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,6 +72,47 @@ fun EditVehicleScreen(
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val snackbarHostState = LocalSnackbarHostState.current
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    // Snapshot the pre-populated form once loaded; dirty = any field differs
+    var initialSnapshot by remember { mutableStateOf<EditVehicleUiState?>(null) }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading && initialSnapshot == null) {
+            initialSnapshot = uiState
+        }
+    }
+    val hasUnsavedChanges = initialSnapshot?.let { s ->
+        s.make != uiState.make ||
+            s.model != uiState.model ||
+            s.year != uiState.year ||
+            s.plateNumber != uiState.plateNumber ||
+            s.vin != uiState.vin ||
+            s.currentOdometer != uiState.currentOdometer ||
+            s.notes != uiState.notes ||
+            s.photoUri != uiState.photoUri
+    } ?: false
+
+    val onBackRequest: () -> Unit = {
+        if (hasUnsavedChanges && !uiState.isSaved) {
+            showDiscardDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    androidx.activity.compose.BackHandler(enabled = hasUnsavedChanges && !uiState.isSaved) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        com.autominder.app.ui.components.DiscardChangesDialog(
+            onDiscard = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onKeepEditing = { showDiscardDialog = false }
+        )
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -112,7 +156,7 @@ fun EditVehicleScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.edit_vehicle_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onBackRequest) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },

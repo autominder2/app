@@ -342,4 +342,11 @@
     <!-- Quick odometer update -->
     <string name="odometer_updated">Odometer updated</string>
     <string name="vehicle_detail_tap_to_update">Tap to update</string>
+
+    <!-- Form UX -->
+    <string name="form_saved">Saved</string>
+    <string name="form_discard_title">Discard changes?</string>
+    <string name="form_discard_message">You have unsaved changes. If you leave now, they will be lost.</string>
+    <string name="form_discard_confirm">Discard</string>
+    <string name="form_keep_editing">Keep editing</string>
 </resources>

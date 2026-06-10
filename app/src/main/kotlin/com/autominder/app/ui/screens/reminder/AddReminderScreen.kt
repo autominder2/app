@@ -46,11 +46,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.ui.util.DateFormatUtil
-import androidx.compose.material3.SnackbarDuration
-import com.autominder.app.ui.components.LocalSnackbarHostState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,16 +57,39 @@ fun AddReminderScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     var showDatePicker by remember { mutableStateOf(false) }
     var dropdownExpanded by remember { mutableStateOf(false) }
-    val snackbarHostState = LocalSnackbarHostState.current
-    val context = LocalContext.current
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    // Smart-default prefills (intervals, due km) don't count as edits
+    val hasUnsavedChanges = uiState.title.isNotBlank() || uiState.description.isNotBlank()
+
+    val onBackRequest: () -> Unit = {
+        if (hasUnsavedChanges && !uiState.isSaved) {
+            showDiscardDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    androidx.activity.compose.BackHandler(enabled = hasUnsavedChanges && !uiState.isSaved) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        com.autominder.app.ui.components.DiscardChangesDialog(
+            onDiscard = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onKeepEditing = { showDiscardDialog = false }
+        )
+    }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             keyboardController?.hide()
-            snackbarHostState.showSnackbar(
-                message = context.getString(R.string.reminder_saved),
-                duration = SnackbarDuration.Short
-            )
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
+            kotlinx.coroutines.delay(650)
             onNavigateBack()
         }
     }
@@ -103,7 +121,7 @@ fun AddReminderScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.add_reminder_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onBackRequest) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }

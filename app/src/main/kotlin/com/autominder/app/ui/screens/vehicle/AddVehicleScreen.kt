@@ -34,6 +34,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,6 +72,37 @@ fun AddVehicleScreen(
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val snackbarHostState = LocalSnackbarHostState.current
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val hasUnsavedChanges = uiState.brand.isNotBlank() ||
+        uiState.model.isNotBlank() ||
+        uiState.year.isNotBlank() ||
+        uiState.currentOdometer.isNotBlank() ||
+        uiState.plateNumber.isNotBlank() ||
+        uiState.vin.isNotBlank() ||
+        uiState.photoUri != null
+
+    val onBackRequest: () -> Unit = {
+        if (hasUnsavedChanges && !uiState.isSaved) {
+            showDiscardDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    androidx.activity.compose.BackHandler(enabled = hasUnsavedChanges && !uiState.isSaved) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        com.autominder.app.ui.components.DiscardChangesDialog(
+            onDiscard = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onKeepEditing = { showDiscardDialog = false }
+        )
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -112,7 +146,7 @@ fun AddVehicleScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.add_vehicle_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onBackRequest) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },

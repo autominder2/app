@@ -47,11 +47,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.domain.model.ServiceType
-import androidx.compose.material3.SnackbarDuration
-import com.autominder.app.ui.components.LocalSnackbarHostState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.LocalContext
 import com.autominder.app.ui.util.DateFormatUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,16 +60,53 @@ fun EditReminderScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var dropdownExpanded by remember { mutableStateOf(false) }
-    val snackbarHostState = LocalSnackbarHostState.current
-    val context = LocalContext.current
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    // Snapshot the pre-populated form once loaded; dirty = any field differs
+    var initialSnapshot by remember { mutableStateOf<EditReminderUiState?>(null) }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading && initialSnapshot == null) {
+            initialSnapshot = uiState
+        }
+    }
+    val hasUnsavedChanges = initialSnapshot?.let { s ->
+        s.serviceType != uiState.serviceType ||
+            s.customLabel != uiState.customLabel ||
+            s.dueKm != uiState.dueKm ||
+            s.dueDateLong != uiState.dueDateLong ||
+            s.intervalKm != uiState.intervalKm ||
+            s.intervalDays != uiState.intervalDays ||
+            s.notes != uiState.notes
+    } ?: false
+
+    val onBackRequest: () -> Unit = {
+        if (hasUnsavedChanges && !uiState.isSaved && !uiState.isDeleted) {
+            showDiscardDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    androidx.activity.compose.BackHandler(enabled = hasUnsavedChanges && !uiState.isSaved && !uiState.isDeleted) {
+        showDiscardDialog = true
+    }
+
+    if (showDiscardDialog) {
+        com.autominder.app.ui.components.DiscardChangesDialog(
+            onDiscard = {
+                showDiscardDialog = false
+                onNavigateBack()
+            },
+            onKeepEditing = { showDiscardDialog = false }
+        )
+    }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             keyboardController?.hide()
-            snackbarHostState.showSnackbar(
-                message = context.getString(R.string.reminder_saved),
-                duration = SnackbarDuration.Short
-            )
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
+            kotlinx.coroutines.delay(650)
             onNavigateBack()
         }
     }
@@ -136,7 +168,7 @@ fun EditReminderScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.edit_reminder_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onBackRequest) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
