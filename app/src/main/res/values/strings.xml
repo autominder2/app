@@ -343,6 +343,10 @@
     <string name="odometer_updated">Odometer updated</string>
     <string name="vehicle_detail_tap_to_update">Tap to update</string>
 
+    <!-- Settings sections -->
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_section_about">About &amp; Legal</string>
+
     <!-- Form UX -->
     <string name="form_saved">Saved</string>
     <string name="form_discard_title">Discard changes?</string>

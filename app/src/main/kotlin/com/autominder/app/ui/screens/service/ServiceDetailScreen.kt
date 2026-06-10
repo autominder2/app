@@ -53,8 +53,11 @@ import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.domain.model.ServiceType
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
+import com.autominder.app.ui.components.FormField
 import com.autominder.app.ui.components.LoadingState
 import java.text.NumberFormat
 import java.util.Locale
@@ -75,6 +78,8 @@ fun ServiceDetailScreen(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
+
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
@@ -82,6 +87,7 @@ fun ServiceDetailScreen(
             text = { Text(stringResource(R.string.service_detail_delete_message)) },
             confirmButton = {
                 TextButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.Reject)
                     showDeleteConfirmation = false
                     viewModel.onEvent(ServiceDetailUiEvent.DeleteClicked)
                 }) {
@@ -159,6 +165,7 @@ private fun ServiceDetailContent(service: Service) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Service type header
+        FormField(index = 0) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -186,8 +193,10 @@ private fun ServiceDetailContent(service: Service) {
                 )
             }
         }
+        }
 
         // Details
+        FormField(index = 1) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -227,8 +236,10 @@ private fun ServiceDetailContent(service: Service) {
                 }
             }
         }
+        }
 
         if (!service.receiptPhotoUri.isNullOrBlank()) {
+            FormField(index = 2) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -263,6 +274,7 @@ private fun ServiceDetailContent(service: Service) {
                         contentScale = ContentScale.Crop
                     )
                 }
+            }
             }
         }
     }

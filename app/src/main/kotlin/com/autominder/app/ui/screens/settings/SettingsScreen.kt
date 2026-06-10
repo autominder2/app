@@ -22,19 +22,25 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,10 +99,13 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
+        val haptic = LocalHapticFeedback.current
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
@@ -174,6 +183,13 @@ fun SettingsScreen(
                 }
             }
 
+            Text(
+                text = stringResource(R.string.settings_section_preferences),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+            )
+
             // Notifications toggle
             Row(
                 modifier = Modifier
@@ -200,7 +216,10 @@ fun SettingsScreen(
                 }
                 Switch(
                     checked = uiState.notificationsEnabled,
-                    onCheckedChange = { enabled -> 
+                    onCheckedChange = { enabled ->
+                        haptic.performHapticFeedback(
+                            if (enabled) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff
+                        )
                         if (enabled && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && permissionLauncher != null) {
                             val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
                                 context,
@@ -240,13 +259,19 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("system" to themeSystem, "light" to themeLight, "dark" to themeDark).forEach { (value, label) ->
-                            FilterChip(
+                    val themeOptions = listOf("system" to themeSystem, "light" to themeLight, "dark" to themeDark)
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        themeOptions.forEachIndexed { index, (value, label) ->
+                            SegmentedButton(
                                 selected = uiState.themeMode == value,
-                                onClick = { viewModel.setThemeMode(value) },
-                                label = { Text(label) }
-                            )
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                    viewModel.setThemeMode(value)
+                                },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = themeOptions.size)
+                            ) {
+                                Text(label)
+                            }
                         }
                     }
                 }
@@ -273,22 +298,35 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(
-                            "km" to stringResource(R.string.settings_unit_km),
-                            "mi" to stringResource(R.string.settings_unit_mi)
-                        ).forEach { (value, label) ->
-                            FilterChip(
+                    val unitOptions = listOf(
+                        "km" to stringResource(R.string.settings_unit_km),
+                        "mi" to stringResource(R.string.settings_unit_mi)
+                    )
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        unitOptions.forEachIndexed { index, (value, label) ->
+                            SegmentedButton(
                                 selected = uiState.distanceUnit == value,
-                                onClick = { viewModel.setDistanceUnit(value) },
-                                label = { Text(label) }
-                            )
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                    viewModel.setDistanceUnit(value)
+                                },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = unitOptions.size)
+                            ) {
+                                Text(label)
+                            }
                         }
                     }
                 }
             }
 
             HorizontalDivider()
+
+            Text(
+                text = stringResource(R.string.settings_section_about),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+            )
 
             // About row
             Row(
@@ -352,7 +390,7 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // App version
             Text(

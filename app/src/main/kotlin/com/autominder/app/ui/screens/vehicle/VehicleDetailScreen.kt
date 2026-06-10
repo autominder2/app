@@ -730,13 +730,13 @@ private fun ReminderCard(
                             horizontalArrangement = Arrangement.End
                         ) {
                             TextButton(onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
                                 onSnooze()
                             }) {
                                 Text(stringResource(R.string.action_snooze), color = contentColor)
                             }
                             TextButton(onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                                 onMarkComplete()
                             }) {
                                 Text(stringResource(R.string.action_done), color = contentColor)
