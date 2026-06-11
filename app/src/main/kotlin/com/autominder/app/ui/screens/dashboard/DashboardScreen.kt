@@ -20,34 +20,52 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Commute
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.util.Calendar
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
@@ -66,17 +84,80 @@ import com.autominder.app.ui.theme.LocalDistanceUnit
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 
+private enum class QuickAction { LOG_SERVICE, ADD_FUEL }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToVehicleDetail: (Long) -> Unit,
     onNavigateToAddVehicle: () -> Unit,
+    onNavigateToAddService: (Long) -> Unit,
+    onNavigateToAddFuel: (Long) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val fabExtended by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val haptic = LocalHapticFeedback.current
+
+    val vehicles = (uiState as? DashboardUiState.Success)?.vehicles ?: emptyList()
+    var fabMenuExpanded by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<QuickAction?>(null) }
+
+    // One vehicle: go straight there. Several: ask which one.
+    fun launchQuickAction(action: QuickAction) {
+        fabMenuExpanded = false
+        when {
+            vehicles.isEmpty() -> onNavigateToAddVehicle()
+            vehicles.size == 1 -> {
+                val id = vehicles.first().vehicle.id
+                if (action == QuickAction.LOG_SERVICE) onNavigateToAddService(id) else onNavigateToAddFuel(id)
+            }
+            else -> pendingAction = action
+        }
+    }
+
+    if (pendingAction != null) {
+        val pickerSheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(
+            onDismissRequest = { pendingAction = null },
+            sheetState = pickerSheetState
+        ) {
+            Text(
+                text = stringResource(R.string.dashboard_pick_vehicle),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+            vehicles.forEach { item ->
+                ListItem(
+                    headlineContent = {
+                        Text(stringResource(R.string.vehicle_make_model, item.vehicle.make, item.vehicle.model))
+                    },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.DirectionsCar,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.clickable {
+                        val action = pendingAction
+                        pendingAction = null
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                        if (action == QuickAction.LOG_SERVICE) {
+                            onNavigateToAddService(item.vehicle.id)
+                        } else {
+                            onNavigateToAddFuel(item.vehicle.id)
+                        }
+                    }
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -84,18 +165,66 @@ fun DashboardScreen(
             DashboardTopBar(scrollBehavior)
         },
         floatingActionButton = {
-            val haptic = LocalHapticFeedback.current
-            ExtendedFloatingActionButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onNavigateToAddVehicle()
-                },
-                expanded = fabExtended,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.action_add_vehicle)) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                // Quick actions revealed above the main FAB
+                AnimatedVisibility(
+                    visible = fabMenuExpanded,
+                    enter = fadeIn() + slideInVertically { it / 3 },
+                    exit = fadeOut() + slideOutVertically { it / 3 }
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        QuickActionRow(
+                            label = stringResource(R.string.dashboard_quick_log_service),
+                            icon = Icons.Default.Build,
+                            onClick = { launchQuickAction(QuickAction.LOG_SERVICE) }
+                        )
+                        QuickActionRow(
+                            label = stringResource(R.string.dashboard_quick_add_fuel),
+                            icon = Icons.Default.LocalGasStation,
+                            onClick = { launchQuickAction(QuickAction.ADD_FUEL) }
+                        )
+                        QuickActionRow(
+                            label = stringResource(R.string.action_add_vehicle),
+                            icon = Icons.Default.DirectionsCar,
+                            onClick = {
+                                fabMenuExpanded = false
+                                onNavigateToAddVehicle()
+                            }
+                        )
+                    }
+                }
+
+                val fabRotation by animateFloatAsState(
+                    targetValue = if (fabMenuExpanded) 45f else 0f,
+                    animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium),
+                    label = "fab_rotation"
+                )
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        if (vehicles.isEmpty()) {
+                            onNavigateToAddVehicle()
+                        } else {
+                            fabMenuExpanded = !fabMenuExpanded
+                        }
+                    },
+                    expanded = fabExtended && !fabMenuExpanded,
+                    icon = {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.cd_quick_actions),
+                            modifier = Modifier.rotate(fabRotation)
+                        )
+                    },
+                    text = { Text(stringResource(R.string.dashboard_quick_actions)) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -127,9 +256,49 @@ fun DashboardScreen(
     }
 }
 
+/** Labeled mini-FAB row used by the expanded quick-actions menu. */
+@Composable
+private fun QuickActionRow(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MaterialTheme.shapes.small,
+            shadowElevation = 2.dp
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        SmallFloatingActionButton(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onClick()
+            },
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        ) {
+            Icon(icon, contentDescription = label)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DashboardTopBar(scrollBehavior: TopAppBarScrollBehavior) {
+    val greeting = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
+        in 5..11 -> stringResource(R.string.dashboard_greeting_morning)
+        in 12..16 -> stringResource(R.string.dashboard_greeting_afternoon)
+        else -> stringResource(R.string.dashboard_greeting_evening)
+    }
+
     TopAppBar(
         title = {
             Column {
@@ -138,7 +307,7 @@ private fun DashboardTopBar(scrollBehavior: TopAppBarScrollBehavior) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = stringResource(R.string.dashboard_subtitle),
+                    text = greeting,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

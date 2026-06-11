@@ -97,6 +97,12 @@ fun NavGraph(
                 },
                 onNavigateToAddVehicle = {
                     navController.navigate(NavRoutes.AddVehicle)
+                },
+                onNavigateToAddService = { vehicleId ->
+                    navController.navigate(NavRoutes.AddService(vehicleId))
+                },
+                onNavigateToAddFuel = { vehicleId ->
+                    navController.navigate(NavRoutes.AddFuel(vehicleId))
                 }
             )
         }

@@ -343,6 +343,16 @@
     <string name="odometer_updated">Odometer updated</string>
     <string name="vehicle_detail_tap_to_update">Tap to update</string>
 
+    <!-- Dashboard quick actions + greeting -->
+    <string name="dashboard_quick_actions">Quick Add</string>
+    <string name="dashboard_quick_log_service">Log Service</string>
+    <string name="dashboard_quick_add_fuel">Add Fuel</string>
+    <string name="dashboard_pick_vehicle">Choose a vehicle</string>
+    <string name="cd_quick_actions">Quick actions</string>
+    <string name="dashboard_greeting_morning">Good morning — let\'s keep your cars healthy</string>
+    <string name="dashboard_greeting_afternoon">Good afternoon — everything under control</string>
+    <string name="dashboard_greeting_evening">Good evening — your fleet at a glance</string>
+
     <!-- Pro analytics charts -->
     <string name="chart_monthly_spending">Last 6 months</string>
     <string name="chart_cost_by_type">Spending by service</string>
