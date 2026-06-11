@@ -31,8 +31,13 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Locale
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import javax.inject.Inject
+
+data class MonthlySpend(val label: String, val cents: Int)
+data class TypeSpend(val label: String, val cents: Int)
 
 data class VehicleDetailUiState(
     val vehicle: Vehicle? = null,
@@ -41,6 +46,10 @@ data class VehicleDetailUiState(
     val totalCostCents: Int = 0,
     val yearCostCents: Int = 0,
     val averageEfficiency: Double = 0.0,
+    val monthlySpending: List<MonthlySpend> = emptyList(),
+    val costByType: List<TypeSpend> = emptyList(),
+    val efficiencySeries: List<Double> = emptyList(),
+    val costPerKmCents: Double? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val isArchived: Boolean = false,
@@ -94,6 +103,7 @@ class VehicleDetailViewModel @Inject constructor(
             serviceRepository.getTotalCostForVehicle(vehicleId),
             serviceRepository.getCostSince(vehicleId, startOfYear),
             fuelRepository.getFuelEntriesForVehicle(vehicleId),
+            serviceRepository.getServicesForVehicle(vehicleId),
             _actionState
         ) { args ->
             val vehicle = args[0] as? com.autominder.app.domain.model.Vehicle
@@ -101,7 +111,8 @@ class VehicleDetailViewModel @Inject constructor(
             val totalCost = args[2] as Int
             val yearCost = args[3] as Int
             val fuelEntries = args[4] as List<com.autominder.app.domain.model.FuelEntry>
-            val action = args[5] as ActionState
+            val services = args[5] as List<com.autominder.app.domain.model.Service>
+            val action = args[6] as ActionState
 
         if (action.isArchived) {
             VehicleDetailUiState(isArchived = true)
@@ -124,6 +135,10 @@ class VehicleDetailViewModel @Inject constructor(
                 totalCostCents = totalCost,
                 yearCostCents = yearCost,
                 averageEfficiency = calculateEfficiency.calculateAverage(fuelEntries),
+                monthlySpending = computeMonthlySpending(services, now),
+                costByType = computeCostByType(services),
+                efficiencySeries = computeEfficiencySeries(fuelEntries),
+                costPerKmCents = computeCostPerKm(totalCost, services, fuelEntries, vehicle.currentOdometer),
                 error = action.error,
                 exportUri = action.exportUri
             )
@@ -138,6 +153,71 @@ class VehicleDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = VehicleDetailUiState(isLoading = true)
         )
+
+    /** Spending per calendar month for the last 6 months, oldest first. */
+    private fun computeMonthlySpending(
+        services: List<com.autominder.app.domain.model.Service>,
+        now: Long
+    ): List<MonthlySpend> {
+        val monthFormat = SimpleDateFormat("MMM", Locale.getDefault())
+        return (5 downTo 0).map { monthsBack ->
+            val cal = Calendar.getInstance().apply {
+                timeInMillis = now
+                add(Calendar.MONTH, -monthsBack)
+            }
+            val month = cal.get(Calendar.MONTH)
+            val year = cal.get(Calendar.YEAR)
+            val cents = services.filter { s ->
+                val sCal = Calendar.getInstance().apply { timeInMillis = s.serviceDate }
+                sCal.get(Calendar.MONTH) == month && sCal.get(Calendar.YEAR) == year
+            }.sumOf { it.costCents ?: 0 }
+            MonthlySpend(label = monthFormat.format(cal.time), cents = cents)
+        }
+    }
+
+    /** All-time spend per service type, largest first, top 5 + Other. */
+    private fun computeCostByType(
+        services: List<com.autominder.app.domain.model.Service>
+    ): List<TypeSpend> {
+        val byType = services
+            .filter { (it.costCents ?: 0) > 0 }
+            .groupBy { it.customLabel ?: it.serviceType.label }
+            .map { (label, group) -> TypeSpend(label, group.sumOf { it.costCents ?: 0 }) }
+            .sortedByDescending { it.cents }
+        if (byType.size <= 5) return byType
+        val top = byType.take(5)
+        val otherCents = byType.drop(5).sumOf { it.cents }
+        return top + TypeSpend("Other", otherCents)
+    }
+
+    /** Chronological km/L per fill-up (needs 2+ entries per point). */
+    private fun computeEfficiencySeries(
+        fuelEntries: List<com.autominder.app.domain.model.FuelEntry>
+    ): List<Double> {
+        val sorted = fuelEntries.sortedBy { it.odometer }
+        return sorted.mapIndexedNotNull { index, entry ->
+            val previous = sorted.getOrNull(index - 1) ?: return@mapIndexedNotNull null
+            val eff = calculateEfficiency.calculate(entry, previous)
+            if (eff > 0) eff else null
+        }
+    }
+
+    /** Total cost divided by tracked distance (earliest record to now). */
+    private fun computeCostPerKm(
+        totalCostCents: Int,
+        services: List<com.autominder.app.domain.model.Service>,
+        fuelEntries: List<com.autominder.app.domain.model.FuelEntry>,
+        currentOdometer: Int
+    ): Double? {
+        if (totalCostCents <= 0) return null
+        val earliest = (services.map { it.odometerAtService } + fuelEntries.map { it.odometer })
+            .filter { it > 0 }
+            .minOrNull() ?: return null
+        val distance = currentOdometer - earliest
+        // Under 100 km of history the ratio is meaningless noise
+        if (distance < 100) return null
+        return totalCostCents.toDouble() / distance
+    }
 
     fun onEvent(event: VehicleDetailUiEvent) {
         when (event) {

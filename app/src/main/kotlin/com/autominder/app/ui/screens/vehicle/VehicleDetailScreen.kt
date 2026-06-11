@@ -90,6 +90,9 @@ import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.ProFeatureGate
 import com.autominder.app.ui.components.QuickMileageSheet
 import com.autominder.app.ui.components.StatusChip
+import com.autominder.app.ui.components.charts.CostByTypeDonut
+import com.autominder.app.ui.components.charts.FuelEfficiencyChart
+import com.autominder.app.ui.components.charts.SpendingTrendChart
 import com.autominder.app.ui.util.DateFormatUtil
 import androidx.compose.material3.SnackbarDuration
 import com.autominder.app.ui.components.LocalSnackbarHostState
@@ -216,6 +219,10 @@ fun VehicleDetailScreen(
                         totalCostCents = uiState.totalCostCents,
                         yearCostCents = uiState.yearCostCents,
                         averageEfficiency = uiState.averageEfficiency,
+                        monthlySpending = uiState.monthlySpending,
+                        costByType = uiState.costByType,
+                        efficiencySeries = uiState.efficiencySeries,
+                        costPerKmCents = uiState.costPerKmCents,
                         isProUser = isProUser,
                         onAddServiceClick = { onNavigateToAddService(v.id) },
                         onMileageLogClick = { onNavigateToMileageLog(v.id) },
@@ -283,6 +290,10 @@ private fun VehicleDetailContent(
     totalCostCents: Int,
     yearCostCents: Int,
     averageEfficiency: Double,
+    monthlySpending: List<MonthlySpend>,
+    costByType: List<TypeSpend>,
+    efficiencySeries: List<Double>,
+    costPerKmCents: Double?,
     isProUser: Boolean,
     onAddServiceClick: () -> Unit,
     onMileageLogClick: () -> Unit,
@@ -449,34 +460,72 @@ private fun VehicleDetailContent(
                         .fillMaxWidth(),
                     elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.vehicle_detail_cost_this_year),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = VehicleDetailViewModel.formatCost(yearCostCents),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = stringResource(R.string.vehicle_detail_cost_all_time),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = VehicleDetailViewModel.formatCost(totalCostCents),
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                            }
+                        }
+
+                        if (costPerKmCents != null) {
+                            val unit = LocalDistanceUnit.current
+                            // Stored per km; scale up when displaying per mile
+                            val perUnitCents = if (unit == "mi") costPerKmCents * 1.609344 else costPerKmCents
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = stringResource(R.string.vehicle_detail_cost_this_year),
+                                text = stringResource(
+                                    R.string.vehicle_detail_cost_per_km,
+                                    VehicleDetailViewModel.formatCost(perUnitCents.toInt()),
+                                    DistanceUtil.unitLabel(unit)
+                                ),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = VehicleDetailViewModel.formatCost(yearCostCents),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        Column(horizontalAlignment = Alignment.End) {
+
+                        if (monthlySpending.any { it.cents > 0 }) {
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = stringResource(R.string.vehicle_detail_cost_all_time),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = stringResource(R.string.chart_monthly_spending),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            SpendingTrendChart(data = monthlySpending)
+                        }
+
+                        if (costByType.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = VehicleDetailViewModel.formatCost(totalCostCents),
-                                style = MaterialTheme.typography.titleLarge
+                                text = stringResource(R.string.chart_cost_by_type),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            CostByTypeDonut(data = costByType)
                         }
                     }
                 }
@@ -498,32 +547,37 @@ private fun VehicleDetailContent(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer
                     )
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = stringResource(R.string.fuel_efficiency_label),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                            Text(
-                                text = stringResource(R.string.fuel_efficiency_value_km_l, averageEfficiency),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.fuel_efficiency_label),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                                Text(
+                                    text = stringResource(R.string.fuel_efficiency_value_km_l, averageEfficiency),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.LocalGasStation,
+                                contentDescription = stringResource(R.string.fuel_efficiency_label),
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.tertiary
                             )
                         }
-                        Icon(
-                            imageVector = Icons.Default.LocalGasStation,
-                            contentDescription = stringResource(R.string.fuel_efficiency_label),
-                            modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.tertiary
-                        )
+
+                        if (efficiencySeries.size >= 2) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            FuelEfficiencyChart(series = efficiencySeries)
+                        }
                     }
                 }
                 } // ProFeatureGate

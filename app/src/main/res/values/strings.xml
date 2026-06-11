@@ -343,6 +343,11 @@
     <string name="odometer_updated">Odometer updated</string>
     <string name="vehicle_detail_tap_to_update">Tap to update</string>
 
+    <!-- Pro analytics charts -->
+    <string name="chart_monthly_spending">Last 6 months</string>
+    <string name="chart_cost_by_type">Spending by service</string>
+    <string name="vehicle_detail_cost_per_km">≈ %1$s per %2$s of ownership</string>
+
     <!-- Settings sections -->
     <string name="settings_section_preferences">Preferences</string>
     <string name="settings_section_about">About &amp; Legal</string>
