@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below auto-backup config.
+     The Room database and DataStore preferences ARE the user's data
+     (service records, reminders, fuel logs, settings) and contain no
+     secrets — backing them up is what makes records survive a device
+     upgrade. Nothing is excluded on purpose. -->
 <full-backup-content>
-    <!-- Exclude secrets and local config from backups -->
-    <exclude domain="sharedpref" path="." />
-    <exclude domain="database" path="." />
+    <include domain="database" path="." />
+    <include domain="file" path="datastore/" />
+    <include domain="sharedpref" path="." />
 </full-backup-content>

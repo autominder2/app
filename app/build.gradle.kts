@@ -140,6 +140,7 @@ dependencies {
 
     // ─── Ads + Billing ──────────────────────────────────────────────────────
     implementation(libs.admob)
+    implementation(libs.ump)   // GDPR/EEA consent — required by Google EU User Consent Policy
     implementation(libs.billing)
 
     // ─── Utilities ──────────────────────────────────────────────────────────

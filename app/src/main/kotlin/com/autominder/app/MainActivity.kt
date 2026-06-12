@@ -48,6 +48,9 @@ class MainActivity : ComponentActivity() {
     lateinit var adManager: AdManager
 
     @Inject
+    lateinit var consentManager: com.autominder.app.ads.ConsentManager
+
+    @Inject
     lateinit var userPreferences: UserPreferences
 
     @Inject
@@ -72,6 +75,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handleIntent(intent)
+
+        // GDPR consent gate — initializes Mobile Ads only once consent allows
+        consentManager.gatherConsentAndInitAds(this)
 
         setContent {
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = "system")

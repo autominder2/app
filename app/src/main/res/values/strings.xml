@@ -361,6 +361,7 @@
     <!-- Settings sections -->
     <string name="settings_section_preferences">Preferences</string>
     <string name="settings_section_about">About &amp; Legal</string>
+    <string name="settings_ad_privacy">Ad privacy options</string>
 
     <!-- Form UX -->
     <string name="form_saved">Saved</string>

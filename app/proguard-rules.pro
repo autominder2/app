@@ -41,6 +41,10 @@
 -keep public class com.google.ads.**
 -dontwarn com.google.android.gms.ads.**
 
+# ─── UMP (GDPR consent) ─────────────────────────────────────
+-keep class com.google.android.ump.** { *; }
+-dontwarn com.google.android.ump.**
+
 # ─── Play Billing ────────────────────────────────────────────
 -keep class com.android.billingclient.** { *; }
 -dontwarn com.android.billingclient.**

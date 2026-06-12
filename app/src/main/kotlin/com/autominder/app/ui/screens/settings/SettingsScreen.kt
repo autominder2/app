@@ -390,6 +390,45 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            // Ad privacy options — UMP requires this entry point for EEA users
+            val consentInformation = remember {
+                com.google.android.ump.UserMessagingPlatform.getConsentInformation(context)
+            }
+            if (consentInformation.privacyOptionsRequirementStatus ==
+                com.google.android.ump.ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            activity?.let {
+                                com.google.android.ump.UserMessagingPlatform.showPrivacyOptionsForm(it) { _ -> }
+                            }
+                        }
+                        .padding(vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PrivacyTip,
+                        contentDescription = stringResource(R.string.settings_ad_privacy),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_ad_privacy),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = stringResource(R.string.settings_ad_privacy),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                HorizontalDivider()
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // App version

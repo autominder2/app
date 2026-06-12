@@ -27,6 +27,7 @@ class UserPreferences @Inject constructor(
         val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DISTANCE_UNIT = stringPreferencesKey("distance_unit")
+        val IS_PRO_CACHED = booleanPreferencesKey("is_pro_cached")
     }
 
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -66,6 +67,21 @@ class UserPreferences @Inject constructor(
     suspend fun setDistanceUnit(unit: String) {
         context.dataStore.edit { preferences ->
             preferences[DISTANCE_UNIT] = unit
+        }
+    }
+
+    /**
+     * Last entitlement Google Play confirmed. Lets a paying user keep Pro
+     * features on an offline cold start; reconciled against Play whenever
+     * the billing client connects.
+     */
+    val isProCached: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[IS_PRO_CACHED] ?: false
+    }
+
+    suspend fun setProCached(isPro: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_PRO_CACHED] = isPro
         }
     }
 }

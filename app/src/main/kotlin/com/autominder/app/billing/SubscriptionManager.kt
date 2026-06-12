@@ -13,24 +13,37 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.PendingPurchasesParams
+import com.autominder.app.data.local.preferences.UserPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SubscriptionManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val userPreferences: UserPreferences
 ) : PurchasesUpdatedListener {
 
     companion object {
         const val PRODUCT_MONTHLY = "autominder_pro_monthly"
         const val PRODUCT_YEARLY = "autominder_pro_yearly"
         const val PRODUCT_LIFETIME = "autominder_pro_lifetime"
+        private const val MAX_RECONNECT_ATTEMPTS = 5
+        private const val RECONNECT_BASE_DELAY_MS = 1_000L
     }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var reconnectAttempts = 0
 
     private val _isProUser = MutableStateFlow(false)
     val isProUser: StateFlow<Boolean> = _isProUser.asStateFlow()
@@ -44,6 +57,14 @@ class SubscriptionManager @Inject constructor(
     private var billingClient: BillingClient? = null
 
     fun initialize() {
+        // Offline cold start: honor the last entitlement Play confirmed so a
+        // paying user is never locked out; Play reconciles when we connect.
+        scope.launch {
+            if (userPreferences.isProCached.first()) {
+                _isProUser.value = true
+            }
+        }
+
         billingClient = BillingClient.newBuilder(context)
             .setListener(this)
             .enablePendingPurchases(
@@ -54,10 +75,15 @@ class SubscriptionManager @Inject constructor(
             )
             .build()
 
+        connect()
+    }
+
+    private fun connect() {
         billingClient?.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(billingResult: BillingResult) {
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     Timber.d("Billing connected")
+                    reconnectAttempts = 0
                     queryProducts()
                     queryExistingPurchases()
                 } else {
@@ -67,8 +93,21 @@ class SubscriptionManager @Inject constructor(
 
             override fun onBillingServiceDisconnected() {
                 Timber.w("Billing disconnected")
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    val backoff = RECONNECT_BASE_DELAY_MS * (1L shl reconnectAttempts)
+                    reconnectAttempts++
+                    scope.launch {
+                        delay(backoff)
+                        connect()
+                    }
+                }
             }
         })
+    }
+
+    private fun setProEntitlement(isPro: Boolean) {
+        _isProUser.value = isPro
+        scope.launch { userPreferences.setProCached(isPro) }
     }
 
     private fun queryProducts() {
@@ -105,11 +144,16 @@ class SubscriptionManager @Inject constructor(
 
         billingClient?.queryPurchasesAsync(subsParams) { billingResult, purchases ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                // Acknowledge anything that slipped through (e.g. app killed
+                // right after purchase) — unacknowledged purchases are
+                // auto-refunded by Play after 3 days.
+                purchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+                    .forEach { acknowledgePurchase(it) }
                 val hasActiveSub = purchases.any {
                     it.purchaseState == Purchase.PurchaseState.PURCHASED
                 }
                 if (hasActiveSub) {
-                    _isProUser.value = true
+                    setProEntitlement(true)
                     return@queryPurchasesAsync
                 }
             }
@@ -120,11 +164,13 @@ class SubscriptionManager @Inject constructor(
 
             billingClient?.queryPurchasesAsync(inAppParams) { inAppResult, inAppPurchases ->
                 if (inAppResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    inAppPurchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+                        .forEach { acknowledgePurchase(it) }
                     val hasLifetime = inAppPurchases.any {
                         it.products.contains(PRODUCT_LIFETIME) &&
                             it.purchaseState == Purchase.PurchaseState.PURCHASED
                     }
-                    _isProUser.value = hasLifetime
+                    setProEntitlement(hasLifetime)
                 }
             }
         }
@@ -153,7 +199,7 @@ class SubscriptionManager @Inject constructor(
                 purchases?.forEach { purchase ->
                     if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
                         acknowledgePurchase(purchase)
-                        _isProUser.value = true
+                        setProEntitlement(true)
                         _purchaseState.value = PurchaseState.Success
                     }
                 }

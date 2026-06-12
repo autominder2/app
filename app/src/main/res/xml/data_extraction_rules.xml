@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ backup + device-to-device transfer config.
+     User records (Room DB, DataStore) must survive phone upgrades —
+     data loss is the #1 churn driver in this category. No secrets are
+     stored locally, so nothing needs excluding. -->
 <data-extraction-rules>
     <cloud-backup>
-        <exclude domain="database" />
-        <exclude domain="sharedpref" />
+        <include domain="database" path="." />
+        <include domain="file" path="datastore/" />
+        <include domain="sharedpref" path="." />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="database" />
-        <exclude domain="sharedpref" />
+        <include domain="database" path="." />
+        <include domain="file" path="datastore/" />
+        <include domain="sharedpref" path="." />
     </device-transfer>
 </data-extraction-rules>
