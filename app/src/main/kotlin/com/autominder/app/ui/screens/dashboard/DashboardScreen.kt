@@ -5,7 +5,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -85,6 +87,7 @@ import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.FleetHealthScore
 import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.DashboardSkeleton
+import com.autominder.app.ui.components.pressScale
 import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
@@ -385,10 +388,14 @@ private fun VehicleCard(
         label = "cardCorner"
     )
 
+    val pressInteraction = remember { MutableInteractionSource() }
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
+            .pressScale(pressInteraction)
             .clickable(
+                interactionSource = pressInteraction,
+                indication = LocalIndication.current,
                 onClickLabel = stringResource(R.string.cd_open_vehicle_details, vehicle.make, vehicle.model),
                 onClick = onClick
             )

@@ -1,6 +1,8 @@
 package com.autominder.app.ui.screens.vehicle
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,9 +48,11 @@ import com.autominder.app.R
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.domain.model.Vehicle
+import androidx.compose.runtime.remember
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.pressScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 
@@ -145,10 +149,16 @@ private fun VehicleListCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val pressInteraction = remember { MutableInteractionSource() }
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .pressScale(pressInteraction)
+            .clickable(
+                interactionSource = pressInteraction,
+                indication = LocalIndication.current,
+                onClick = onClick
+            ),
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
     ) {
