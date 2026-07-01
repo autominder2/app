@@ -103,8 +103,16 @@ class AddVehicleViewModel @Inject constructor(
             return
         }
 
+        // Year is optional — only validate a value the user actually entered,
+        // so "just make + model" can be saved without touching year.
         val yearInt = state.year.toIntOrNull() ?: 0
-        Validators.validateYear(yearInt)?.let { errorMsg ->
+        if (state.year.isNotBlank()) {
+            Validators.validateYear(yearInt)?.let { errorMsg ->
+                _uiState.value = state.copy(error = errorMsg)
+                return
+            }
+        }
+        Validators.validateVin(state.vin)?.let { errorMsg ->
             _uiState.value = state.copy(error = errorMsg)
             return
         }

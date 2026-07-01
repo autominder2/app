@@ -228,6 +228,11 @@
     <string name="add_vehicle_section_vehicle">Vehicle</string>
     <string name="add_vehicle_section_identity">Identity</string>
     <string name="add_vehicle_section_odometer">Odometer</string>
+    <string name="add_vehicle_headline">What are you driving?</string>
+    <string name="add_vehicle_subhead">Just the make and model — you can add the rest anytime.</string>
+    <string name="add_vehicle_auto_reminders">We\'ll set up your maintenance reminders automatically.</string>
+    <string name="add_vehicle_more_details">Add more details (optional)</string>
+    <string name="add_vehicle_cta">Add Car</string>
 
     <!-- Additional -->
     <string name="privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
