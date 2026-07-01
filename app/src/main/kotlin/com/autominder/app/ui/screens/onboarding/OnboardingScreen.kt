@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.autominder.app.R
+import com.autominder.app.ui.theme.Motion
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -251,10 +252,12 @@ private fun OnboardingPageContent(page: OnboardingPage, pageOffset: Float) {
             contentAlignment = Alignment.Center,
             modifier = Modifier.graphicsLayer {
                 alpha = 1f - clampedDistance
-                val scale = 0.82f + 0.18f * (1f - clampedDistance)
+                // Parallax drift + scale-in are the nausea-prone parts, so they
+                // scale by Motion.amplitude (0 when "Remove animations" is on).
+                val scale = 1f - (0.18f * clampedDistance * Motion.amplitude)
                 scaleX = scale
                 scaleY = scale
-                translationX = pageOffset * size.width * 0.25f
+                translationX = pageOffset * size.width * 0.25f * Motion.amplitude
             }
         ) {
             Box(
@@ -284,7 +287,7 @@ private fun OnboardingPageContent(page: OnboardingPage, pageOffset: Float) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.graphicsLayer {
                 alpha = 1f - clampedDistance
-                translationX = pageOffset * size.width * 0.12f
+                translationX = pageOffset * size.width * 0.12f * Motion.amplitude
             }
         ) {
             Text(

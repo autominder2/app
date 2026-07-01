@@ -80,6 +80,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handleIntent(intent)
 
+        // Honor the system "Remove animations" accessibility setting app-wide.
+        com.autominder.app.ui.theme.Motion.reduceMotion = try {
+            android.provider.Settings.Global.getFloat(
+                contentResolver,
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            ) == 0f
+        } catch (e: Exception) {
+            false
+        }
+
         // GDPR consent gate — initializes Mobile Ads only once consent allows
         consentManager.gatherConsentAndInitAds(this)
 

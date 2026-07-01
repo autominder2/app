@@ -36,26 +36,32 @@ import com.autominder.app.ui.screens.vehicle.VehicleListScreen
 // Forward navigation slides the new screen in from the right while the old one
 // recedes slightly; popping reverses it with a subtle scale-down so depth reads
 // correctly during predictive-back gestures.
+// When "Remove animations" is on, every destination cross-fades instantly
+// instead of sliding — no horizontal travel, no scale.
 private val forwardEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-    slideInHorizontally(
+    if (Motion.reduceMotion) fadeIn(tween(0))
+    else slideInHorizontally(
         animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedDecelerate)
     ) { it / 4 } + fadeIn(tween(Motion.DurationMedium))
 }
 
 private val forwardExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-    slideOutHorizontally(
+    if (Motion.reduceMotion) fadeOut(tween(0))
+    else slideOutHorizontally(
         animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedAccelerate)
     ) { -it / 8 } + fadeOut(tween(Motion.DurationShort))
 }
 
 private val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-    slideInHorizontally(
+    if (Motion.reduceMotion) fadeIn(tween(0))
+    else slideInHorizontally(
         animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedDecelerate)
     ) { -it / 8 } + fadeIn(tween(Motion.DurationMedium))
 }
 
 private val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-    slideOutHorizontally(
+    if (Motion.reduceMotion) fadeOut(tween(0))
+    else slideOutHorizontally(
         animationSpec = tween(Motion.DurationMedium, easing = Motion.EmphasizedAccelerate)
     ) { it / 4 } + scaleOut(targetScale = 0.96f, animationSpec = tween(Motion.DurationMedium)) +
         fadeOut(tween(Motion.DurationMedium))
