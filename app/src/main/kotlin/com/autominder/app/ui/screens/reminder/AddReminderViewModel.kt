@@ -4,6 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.core.util.AnalyticsEvents
+import com.autominder.app.core.util.AnalyticsHelper
+import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceType
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class AddReminderUiState(
@@ -30,7 +34,8 @@ data class AddReminderUiState(
     val serviceType: ServiceType = ServiceType.OIL_CHANGE,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val shouldRequestNotificationPermission: Boolean = false
 )
 
 sealed class AddReminderUiEvent {
@@ -42,6 +47,7 @@ sealed class AddReminderUiEvent {
     data class IntervalDaysChanged(val intervalDays: String) : AddReminderUiEvent()
     data class ServiceTypeChanged(val type: ServiceType) : AddReminderUiEvent()
     object SaveClicked : AddReminderUiEvent()
+    object PermissionRequestHandled : AddReminderUiEvent()
 }
 
 @HiltViewModel
@@ -49,6 +55,7 @@ class AddReminderViewModel @Inject constructor(
     private val reminderRepository: IReminderRepository,
     private val vehicleRepository: IVehicleRepository,
     private val userPreferences: UserPreferences,
+    private val analyticsHelper: AnalyticsHelper,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -107,6 +114,7 @@ class AddReminderViewModel @Inject constructor(
             is AddReminderUiEvent.IntervalDaysChanged -> _uiState.value = _uiState.value.copy(intervalDays = event.intervalDays)
             is AddReminderUiEvent.ServiceTypeChanged -> onServiceTypeChanged(event.type)
             is AddReminderUiEvent.SaveClicked -> saveReminder()
+            is AddReminderUiEvent.PermissionRequestHandled -> _uiState.value = _uiState.value.copy(shouldRequestNotificationPermission = false)
         }
     }
 
@@ -130,7 +138,7 @@ class AddReminderViewModel @Inject constructor(
 
     private fun saveReminder() {
         val state = _uiState.value
-        
+
         if (state.serviceType == ServiceType.CUSTOM && state.title.isBlank()) {
             _uiState.value = _uiState.value.copy(error = "Please specify a name for your custom reminder")
             return
@@ -144,6 +152,10 @@ class AddReminderViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
+                // Check if this is the first reminder for this vehicle
+                val existingReminders = reminderRepository.getAllRemindersForVehicle(vehicleId).first()
+                val isFirstReminder = existingReminders.isEmpty()
+
                 val currentTime = System.currentTimeMillis()
                 val reminder = Reminder(
                     id = 0,
@@ -159,8 +171,19 @@ class AddReminderViewModel @Inject constructor(
                     updatedAt = currentTime
                 )
                 reminderRepository.insertReminder(reminder)
-                _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
+
+                analyticsHelper.logEvent(
+                    AnalyticsEvents.REMINDER_CREATED,
+                    mapOf(AnalyticsParams.REMINDER_TYPE to state.serviceType.name)
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSaved = true,
+                    shouldRequestNotificationPermission = isFirstReminder
+                )
             } catch (e: Exception) {
+                Timber.e(e, "Failed to save reminder")
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Failed to save reminder")
             }
         }

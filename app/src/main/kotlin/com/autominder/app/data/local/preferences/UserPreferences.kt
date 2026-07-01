@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,6 +29,8 @@ class UserPreferences @Inject constructor(
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DISTANCE_UNIT = stringPreferencesKey("distance_unit")
         val IS_PRO_CACHED = booleanPreferencesKey("is_pro_cached")
+        val SERVICE_LOG_COUNT = intPreferencesKey("service_log_count")
+        val HAS_REQUESTED_REVIEW = booleanPreferencesKey("has_requested_review")
     }
 
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -82,6 +85,27 @@ class UserPreferences @Inject constructor(
     suspend fun setProCached(isPro: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_PRO_CACHED] = isPro
+        }
+    }
+
+    val serviceLogCount: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[SERVICE_LOG_COUNT] ?: 0
+    }
+
+    suspend fun incrementServiceLogCount() {
+        context.dataStore.edit { preferences ->
+            val current = preferences[SERVICE_LOG_COUNT] ?: 0
+            preferences[SERVICE_LOG_COUNT] = current + 1
+        }
+    }
+
+    val hasRequestedReview: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[HAS_REQUESTED_REVIEW] ?: false
+    }
+
+    suspend fun setHasRequestedReview(requested: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[HAS_REQUESTED_REVIEW] = requested
         }
     }
 }

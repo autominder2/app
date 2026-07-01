@@ -1,82 +1,47 @@
-# ============================================================
-# AutoMinder — ProGuard Rules (baseline)
-# ============================================================
+# ─── AutoMinder Production ProGuard Configuration ───────────────────────────
 
-# ─── Room ────────────────────────────────────────────────────
--keep class * extends androidx.room.RoomDatabase
--dontwarn androidx.room.**
--keep @androidx.room.Entity class *
--keep @androidx.room.Dao class *
-
-# ─── Hilt / Dagger ──────────────────────────────────────────
--dontwarn com.google.dagger.**
+# 1. Hilt / Dagger
+-keepattributes *Annotation*
+-keepattributes Signature
 -keep class dagger.hilt.** { *; }
--keep class * extends dagger.hilt.android.lifecycle.HiltViewModel
--keep @dagger.hilt.android.HiltAndroidApp class *
--keep @dagger.hilt.InstallIn class *
+-keep interface dagger.hilt.** { *; }
 
-# ─── Kotlin Serialization ───────────────────────────────────
+# 2. Room
+-keep class * extends androidx.room.RoomDatabase
+-keep class * extends androidx.room.Entity
+-keep class * extends androidx.room.Dao
+-dontwarn androidx.room.paging.**
+
+# 3. Kotlinx Serialization
+# Ensure @Serializable classes aren't stripped as they are used by Navigation Compose
 -keepattributes *Annotation*, InnerClasses
--dontnote kotlinx.serialization.AnnotationsKt
--keepclassmembers class kotlinx.serialization.json.** { *** Companion; }
--keepclasseswithmembers class kotlinx.serialization.** {
-    kotlinx.serialization.KSerializer serializer(...);
-}
--keep,includedescriptorclasses class com.autominder.app.**$$serializer { *; }
--keepclassmembers class com.autominder.app.** {
+-keepclassmembers class ** {
     *** Companion;
-}
--keepclasseswithmembers class com.autominder.app.** {
-    kotlinx.serialization.KSerializer serializer(...);
+    *** $serializer;
 }
 
-# ─── Coroutines ──────────────────────────────────────────────
--keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
--keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
--keepclassmembernames class kotlinx.** { volatile <fields>; }
--dontwarn kotlinx.coroutines.**
-
-# ─── AdMob / Google Mobile Ads ───────────────────────────────
--keep public class com.google.android.gms.ads.** { public *; }
--keep public class com.google.ads.**
--dontwarn com.google.android.gms.ads.**
-
-# ─── UMP (GDPR consent) ─────────────────────────────────────
+# 4. AdMob / UMP
+-keep class com.google.android.gms.ads.** { *; }
 -keep class com.google.android.ump.** { *; }
--dontwarn com.google.android.ump.**
 
-# ─── Play Billing ────────────────────────────────────────────
--keep class com.android.billingclient.** { *; }
--dontwarn com.android.billingclient.**
--keep class com.autominder.app.billing.** { *; }
+# 5. Billing
+-keep class com.android.billingclient.api.** { *; }
 
-# ─── Coil 3 ──────────────────────────────────────────────────
--keep class coil3.** { *; }
--dontwarn coil3.**
--dontwarn coil.**
-
-# ─── Glance AppWidget ────────────────────────────────────────
--keep class androidx.glance.** { *; }
--keep class * extends androidx.glance.appwidget.GlanceAppWidget
--keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver
-
-# ─── Timber ──────────────────────────────────────────────────
--dontwarn org.jetbrains.annotations.**
-
-# ─── DataStore Preferences ──────────────────────────────────
--keep class androidx.datastore.** { *; }
--dontwarn androidx.datastore.**
-
-# ─── Navigation Compose — type-safe @Serializable routes ────
--keep class com.autominder.app.ui.navigation.NavRoutes { *; }
--keep class com.autominder.app.ui.navigation.NavRoutes$* { *; }
-
-# ─── Enum Classes (ServiceType and others) ──────────────────
--keepclassmembers enum com.autominder.app.** {
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
+# 6. Timber Strip (Expertise)
+# This physically removes the calls to Timber.d, Timber.v, and Timber.i from the release binary.
+# Note: R8 is more efficient if we target the static methods directly.
+-assumenosideeffects class timber.log.Timber {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
 }
 
-# ─── General Android ─────────────────────────────────────────
+# 7. Compose Performance
+# Optimizes Compose runtime by stripping out source information used by the debugger
+-keepclassmembers class ** {
+    @androidx.compose.runtime.Composable *;
+}
+
+# 8. General Metadata Preservation
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

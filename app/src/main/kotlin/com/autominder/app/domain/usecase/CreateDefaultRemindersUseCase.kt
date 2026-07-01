@@ -7,7 +7,7 @@ import javax.inject.Inject
 
 /**
  * Creates standard maintenance reminders for a newly added vehicle.
- * Industry-standard intervals based on manufacturer averages.
+ * Expertise: This logic is now intended to be called within a repository transaction.
  */
 class CreateDefaultRemindersUseCase @Inject constructor(
     private val reminderRepository: IReminderRepository
@@ -16,6 +16,7 @@ class CreateDefaultRemindersUseCase @Inject constructor(
         val now = System.currentTimeMillis()
         STANDARD_TEMPLATES.forEach { template ->
             val reminder = Reminder(
+                id = 0,
                 vehicleId = vehicleId,
                 serviceType = template.serviceType,
                 intervalKm = template.intervalKm,

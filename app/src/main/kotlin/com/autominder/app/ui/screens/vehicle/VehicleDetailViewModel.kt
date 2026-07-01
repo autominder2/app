@@ -5,6 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.core.util.AnalyticsEvents
+import com.autominder.app.core.util.AnalyticsHelper
+import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceStatus
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.Calendar
 import java.util.Locale
 import java.text.NumberFormat
@@ -74,6 +78,7 @@ class VehicleDetailViewModel @Inject constructor(
     private val mileageLogRepository: IMileageLogRepository,
     private val exportServiceHistory: ExportServiceHistoryUseCase,
     private val calculateEfficiency: CalculateEfficiencyUseCase,
+    private val analyticsHelper: AnalyticsHelper,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -243,7 +248,12 @@ class VehicleDetailViewModel @Inject constructor(
                         notes = null
                     )
                 )
+                analyticsHelper.logEvent(
+                    AnalyticsEvents.ODOMETER_UPDATED,
+                    mapOf(AnalyticsParams.ODOMETER_VALUE to odometerKm)
+                )
             } catch (e: Exception) {
+                Timber.e(e, "Failed to update odometer")
                 _actionState.update { it.copy(error = e.message ?: "Failed to update odometer") }
             }
         }
@@ -254,7 +264,9 @@ class VehicleDetailViewModel @Inject constructor(
             try {
                 val uri = exportServiceHistory(vehicleId)
                 _actionState.update { it.copy(exportUri = uri) }
+                analyticsHelper.logEvent(AnalyticsEvents.HISTORY_EXPORTED)
             } catch (e: Exception) {
+                Timber.e(e, "Export failed")
                 _actionState.update { it.copy(error = e.message ?: "Export failed") }
             }
         }
@@ -265,8 +277,16 @@ class VehicleDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 vehicleRepository.updateVehicle(vehicle.copy(isArchived = true))
+                analyticsHelper.logEvent(
+                    AnalyticsEvents.VEHICLE_ARCHIVED,
+                    mapOf(
+                        AnalyticsParams.VEHICLE_MAKE to vehicle.make,
+                        AnalyticsParams.VEHICLE_MODEL to vehicle.model
+                    )
+                )
                 _actionState.value = _actionState.value.copy(isArchived = true)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to archive vehicle")
                 _actionState.value = _actionState.value.copy(error = e.message ?: "Failed to archive vehicle")
             }
         }
@@ -279,6 +299,7 @@ class VehicleDetailViewModel @Inject constructor(
                 reminderRepository.markCompleted(reminderId)
                 scheduleNextOccurrence(reminder)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to complete reminder")
                 _actionState.value = _actionState.value.copy(error = e.message ?: "Failed to complete reminder")
             }
         }
@@ -316,6 +337,7 @@ class VehicleDetailViewModel @Inject constructor(
                 val snoozeUntil = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L
                 reminderRepository.snoozeReminder(reminderId, snoozeUntil)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to snooze reminder")
                 _actionState.value = _actionState.value.copy(error = e.message ?: "Failed to snooze reminder")
             }
         }

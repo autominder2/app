@@ -1,5 +1,9 @@
 package com.autominder.app.ui.screens.reminder
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,6 +64,16 @@ fun AddReminderScreen(
     var showDiscardDialog by remember { mutableStateOf(false) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
+    // Android 13+ permission launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        // We log the result via preference update if needed, but for the "contextual ask"
+        // we just continue the navigation back after the user interacts with the system dialog.
+        viewModel.onEvent(AddReminderUiEvent.PermissionRequestHandled)
+        onNavigateBack()
+    }
+
     // Smart-default prefills (intervals, due km) don't count as edits
     val hasUnsavedChanges = uiState.title.isNotBlank() || uiState.description.isNotBlank()
 
@@ -89,8 +103,15 @@ fun AddReminderScreen(
         if (uiState.isSaved) {
             keyboardController?.hide()
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
-            kotlinx.coroutines.delay(650)
-            onNavigateBack()
+
+            if (uiState.shouldRequestNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // Delay slightly so the user sees the "saved" haptic/UI feedback before the system dialog pops
+                kotlinx.coroutines.delay(300)
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                kotlinx.coroutines.delay(650)
+                onNavigateBack()
+            }
         }
     }
 

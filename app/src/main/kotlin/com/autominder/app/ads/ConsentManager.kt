@@ -1,6 +1,8 @@
 package com.autominder.app.ads
 
 import android.app.Activity
+import com.autominder.app.core.util.AnalyticsEvents
+import com.autominder.app.core.util.AnalyticsHelper
 import com.google.android.gms.ads.MobileAds
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
@@ -21,7 +23,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class ConsentManager @Inject constructor(
-    private val adManager: AdManager
+    private val adManager: AdManager,
+    private val analyticsHelper: AnalyticsHelper
 ) {
 
     private val isMobileAdsInitialized = AtomicBoolean(false)
@@ -44,7 +47,10 @@ class ConsentManager @Inject constructor(
                         Timber.w("Consent form error: ${formError.errorCode} ${formError.message}")
                     }
                     if (consentInformation.canRequestAds()) {
+                        analyticsHelper.logEvent(AnalyticsEvents.ADS_CONSENT_GIVEN)
                         initializeMobileAds(activity)
+                    } else {
+                        analyticsHelper.logEvent(AnalyticsEvents.ADS_CONSENT_DENIED)
                     }
                 }
             },

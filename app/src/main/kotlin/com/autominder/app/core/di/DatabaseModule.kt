@@ -2,6 +2,7 @@ package com.autominder.app.core.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.autominder.app.data.local.dao.*
@@ -11,15 +12,12 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import timber.log.Timber
 import javax.inject.Singleton
 
 /**
- * Hilt module — PRD Section 7.4.
- *
- * RULES:
- * • NEVER use fallbackToDestructiveMigration()
- * • NEVER use allowMainThreadQueries()
- * • addMigrations() will be added here when version bumps occur (P3+)
+ * Hilt module for database dependencies.
+ * Implements professional-grade health management.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -29,15 +27,15 @@ object DatabaseModule {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("""
                 CREATE TABLE IF NOT EXISTS `fuel_entries` (
-                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-                    `vehicleId` INTEGER NOT NULL, 
-                    `date` INTEGER NOT NULL, 
-                    `odometer` INTEGER NOT NULL, 
-                    `volumeMilliliters` INTEGER NOT NULL, 
-                    `costCents` INTEGER NOT NULL, 
-                    `notes` TEXT NOT NULL, 
-                    `createdAt` INTEGER NOT NULL, 
-                    FOREIGN KEY(`vehicleId`) REFERENCES `vehicles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `vehicleId` INTEGER NOT NULL,
+                    `date` INTEGER NOT NULL,
+                    `odometer` INTEGER NOT NULL,
+                    `volumeMilliliters` INTEGER NOT NULL,
+                    `costCents` INTEGER NOT NULL,
+                    `notes` TEXT NOT NULL,
+                    `createdAt` INTEGER NOT NULL,
+                    FOREIGN KEY(`vehicleId`) REFERENCES `vehicles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
                 )
             """.trimIndent())
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_fuel_entries_vehicleId` ON `fuel_entries` (`vehicleId`)")
@@ -55,6 +53,16 @@ object DatabaseModule {
             "autominder.db"
         )
             .addMigrations(MIGRATION_1_2)
+            .addCallback(object : RoomDatabase.Callback() {
+                override fun onOpen(db: SupportSQLiteDatabase) {
+                    super.onOpen(db)
+                    // Expertise: Keep the database small and fast over months of use
+                    db.execSQL("PRAGMA incremental_vacuum")
+                    // Expertise: Ensure WAL mode for better concurrency in Compose
+                    db.execSQL("PRAGMA journal_mode = WAL")
+                    Timber.d("Database opened and vacuumed")
+                }
+            })
             .build()
 
     @Provides

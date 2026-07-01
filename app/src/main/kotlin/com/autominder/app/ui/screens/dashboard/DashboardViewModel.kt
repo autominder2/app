@@ -1,7 +1,9 @@
 package com.autominder.app.ui.screens.dashboard
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autominder.app.core.util.ReviewHelper
 import com.autominder.app.domain.usecase.GetDashboardDataUseCase
 import com.autominder.app.domain.usecase.VehicleWithStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -9,16 +11,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * State of the dashboard — follows unidirectional data flow (UDF).
- * All 4 states are explicitly defined.
  */
 sealed class DashboardUiState {
     object Loading : DashboardUiState()
@@ -30,13 +31,10 @@ sealed class DashboardUiState {
     ) : DashboardUiState()
 }
 
-/**
- * Orchestrates dashboard logic, fetching vehicles and statuses via usecase.
- * Uses stateIn(WhileSubscribed) to keep data hot for 5s — instant on back-nav.
- */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    getDashboardDataUseCase: GetDashboardDataUseCase
+    private val getDashboardDataUseCase: GetDashboardDataUseCase,
+    private val reviewHelper: ReviewHelper
 ) : ViewModel() {
 
     private val refreshTrigger = MutableStateFlow(0)
@@ -65,4 +63,14 @@ class DashboardViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DashboardUiState.Loading
         )
+
+    /**
+     * Attempts to trigger the Google Play In-App Review flow if the user
+     * has reached the required milestones (3+ service logs).
+     */
+    fun requestReviewIfAppropriate(activity: Activity) {
+        viewModelScope.launch {
+            reviewHelper.requestReviewIfAppropriate(activity)
+        }
+    }
 }

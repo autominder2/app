@@ -27,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import com.autominder.app.ads.AdManager
 import com.autominder.app.ads.BannerAdView
 import com.autominder.app.billing.SubscriptionManager
+import com.autominder.app.core.util.UpdateHelper
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.ui.components.BottomNavBar
 import com.autominder.app.ui.navigation.NavGraph
@@ -56,6 +57,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var subscriptionManager: SubscriptionManager
 
+    @Inject
+    lateinit var updateHelper: UpdateHelper
+
     private val _deepLinkEvents = kotlinx.coroutines.flow.MutableSharedFlow<Long>(extraBufferCapacity = 1)
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -78,6 +82,9 @@ class MainActivity : ComponentActivity() {
 
         // GDPR consent gate — initializes Mobile Ads only once consent allows
         consentManager.gatherConsentAndInitAds(this)
+
+        // Check for updates on startup
+        updateHelper.checkForUpdates(this)
 
         setContent {
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = "system")

@@ -1,5 +1,6 @@
 package com.autominder.app.ui.screens.dashboard
 
+import android.app.Activity
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -50,6 +51,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,9 +64,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import java.util.Calendar
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
@@ -100,12 +106,20 @@ fun DashboardScreen(
     val fabExtended by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+
+    // Trigger In-App Review check when Dashboard appears
+    LaunchedEffect(Unit) {
+        val activity = context as? Activity
+        if (activity != null) {
+            viewModel.requestReviewIfAppropriate(activity)
+        }
+    }
 
     val vehicles = (uiState as? DashboardUiState.Success)?.vehicles ?: emptyList()
     var fabMenuExpanded by remember { mutableStateOf(false) }
     var pendingAction by remember { mutableStateOf<QuickAction?>(null) }
 
-    // One vehicle: go straight there. Several: ask which one.
     fun launchQuickAction(action: QuickAction) {
         fabMenuExpanded = false
         when {
@@ -166,7 +180,6 @@ fun DashboardScreen(
         },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End) {
-                // Quick actions revealed above the main FAB
                 AnimatedVisibility(
                     visible = fabMenuExpanded,
                     enter = fadeIn() + slideInVertically { it / 3 },
@@ -256,7 +269,6 @@ fun DashboardScreen(
     }
 }
 
-/** Labeled mini-FAB row used by the expanded quick-actions menu. */
 @Composable
 private fun QuickActionRow(
     label: String,
@@ -356,6 +368,7 @@ private fun VehicleCard(
     modifier: Modifier = Modifier
 ) {
     val vehicle = vehicleWithStatus.vehicle
+    val statusLabel = vehicleWithStatus.status.name.lowercase().replace("_", " ")
 
     val targetCornerDp = when (vehicleWithStatus.status) {
         ServiceStatus.OVERDUE -> 8f
@@ -374,25 +387,34 @@ private fun VehicleCard(
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                onClickLabel = stringResource(R.string.cd_open_vehicle_details, vehicle.make, vehicle.model),
+                onClick = onClick
+            )
             .animateContentSize(
                 animationSpec = spring(
                     dampingRatio = Spring.DampingRatioNoBouncy,
                     stiffness = Spring.StiffnessMediumLow
                 )
-            ),
+            )
+            // Expertise: Professional Accessibility semantics
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${vehicle.year} ${vehicle.make} ${vehicle.model}. " +
+                        "${DistanceUtil.kmToDisplay(vehicle.currentOdometer, "km")} km tracked."
+                stateDescription = "Status: $statusLabel. " +
+                        if (vehicleWithStatus.overdueCount > 0) "${vehicleWithStatus.overdueCount} items overdue." else ""
+            },
         shape = RoundedCornerShape(cornerRadius.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // Hero photo strip — full width when photo exists
             if (vehicle.photoUri != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalPlatformContext.current)
                         .data(vehicle.photoUri)
                         .crossfade(300)
                         .build(),
-                    contentDescription = stringResource(R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model),
+                    contentDescription = null, // decorative hero image
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(140.dp),
@@ -407,7 +429,6 @@ private fun VehicleCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Only show icon placeholder when there's no hero photo
                 if (vehicle.photoUri == null) {
                     Card(
                         modifier = Modifier.size(40.dp),
@@ -418,7 +439,7 @@ private fun VehicleCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Commute,
-                            contentDescription = stringResource(R.string.cd_vehicle_no_photo),
+                            contentDescription = null,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(8.dp),

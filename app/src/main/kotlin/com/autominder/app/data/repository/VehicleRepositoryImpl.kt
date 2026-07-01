@@ -1,6 +1,8 @@
 package com.autominder.app.data.repository
 
+import androidx.room.withTransaction
 import com.autominder.app.data.local.dao.VehicleDao
+import com.autominder.app.data.local.database.AppDatabase
 import com.autominder.app.data.mapper.toDomain
 import com.autominder.app.data.mapper.toEntity
 import com.autominder.app.domain.model.Vehicle
@@ -10,8 +12,14 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Repository implementation for Vehicle data.
+ * Expertise: Uses AppDatabase directly for cross-DAO transactions
+ * to ensure data atomicity during vehicle onboarding.
+ */
 @Singleton
 class VehicleRepositoryImpl @Inject constructor(
+    private val database: AppDatabase,
     private val vehicleDao: VehicleDao
 ) : IVehicleRepository {
 
@@ -33,6 +41,21 @@ class VehicleRepositoryImpl @Inject constructor(
 
     override suspend fun insertVehicle(vehicle: Vehicle): Long {
         return vehicleDao.insertVehicle(vehicle.toEntity())
+    }
+
+    /**
+     * Expertise: Atomic operation ensuring a vehicle and its maintenance
+     * schedule are created together or not at all.
+     */
+    override suspend fun insertVehicleWithInitialState(
+        vehicle: Vehicle,
+        initialState: suspend (Long) -> Unit
+    ): Long {
+        return database.withTransaction {
+            val id = vehicleDao.insertVehicle(vehicle.toEntity())
+            initialState(id)
+            id
+        }
     }
 
     override suspend fun updateVehicle(vehicle: Vehicle) {

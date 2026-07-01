@@ -13,6 +13,9 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.PendingPurchasesParams
+import com.autominder.app.core.util.AnalyticsEvents
+import com.autominder.app.core.util.AnalyticsHelper
+import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.data.local.preferences.UserPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +34,8 @@ import javax.inject.Singleton
 @Singleton
 class SubscriptionManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val analyticsHelper: AnalyticsHelper
 ) : PurchasesUpdatedListener {
 
     companion object {
@@ -107,7 +111,10 @@ class SubscriptionManager @Inject constructor(
 
     private fun setProEntitlement(isPro: Boolean) {
         _isProUser.value = isPro
-        scope.launch { userPreferences.setProCached(isPro) }
+        scope.launch {
+            userPreferences.setProCached(isPro)
+            analyticsHelper.setUserProperty("is_pro", isPro.toString())
+        }
     }
 
     private fun queryProducts() {
@@ -201,6 +208,11 @@ class SubscriptionManager @Inject constructor(
                         acknowledgePurchase(purchase)
                         setProEntitlement(true)
                         _purchaseState.value = PurchaseState.Success
+
+                        analyticsHelper.logEvent(
+                            AnalyticsEvents.PURCHASE_SUCCESS,
+                            mapOf(AnalyticsParams.PRODUCT_ID to purchase.products.joinToString())
+                        )
                     }
                 }
             }
@@ -209,6 +221,10 @@ class SubscriptionManager @Inject constructor(
             }
             else -> {
                 _purchaseState.value = PurchaseState.Error(billingResult.debugMessage)
+                analyticsHelper.logEvent(
+                    AnalyticsEvents.PURCHASE_FAILED,
+                    mapOf(AnalyticsParams.ERROR_MESSAGE to billingResult.debugMessage)
+                )
             }
         }
     }

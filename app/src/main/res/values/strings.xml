@@ -74,6 +74,7 @@
     <string name="cd_add_reminder">Add Reminder</string>
     <string name="cd_vehicle_photo_description">%1$s %2$s</string>
     <string name="cd_vehicle_no_photo">No vehicle photo</string>
+    <string name="cd_open_vehicle_details">Open details for %1$s %2$s</string>
 
     <!-- Shared Formatted -->
     <string name="vehicle_make_model">%1$s %2$s</string>

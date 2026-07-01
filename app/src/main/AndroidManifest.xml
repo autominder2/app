@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Only permissions the app actually uses. Photo attachments go through
          the system photo picker, which needs no media/camera permission.
@@ -32,7 +33,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AutoMinder"
         android:usesCleartextTraffic="false"
-        android:enableOnBackInvokedCallback="true">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33">
 
         <!-- AdMob App ID — injected at build time via resValue in build.gradle.kts -->
         <meta-data
@@ -44,8 +47,7 @@
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
-            tools:node="merge"
-            xmlns:tools="http://schemas.android.com/tools">
+            tools:node="merge">
             <meta-data
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"
@@ -56,7 +58,8 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AutoMinder.Splash"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

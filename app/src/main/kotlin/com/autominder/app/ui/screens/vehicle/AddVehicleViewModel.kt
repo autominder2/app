@@ -1,19 +1,24 @@
 package com.autominder.app.ui.screens.vehicle
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autominder.app.core.util.AnalyticsEvents
+import com.autominder.app.core.util.AnalyticsHelper
+import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.usecase.CreateDefaultRemindersUseCase
 import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.domain.validation.Validators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import com.autominder.app.domain.validation.Validators
+import timber.log.Timber
 import javax.inject.Inject
 
 data class AddVehicleUiState(
@@ -44,18 +49,46 @@ sealed class AddVehicleUiEvent {
 class AddVehicleViewModel @Inject constructor(
     private val vehicleRepository: IVehicleRepository,
     private val createDefaultReminders: CreateDefaultRemindersUseCase,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val analyticsHelper: AnalyticsHelper,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AddVehicleUiState())
+    companion object {
+        private const val KEY_BRAND = "brand"
+        private const val KEY_MODEL = "model"
+        private const val KEY_YEAR = "year"
+        private const val KEY_ODOMETER = "odometer"
+    }
+
+    private val _uiState = MutableStateFlow(
+        AddVehicleUiState(
+            brand = savedStateHandle[KEY_BRAND] ?: "",
+            model = savedStateHandle[KEY_MODEL] ?: "",
+            year = savedStateHandle[KEY_YEAR] ?: "",
+            currentOdometer = savedStateHandle[KEY_ODOMETER] ?: ""
+        )
+    )
     val uiState: StateFlow<AddVehicleUiState> = _uiState.asStateFlow()
 
     fun onEvent(event: AddVehicleUiEvent) {
         when (event) {
-            is AddVehicleUiEvent.BrandChanged -> _uiState.value = _uiState.value.copy(brand = event.brand)
-            is AddVehicleUiEvent.ModelChanged -> _uiState.value = _uiState.value.copy(model = event.model)
-            is AddVehicleUiEvent.YearChanged -> _uiState.value = _uiState.value.copy(year = event.year)
-            is AddVehicleUiEvent.OdometerChanged -> _uiState.value = _uiState.value.copy(currentOdometer = event.odometer)
+            is AddVehicleUiEvent.BrandChanged -> {
+                _uiState.value = _uiState.value.copy(brand = event.brand)
+                savedStateHandle[KEY_BRAND] = event.brand
+            }
+            is AddVehicleUiEvent.ModelChanged -> {
+                _uiState.value = _uiState.value.copy(model = event.model)
+                savedStateHandle[KEY_MODEL] = event.model
+            }
+            is AddVehicleUiEvent.YearChanged -> {
+                _uiState.value = _uiState.value.copy(year = event.year)
+                savedStateHandle[KEY_YEAR] = event.year
+            }
+            is AddVehicleUiEvent.OdometerChanged -> {
+                _uiState.value = _uiState.value.copy(currentOdometer = event.odometer)
+                savedStateHandle[KEY_ODOMETER] = event.odometer
+            }
             is AddVehicleUiEvent.PlateNumberChanged -> _uiState.value = _uiState.value.copy(plateNumber = event.plateNumber)
             is AddVehicleUiEvent.VinChanged -> _uiState.value = _uiState.value.copy(vin = event.vin)
             is AddVehicleUiEvent.PhotoUriChanged -> _uiState.value = _uiState.value.copy(photoUri = event.uri)
@@ -96,10 +129,23 @@ class AddVehicleViewModel @Inject constructor(
                     createdAt = now,
                     updatedAt = now
                 )
-                val newVehicleId = vehicleRepository.insertVehicle(newVehicle)
-                createDefaultReminders(newVehicleId, odometerKm)
+
+                // Expertise: Atomic transactional creation of vehicle + reminders
+                vehicleRepository.insertVehicleWithInitialState(newVehicle) { vehicleId ->
+                    createDefaultReminders(vehicleId, odometerKm)
+                }
+
+                analyticsHelper.logEvent(
+                    AnalyticsEvents.VEHICLE_ADDED,
+                    mapOf(
+                        AnalyticsParams.VEHICLE_MAKE to state.brand,
+                        AnalyticsParams.VEHICLE_MODEL to state.model
+                    )
+                )
+
                 _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to save vehicle")
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Failed to save vehicle")
             }
         }

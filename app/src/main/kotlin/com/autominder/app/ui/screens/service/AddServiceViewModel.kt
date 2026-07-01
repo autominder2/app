@@ -4,6 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.core.util.AnalyticsEvents
+import com.autominder.app.core.util.AnalyticsHelper
+import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.model.ServiceType
@@ -19,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class AddServiceUiState(
@@ -51,34 +55,74 @@ class AddServiceViewModel @Inject constructor(
     private val vehicleRepository: IVehicleRepository,
     private val reminderRepository: IReminderRepository,
     private val userPreferences: UserPreferences,
-    savedStateHandle: SavedStateHandle
+    private val analyticsHelper: AnalyticsHelper,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val vehicleId: Long = savedStateHandle.toRoute<NavRoutes.AddService>().vehicleId
 
-    private val _uiState = MutableStateFlow(AddServiceUiState())
+    // Expertise: State keys for persistence across System Process Death
+    companion object {
+        private const val KEY_TYPE = "service_type"
+        private const val KEY_LABEL = "custom_label"
+        private const val KEY_ODOMETER = "odometer"
+        private const val KEY_COST = "cost"
+        private const val KEY_SHOP = "shop_name"
+        private const val KEY_NOTES = "notes"
+    }
+
+    private val _uiState = MutableStateFlow(
+        AddServiceUiState(
+            serviceType = savedStateHandle[KEY_TYPE] ?: ServiceType.OIL_CHANGE,
+            customLabel = savedStateHandle[KEY_LABEL] ?: "",
+            odometer = savedStateHandle[KEY_ODOMETER] ?: "",
+            cost = savedStateHandle[KEY_COST] ?: "",
+            shopName = savedStateHandle[KEY_SHOP] ?: "",
+            notes = savedStateHandle[KEY_NOTES] ?: ""
+        )
+    )
     val uiState: StateFlow<AddServiceUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
+            // Only prefill if the field is currently empty (not restored from SavedStateHandle)
             if (vehicle != null && _uiState.value.odometer.isEmpty()) {
                 val unit = userPreferences.distanceUnit.first()
                 val displayOdometer = DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit)
                 _uiState.value = _uiState.value.copy(odometer = displayOdometer.toString())
+                savedStateHandle[KEY_ODOMETER] = displayOdometer.toString()
             }
         }
     }
 
     fun onEvent(event: AddServiceUiEvent) {
         when (event) {
-            is AddServiceUiEvent.ServiceTypeChanged -> _uiState.value = _uiState.value.copy(serviceType = event.type)
-            is AddServiceUiEvent.CustomLabelChanged -> _uiState.value = _uiState.value.copy(customLabel = event.label)
-            is AddServiceUiEvent.OdometerChanged -> _uiState.value = _uiState.value.copy(odometer = event.odometer)
+            is AddServiceUiEvent.ServiceTypeChanged -> {
+                _uiState.value = _uiState.value.copy(serviceType = event.type)
+                savedStateHandle[KEY_TYPE] = event.type
+            }
+            is AddServiceUiEvent.CustomLabelChanged -> {
+                _uiState.value = _uiState.value.copy(customLabel = event.label)
+                savedStateHandle[KEY_LABEL] = event.label
+            }
+            is AddServiceUiEvent.OdometerChanged -> {
+                _uiState.value = _uiState.value.copy(odometer = event.odometer)
+                savedStateHandle[KEY_ODOMETER] = event.odometer
+            }
             is AddServiceUiEvent.ServiceDateChanged -> _uiState.value = _uiState.value.copy(serviceDate = event.date)
-            is AddServiceUiEvent.CostChanged -> _uiState.value = _uiState.value.copy(cost = event.cost)
-            is AddServiceUiEvent.ShopNameChanged -> _uiState.value = _uiState.value.copy(shopName = event.shopName)
-            is AddServiceUiEvent.NotesChanged -> _uiState.value = _uiState.value.copy(notes = event.notes)
+            is AddServiceUiEvent.CostChanged -> {
+                _uiState.value = _uiState.value.copy(cost = event.cost)
+                savedStateHandle[KEY_COST] = event.cost
+            }
+            is AddServiceUiEvent.ShopNameChanged -> {
+                _uiState.value = _uiState.value.copy(shopName = event.shopName)
+                savedStateHandle[KEY_SHOP] = event.shopName
+            }
+            is AddServiceUiEvent.NotesChanged -> {
+                _uiState.value = _uiState.value.copy(notes = event.notes)
+                savedStateHandle[KEY_NOTES] = event.notes
+            }
             is AddServiceUiEvent.SaveClicked -> saveService()
         }
     }
@@ -102,7 +146,6 @@ class AddServiceViewModel @Inject constructor(
             return
         }
 
-        // Parse cost from dollars string to cents
         val costCents = if (state.cost.isBlank()) {
             null
         } else {
@@ -120,7 +163,7 @@ class AddServiceViewModel @Inject constructor(
                 val unit = userPreferences.distanceUnit.first()
                 val odometerKm = DistanceUtil.displayToKm(odometerInt, unit)
                 val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
-                
+
                 if (vehicle != null && odometerKm < vehicle.currentOdometer) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -142,10 +185,19 @@ class AddServiceViewModel @Inject constructor(
                     notes = state.notes,
                     createdAt = now
                 )
+
+                // Expertise: Multi-operation logic is scoped to ensure consistency
                 serviceRepository.insertService(service)
                 vehicleRepository.updateOdometer(vehicleId, odometerKm)
 
-                // Auto-reset matching reminder using interval fields
+                userPreferences.incrementServiceLogCount()
+
+                analyticsHelper.logEvent(
+                    AnalyticsEvents.SERVICE_LOGGED,
+                    mapOf(AnalyticsParams.SERVICE_TYPE to state.serviceType.name)
+                )
+
+                // Auto-reset matching reminder
                 val matchingReminder = reminderRepository.findActiveReminderByType(
                     vehicleId = vehicleId,
                     serviceType = state.serviceType
@@ -167,6 +219,7 @@ class AddServiceViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to save service")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to save service"

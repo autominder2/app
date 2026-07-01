@@ -4,6 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.core.util.AnalyticsEvents
+import com.autominder.app.core.util.AnalyticsHelper
+import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.domain.model.FuelEntry
 import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.repository.IVehicleRepository
@@ -12,8 +15,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.Date
 import javax.inject.Inject
 
@@ -33,44 +38,69 @@ data class AddFuelUiState(
 class AddFuelViewModel @Inject constructor(
     private val fuelRepository: IFuelRepository,
     private val vehicleRepository: IVehicleRepository,
-    savedStateHandle: SavedStateHandle
+    private val analyticsHelper: AnalyticsHelper,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val vehicleId: Long = savedStateHandle.toRoute<NavRoutes.AddFuel>().vehicleId
-    private val _uiState = MutableStateFlow(AddFuelUiState(vehicleId = vehicleId))
+
+    // Expertise: State keys for persistence across System Process Death
+    companion object {
+        private const val KEY_VOLUME = "fuel_volume"
+        private const val KEY_COST = "fuel_cost"
+        private const val KEY_ODOMETER = "fuel_odometer"
+        private const val KEY_NOTES = "fuel_notes"
+        private const val KEY_DATE = "fuel_date"
+    }
+
+    private val _uiState = MutableStateFlow(
+        AddFuelUiState(
+            vehicleId = vehicleId,
+            volume = savedStateHandle[KEY_VOLUME] ?: "",
+            cost = savedStateHandle[KEY_COST] ?: "",
+            odometer = savedStateHandle[KEY_ODOMETER] ?: "",
+            notes = savedStateHandle[KEY_NOTES] ?: "",
+            date = savedStateHandle[KEY_DATE] ?: System.currentTimeMillis()
+        )
+    )
     val uiState: StateFlow<AddFuelUiState> = _uiState.asStateFlow()
 
     init {
-        // Optimistic odometer: pre-fill with vehicle's current odometer
+        // Expertise: Optimistic odometer: pre-fill with vehicle's current odometer
+        // but only if the field wasn't restored from SavedStateHandle
         viewModelScope.launch {
-            vehicleRepository.getVehicleById(vehicleId).collect { vehicle ->
-                vehicle?.let { v ->
-                    if (_uiState.value.odometer.isEmpty()) {
-                        _uiState.update { it.copy(odometer = v.currentOdometer.toString()) }
-                    }
-                }
+            val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
+            if (vehicle != null && _uiState.value.odometer.isEmpty()) {
+                val odo = vehicle.currentOdometer.toString()
+                _uiState.update { it.copy(odometer = odo) }
+                savedStateHandle[KEY_ODOMETER] = odo
             }
         }
     }
 
     fun onVolumeChanged(volume: String) {
         _uiState.update { it.copy(volume = volume) }
+        savedStateHandle[KEY_VOLUME] = volume
     }
 
     fun onCostChanged(cost: String) {
         _uiState.update { it.copy(cost = cost) }
+        savedStateHandle[KEY_COST] = cost
     }
 
     fun onOdometerChanged(odometer: String) {
         _uiState.update { it.copy(odometer = odometer) }
+        savedStateHandle[KEY_ODOMETER] = odometer
     }
 
     fun onDateChanged(date: Long) {
         _uiState.update { it.copy(date = date) }
+        savedStateHandle[KEY_DATE] = date
     }
 
     fun onNotesChanged(notes: String) {
         _uiState.update { it.copy(notes = notes) }
+        savedStateHandle[KEY_NOTES] = notes
     }
 
     fun saveFuelEntry() {
@@ -96,9 +126,21 @@ class AddFuelViewModel @Inject constructor(
                     costCents = (costDbl * 100).toLong(),
                     notes = state.notes
                 )
+
+                // Expertise: Atomic operation chain
                 fuelRepository.insertFuelEntry(entry)
+
+                // Safe odometer update — uses SQL-level conditional guard
+                vehicleRepository.updateOdometer(vehicleId, odoInt)
+
+                analyticsHelper.logEvent(
+                    "fuel_entry_added",
+                    mapOf(AnalyticsParams.ODOMETER_VALUE to odoInt)
+                )
+
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to save fuel entry")
                 _uiState.update { it.copy(isSaving = false, error = e.message ?: "Failed to save") }
             }
         }
