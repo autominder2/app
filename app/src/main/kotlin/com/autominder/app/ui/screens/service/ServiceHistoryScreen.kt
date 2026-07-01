@@ -36,6 +36,7 @@ import com.autominder.app.R
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import com.autominder.app.ui.components.SwipeToDeleteContainer
 import com.autominder.app.domain.model.Service
@@ -84,7 +85,7 @@ fun ServiceHistoryScreen(
                 .padding(padding)
         ) {
             when (val state = uiState) {
-                is ServiceHistoryUiState.Loading -> LoadingState()
+                is ServiceHistoryUiState.Loading -> ListSkeleton()
                 is ServiceHistoryUiState.Empty -> EmptyState(
                     title = stringResource(R.string.service_history_empty_title),
                     subtitle = stringResource(R.string.service_history_empty_subtitle),

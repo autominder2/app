@@ -84,6 +84,7 @@ import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.FleetHealthScore
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.DashboardSkeleton
 import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
@@ -246,7 +247,7 @@ fun DashboardScreen(
                 .padding(padding)
         ) {
             when (val state = uiState) {
-                is DashboardUiState.Loading -> LoadingState()
+                is DashboardUiState.Loading -> DashboardSkeleton()
                 is DashboardUiState.Empty -> EmptyState(
                     title = stringResource(R.string.dashboard_no_vehicles_title),
                     subtitle = stringResource(R.string.dashboard_no_vehicles_subtitle),

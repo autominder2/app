@@ -20,6 +20,7 @@ import com.autominder.app.R
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import com.autominder.app.ui.components.SwipeToDeleteContainer
 import com.autominder.app.ui.util.DateFormatUtil
@@ -59,7 +60,7 @@ fun FuelHistoryScreen(
                 .padding(padding)
         ) {
             when {
-                uiState.isLoading -> LoadingState()
+                uiState.isLoading -> ListSkeleton()
                 uiState.error != null -> ErrorState(
                     message = uiState.error!!,
                     onRetry = { viewModel.retry() }

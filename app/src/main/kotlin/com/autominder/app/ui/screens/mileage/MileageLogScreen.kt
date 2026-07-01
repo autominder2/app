@@ -45,6 +45,7 @@ import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import com.autominder.app.ui.components.SwipeToDeleteContainer
 import com.autominder.app.ui.theme.LocalDistanceUnit
@@ -82,7 +83,7 @@ fun MileageLogScreen(
         }
     ) { padding ->
         when {
-            uiState.isLoading -> LoadingState()
+            uiState.isLoading -> ListSkeleton()
             uiState.loadError != null -> ErrorState(
                 message = uiState.loadError!!,
                 onRetry = { viewModel.onEvent(MileageLogUiEvent.Retry) }
