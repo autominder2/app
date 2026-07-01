@@ -12,7 +12,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import timber.log.Timber
 import javax.inject.Singleton
 
 /**
@@ -53,16 +52,11 @@ object DatabaseModule {
             "autominder.db"
         )
             .addMigrations(MIGRATION_1_2)
-            .addCallback(object : RoomDatabase.Callback() {
-                override fun onOpen(db: SupportSQLiteDatabase) {
-                    super.onOpen(db)
-                    // Expertise: Keep the database small and fast over months of use
-                    db.execSQL("PRAGMA incremental_vacuum")
-                    // Expertise: Ensure WAL mode for better concurrency in Compose
-                    db.execSQL("PRAGMA journal_mode = WAL")
-                    Timber.d("Database opened and vacuumed")
-                }
-            })
+            // WAL improves read/write concurrency. Set it through the builder —
+            // NOT via execSQL("PRAGMA journal_mode = WAL"), which returns a row
+            // and makes execSQL throw "Queries can be performed using
+            // SQLiteDatabase query or rawQuery methods only" on every open.
+            .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
             .build()
 
     @Provides

@@ -212,13 +212,15 @@
 
     <!-- Onboarding Screen -->
     <string name="onboarding_welcome_title">Welcome to AutoMinder</string>
-    <string name="onboarding_welcome_subtitle">Keep your vehicles in top shape</string>
-    <string name="onboarding_track_title">Track Maintenance</string>
-    <string name="onboarding_track_subtitle">Never miss an oil change, tire rotation, or brake service</string>
-    <string name="onboarding_notify_title">Get Notified</string>
-    <string name="onboarding_notify_subtitle">Receive timely reminders before services are due</string>
+    <string name="onboarding_welcome_subtitle">Your garage, organized. Every vehicle you own, cared for in one calm place.</string>
+    <string name="onboarding_track_title">Never miss a service</string>
+    <string name="onboarding_track_subtitle">Oil changes, tire rotations, brakes — tracked by date and distance, so nothing slips by.</string>
+    <string name="onboarding_notify_title">We\'ll tap you on the shoulder</string>
+    <string name="onboarding_notify_subtitle">Gentle reminders arrive before things are due — never spammy, always in time.</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="cd_onboarding_next">Next page</string>
 
     <!-- Additional -->
     <string name="privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
