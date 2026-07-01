@@ -142,6 +142,10 @@
     <string name="add_service_notes_label">Notes (Optional)</string>
     <string name="add_service_saving">Saving\u2026</string>
     <string name="add_service_save">Save Service</string>
+    <string name="add_service_remind_title">Remind me for the next one</string>
+    <string name="add_service_remind_subtitle">We\'ll schedule the next service so you never have to remember.</string>
+    <string name="add_service_remind_every_distance">Every (%1$s)</string>
+    <string name="add_service_remind_every_months">Every (months)</string>
 
     <!-- Service Detail Screen -->
     <string name="service_detail_title">Service Detail</string>

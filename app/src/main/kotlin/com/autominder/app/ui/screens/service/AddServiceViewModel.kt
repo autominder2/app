@@ -8,8 +8,10 @@ import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.data.local.preferences.UserPreferences
+import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.model.ServiceType
+import com.autominder.app.domain.model.suggestedInterval
 import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
@@ -33,6 +35,10 @@ data class AddServiceUiState(
     val cost: String = "",
     val shopName: String = "",
     val notes: String = "",
+    // "Remind me for the next one" — the log-and-never-forget prompt
+    val remindNext: Boolean = true,
+    val remindIntervalKm: String = "",
+    val remindIntervalMonths: String = "",
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val error: String? = null
@@ -46,6 +52,9 @@ sealed class AddServiceUiEvent {
     data class CostChanged(val cost: String) : AddServiceUiEvent()
     data class ShopNameChanged(val shopName: String) : AddServiceUiEvent()
     data class NotesChanged(val notes: String) : AddServiceUiEvent()
+    data class RemindNextToggled(val enabled: Boolean) : AddServiceUiEvent()
+    data class RemindKmChanged(val km: String) : AddServiceUiEvent()
+    data class RemindMonthsChanged(val months: String) : AddServiceUiEvent()
     object SaveClicked : AddServiceUiEvent()
 }
 
@@ -84,6 +93,8 @@ class AddServiceViewModel @Inject constructor(
     val uiState: StateFlow<AddServiceUiState> = _uiState.asStateFlow()
 
     init {
+        // Seed the reminder-interval suggestion for the initial service type.
+        seedSuggestedInterval(_uiState.value.serviceType)
         viewModelScope.launch {
             val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
             // Only prefill if the field is currently empty (not restored from SavedStateHandle)
@@ -96,11 +107,30 @@ class AddServiceViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Pre-fills the "remind me" interval fields with sensible defaults for the
+     * given type, converting the km suggestion into the user's distance unit so
+     * the number they see matches how they read the odometer.
+     */
+    private fun seedSuggestedInterval(type: ServiceType) {
+        viewModelScope.launch {
+            val unit = userPreferences.distanceUnit.first()
+            val suggestion = type.suggestedInterval()
+            val kmDisplay = suggestion.km?.let { DistanceUtil.kmToDisplay(it, unit).toString() } ?: ""
+            _uiState.value = _uiState.value.copy(
+                remindIntervalKm = kmDisplay,
+                remindIntervalMonths = suggestion.months?.toString() ?: ""
+            )
+        }
+    }
+
     fun onEvent(event: AddServiceUiEvent) {
         when (event) {
             is AddServiceUiEvent.ServiceTypeChanged -> {
                 _uiState.value = _uiState.value.copy(serviceType = event.type)
                 savedStateHandle[KEY_TYPE] = event.type
+                // Refresh the reminder-interval suggestion to match the new type.
+                seedSuggestedInterval(event.type)
             }
             is AddServiceUiEvent.CustomLabelChanged -> {
                 _uiState.value = _uiState.value.copy(customLabel = event.label)
@@ -123,6 +153,9 @@ class AddServiceViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(notes = event.notes)
                 savedStateHandle[KEY_NOTES] = event.notes
             }
+            is AddServiceUiEvent.RemindNextToggled -> _uiState.value = _uiState.value.copy(remindNext = event.enabled)
+            is AddServiceUiEvent.RemindKmChanged -> _uiState.value = _uiState.value.copy(remindIntervalKm = event.km)
+            is AddServiceUiEvent.RemindMonthsChanged -> _uiState.value = _uiState.value.copy(remindIntervalMonths = event.months)
             is AddServiceUiEvent.SaveClicked -> saveService()
         }
     }
@@ -197,24 +230,57 @@ class AddServiceViewModel @Inject constructor(
                     mapOf(AnalyticsParams.SERVICE_TYPE to state.serviceType.name)
                 )
 
-                // Auto-reset matching reminder
+                // "Remind me for the next one" — the intervals the user chose,
+                // converted to km/days. Null when the toggle is off.
+                val reminderIntervalKm: Int? = if (state.remindNext) {
+                    state.remindIntervalKm.toIntOrNull()?.takeIf { it > 0 }
+                        ?.let { DistanceUtil.displayToKm(it, unit) }
+                } else null
+                val reminderIntervalDays: Int? = if (state.remindNext) {
+                    state.remindIntervalMonths.toIntOrNull()?.takeIf { it > 0 }?.let { it * 30 }
+                } else null
+
                 val matchingReminder = reminderRepository.findActiveReminderByType(
                     vehicleId = vehicleId,
                     serviceType = state.serviceType
                 )
-                if (matchingReminder != null) {
-                    val resetReminder = matchingReminder.copy(
-                        nextDueOdometer = matchingReminder.intervalKm?.let { odometerKm + it },
-                        nextDueDate = matchingReminder.intervalDays?.let {
-                            state.serviceDate + (it.toLong() * 86_400_000L)
-                        },
-                        isCompleted = false,
-                        completedAt = null,
-                        snoozeUntil = null,
-                        lastNotifiedAt = null,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    reminderRepository.updateReminder(resetReminder)
+                when {
+                    // A reminder already exists: reset its due window. If the user
+                    // kept the toggle on, adopt any interval edits they made.
+                    matchingReminder != null -> {
+                        val km = if (state.remindNext) reminderIntervalKm else matchingReminder.intervalKm
+                        val days = if (state.remindNext) reminderIntervalDays else matchingReminder.intervalDays
+                        reminderRepository.updateReminder(
+                            matchingReminder.copy(
+                                intervalKm = km,
+                                intervalDays = days,
+                                nextDueOdometer = km?.let { odometerKm + it },
+                                nextDueDate = days?.let { state.serviceDate + (it.toLong() * 86_400_000L) },
+                                isCompleted = false,
+                                completedAt = null,
+                                snoozeUntil = null,
+                                lastNotifiedAt = null,
+                                updatedAt = now
+                            )
+                        )
+                    }
+                    // No reminder yet: create one so the user never has to remember.
+                    state.remindNext && (reminderIntervalKm != null || reminderIntervalDays != null) -> {
+                        reminderRepository.insertReminder(
+                            Reminder(
+                                id = 0,
+                                vehicleId = vehicleId,
+                                serviceType = state.serviceType,
+                                customLabel = if (state.serviceType == ServiceType.CUSTOM) state.customLabel else null,
+                                intervalKm = reminderIntervalKm,
+                                intervalDays = reminderIntervalDays,
+                                nextDueOdometer = reminderIntervalKm?.let { odometerKm + it },
+                                nextDueDate = reminderIntervalDays?.let { state.serviceDate + (it.toLong() * 86_400_000L) },
+                                createdAt = now,
+                                updatedAt = now
+                            )
+                        )
+                    }
                 }
 
                 _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)

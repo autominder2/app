@@ -1,19 +1,29 @@
 package com.autominder.app.ui.screens.service
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -32,11 +43,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,6 +77,7 @@ fun AddServiceScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     var showDatePicker by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showMore by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     // Pre-filled defaults (date, odometer) don't count as edits
@@ -213,43 +228,76 @@ fun AddServiceScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
+            // Headline: the log-and-never-forget prompt
             FormField(index = 3) {
-                OutlinedTextField(
-                    value = uiState.cost,
-                    onValueChange = { viewModel.onEvent(AddServiceUiEvent.CostChanged(it)) },
-                    label = { Text(stringResource(R.string.add_service_cost_label)) },
-                    placeholder = { Text(stringResource(R.string.add_service_cost_placeholder)) },
-                    prefix = { Text(stringResource(R.string.add_service_cost_prefix)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true
+                ReminderPromptCard(
+                    enabled = uiState.remindNext,
+                    intervalDistance = uiState.remindIntervalKm,
+                    intervalMonths = uiState.remindIntervalMonths,
+                    unitLabel = DistanceUtil.unitLabel(LocalDistanceUnit.current),
+                    onToggle = { viewModel.onEvent(AddServiceUiEvent.RemindNextToggled(it)) },
+                    onDistanceChanged = { viewModel.onEvent(AddServiceUiEvent.RemindKmChanged(it)) },
+                    onMonthsChanged = { viewModel.onEvent(AddServiceUiEvent.RemindMonthsChanged(it)) }
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            FormField(index = 4) {
-                OutlinedTextField(
-                    value = uiState.shopName,
-                    onValueChange = { viewModel.onEvent(AddServiceUiEvent.ShopNameChanged(it)) },
-                    label = { Text(stringResource(R.string.add_service_shop_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+            // Optional details fold away so the default view stays short
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { showMore = !showMore }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.add_vehicle_more_details),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = if (showMore) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FormField(index = 5) {
-                OutlinedTextField(
-                    value = uiState.notes,
-                    onValueChange = { viewModel.onEvent(AddServiceUiEvent.NotesChanged(it)) },
-                    label = { Text(stringResource(R.string.add_service_notes_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
-                )
+            AnimatedVisibility(visible = showMore) {
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = uiState.cost,
+                        onValueChange = { viewModel.onEvent(AddServiceUiEvent.CostChanged(it)) },
+                        label = { Text(stringResource(R.string.add_service_cost_label)) },
+                        placeholder = { Text(stringResource(R.string.add_service_cost_placeholder)) },
+                        prefix = { Text(stringResource(R.string.add_service_cost_prefix)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = uiState.shopName,
+                        onValueChange = { viewModel.onEvent(AddServiceUiEvent.ShopNameChanged(it)) },
+                        label = { Text(stringResource(R.string.add_service_shop_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = uiState.notes,
+                        onValueChange = { viewModel.onEvent(AddServiceUiEvent.NotesChanged(it)) },
+                        label = { Text(stringResource(R.string.add_service_notes_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+                }
             }
 
             if (uiState.error != null) {
@@ -261,7 +309,7 @@ fun AddServiceScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             SaveButton(
                 state = when {
@@ -273,6 +321,86 @@ fun AddServiceScreen(
                 onClick = { viewModel.onEvent(AddServiceUiEvent.SaveClicked) },
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+/**
+ * "Remind me for the next one" — turns a one-off log into an ongoing schedule.
+ * Pre-filled with a sensible interval for the chosen service type, editable,
+ * and dismissable. This is what makes users never have to remember a service.
+ */
+@Composable
+private fun ReminderPromptCard(
+    enabled: Boolean,
+    intervalDistance: String,
+    intervalMonths: String,
+    unitLabel: String,
+    onToggle: (Boolean) -> Unit,
+    onDistanceChanged: (String) -> Unit,
+    onMonthsChanged: (String) -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f))
+            .padding(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.NotificationsActive,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.add_service_remind_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = stringResource(R.string.add_service_remind_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = enabled,
+                onCheckedChange = {
+                    haptic.performHapticFeedback(
+                        if (it) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff
+                    )
+                    onToggle(it)
+                }
+            )
+        }
+        AnimatedVisibility(visible = enabled) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = intervalDistance,
+                    onValueChange = onDistanceChanged,
+                    label = { Text(stringResource(R.string.add_service_remind_every_distance, unitLabel)) },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = intervalMonths,
+                    onValueChange = onMonthsChanged,
+                    label = { Text(stringResource(R.string.add_service_remind_every_months)) },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
         }
     }
 }
