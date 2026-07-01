@@ -106,11 +106,16 @@ class AddFuelViewModel @Inject constructor(
     fun saveFuelEntry() {
         val state = _uiState.value
         val volumeDbl = state.volume.toDoubleOrNull() ?: 0.0
+        // Cost is optional — logging fuel should take two fields, not a receipt.
         val costDbl = state.cost.toDoubleOrNull() ?: 0.0
         val odoInt = state.odometer.toIntOrNull() ?: 0
 
-        if (volumeDbl <= 0 || costDbl <= 0 || odoInt <= 0) {
-            _uiState.update { it.copy(error = "Please fill all fields with valid numbers") }
+        if (volumeDbl <= 0 || odoInt <= 0) {
+            _uiState.update { it.copy(error = "Enter a valid fuel amount and odometer") }
+            return
+        }
+        if (costDbl < 0) {
+            _uiState.update { it.copy(error = "Cost cannot be negative") }
             return
         }
 

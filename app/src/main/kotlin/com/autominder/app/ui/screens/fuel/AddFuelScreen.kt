@@ -1,15 +1,22 @@
 package com.autominder.app.ui.screens.fuel
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,6 +43,7 @@ fun AddFuelScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showMore by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     val hasUnsavedChanges = uiState.volume.isNotBlank() ||
@@ -108,15 +116,6 @@ fun AddFuelScreen(
             )
 
             OutlinedTextField(
-                value = uiState.cost,
-                onValueChange = viewModel::onCostChanged,
-                label = { Text(stringResource(R.string.fuel_label_cost, "$")) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
-
-            OutlinedTextField(
                 value = uiState.odometer,
                 onValueChange = viewModel::onOdometerChanged,
                 label = { Text(stringResource(R.string.fuel_label_odometer, "km")) },
@@ -126,25 +125,62 @@ fun AddFuelScreen(
             )
 
             OutlinedTextField(
-                value = DateFormatUtil.formatDate(uiState.date),
-                onValueChange = {},
-                label = { Text(stringResource(R.string.fuel_label_date)) },
+                value = uiState.cost,
+                onValueChange = viewModel::onCostChanged,
+                label = { Text(stringResource(R.string.fuel_label_cost, "$")) },
                 modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.cd_select_date))
-                    }
-                }
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
             )
 
-            OutlinedTextField(
-                value = uiState.notes,
-                onValueChange = viewModel::onNotesChanged,
-                label = { Text(stringResource(R.string.fuel_label_notes)) },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
-            )
+            // Date defaults to today and notes are rare — fold them away so the
+            // default view is just amount + odometer + cost.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { showMore = !showMore }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.add_vehicle_more_details),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = if (showMore) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            AnimatedVisibility(visible = showMore) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    OutlinedTextField(
+                        value = DateFormatUtil.formatDate(uiState.date),
+                        onValueChange = {},
+                        label = { Text(stringResource(R.string.fuel_label_date)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showDatePicker = true }) {
+                                Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.cd_select_date))
+                            }
+                        }
+                    )
+
+                    OutlinedTextField(
+                        value = uiState.notes,
+                        onValueChange = viewModel::onNotesChanged,
+                        label = { Text(stringResource(R.string.fuel_label_notes)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+                }
+            }
 
             if (uiState.error != null) {
                 Text(
