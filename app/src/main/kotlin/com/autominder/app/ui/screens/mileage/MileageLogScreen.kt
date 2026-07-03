@@ -82,6 +82,13 @@ fun MileageLogScreen(
             )
         }
     ) { padding ->
+        // Scaffold padding wraps every branch — skeleton and error must not
+        // render underneath the app bar.
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
         when {
             uiState.isLoading -> ListSkeleton()
             uiState.loadError != null -> ErrorState(
@@ -92,7 +99,6 @@ fun MileageLogScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
                     .padding(horizontal = 16.dp),
                 contentPadding = PaddingValues(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -157,6 +163,7 @@ fun MileageLogScreen(
             }
             }
         }
+        }
     }
 }
 
@@ -185,7 +192,7 @@ private fun MileageInputSection(
         OutlinedTextField(
             value = newOdometer,
             onValueChange = onOdometerChanged,
-            label = { Text("Odometer (${DistanceUtil.unitLabel(LocalDistanceUnit.current)})") },
+            label = { Text(stringResource(R.string.fuel_label_odometer, DistanceUtil.unitLabel(LocalDistanceUnit.current))) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true

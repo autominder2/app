@@ -112,7 +112,7 @@ fun VehicleListScreen(
                 )
                 is VehicleListUiState.Error -> ErrorState(
                     message = state.message,
-                    onRetry = { /* re-collect handled by init */ }
+                    onRetry = { viewModel.retry() }
                 )
                 is VehicleListUiState.Success -> VehicleListContent(
                     vehicles = state.vehicles,

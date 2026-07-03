@@ -132,7 +132,7 @@
     <string name="add_service_type_label">Service Type</string>
     <string name="add_service_name_label">Service Name</string>
     <string name="add_service_name_placeholder">e.g. Brake Fluid Flush</string>
-    <string name="add_service_odometer_label">Odometer at Service (km)</string>
+    <string name="add_service_odometer_label">Odometer at Service (%1$s)</string>
     <string name="add_service_date_label">Service Date</string>
     <string name="add_service_select_date">Select Date</string>
     <string name="add_service_cost_label">Cost (Optional)</string>

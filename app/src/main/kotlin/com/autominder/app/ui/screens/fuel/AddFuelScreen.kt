@@ -27,6 +27,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import com.autominder.app.R
+import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.components.DiscardChangesDialog
 import com.autominder.app.ui.components.SaveButton
 import com.autominder.app.ui.components.SaveButtonState
@@ -118,7 +120,7 @@ fun AddFuelScreen(
             OutlinedTextField(
                 value = uiState.odometer,
                 onValueChange = viewModel::onOdometerChanged,
-                label = { Text(stringResource(R.string.fuel_label_odometer, "km")) },
+                label = { Text(stringResource(R.string.fuel_label_odometer, DistanceUtil.unitLabel(LocalDistanceUnit.current))) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true

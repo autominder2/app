@@ -40,6 +40,8 @@ class ServiceDetailViewModel @Inject constructor(
         loadService()
     }
 
+    fun retry() = loadService()
+
     private fun loadService() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)

@@ -202,7 +202,7 @@ fun AddServiceScreen(
                 OutlinedTextField(
                     value = uiState.odometer,
                     onValueChange = { viewModel.onEvent(AddServiceUiEvent.OdometerChanged(it)) },
-                    label = { Text("Odometer at Service (${DistanceUtil.unitLabel(LocalDistanceUnit.current)})") },
+                    label = { Text(stringResource(R.string.add_service_odometer_label, DistanceUtil.unitLabel(LocalDistanceUnit.current))) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true

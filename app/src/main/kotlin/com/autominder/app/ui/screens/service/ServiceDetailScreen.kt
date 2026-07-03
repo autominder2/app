@@ -138,7 +138,7 @@ fun ServiceDetailScreen(
                 uiState.isLoading -> LoadingState()
                 uiState.error != null -> ErrorState(
                     message = uiState.error!!,
-                    onRetry = {}
+                    onRetry = { viewModel.retry() }
                 )
                 uiState.service == null -> EmptyState(
                     title = stringResource(R.string.service_detail_not_found_title),

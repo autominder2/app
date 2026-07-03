@@ -7,14 +7,17 @@ import androidx.navigation.toRoute
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
+import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.FuelEntry
 import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.repository.IVehicleRepository
+import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,6 +41,7 @@ data class AddFuelUiState(
 class AddFuelViewModel @Inject constructor(
     private val fuelRepository: IFuelRepository,
     private val vehicleRepository: IVehicleRepository,
+    private val userPreferences: UserPreferences,
     private val analyticsHelper: AnalyticsHelper,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -67,11 +71,13 @@ class AddFuelViewModel @Inject constructor(
 
     init {
         // Expertise: Optimistic odometer: pre-fill with vehicle's current odometer
-        // but only if the field wasn't restored from SavedStateHandle
+        // but only if the field wasn't restored from SavedStateHandle.
+        // Converted to the user's display unit — storage is always km.
         viewModelScope.launch {
             val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
             if (vehicle != null && _uiState.value.odometer.isEmpty()) {
-                val odo = vehicle.currentOdometer.toString()
+                val unit = userPreferences.distanceUnit.first()
+                val odo = DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit).toString()
                 _uiState.update { it.copy(odometer = odo) }
                 savedStateHandle[KEY_ODOMETER] = odo
             }
@@ -123,10 +129,13 @@ class AddFuelViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                // Input is in the user's display unit — storage is always km.
+                val unit = userPreferences.distanceUnit.first()
+                val odometerKm = DistanceUtil.displayToKm(odoInt, unit)
                 val entry = FuelEntry(
                     vehicleId = vehicleId,
                     date = Date(state.date),
-                    odometer = odoInt,
+                    odometer = odometerKm,
                     volumeMilliliters = (volumeDbl * 1000).toInt(),
                     costCents = (costDbl * 100).toLong(),
                     notes = state.notes
@@ -136,11 +145,11 @@ class AddFuelViewModel @Inject constructor(
                 fuelRepository.insertFuelEntry(entry)
 
                 // Safe odometer update — uses SQL-level conditional guard
-                vehicleRepository.updateOdometer(vehicleId, odoInt)
+                vehicleRepository.updateOdometer(vehicleId, odometerKm)
 
                 analyticsHelper.logEvent(
                     "fuel_entry_added",
-                    mapOf(AnalyticsParams.ODOMETER_VALUE to odoInt)
+                    mapOf(AnalyticsParams.ODOMETER_VALUE to odometerKm)
                 )
 
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
