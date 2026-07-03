@@ -114,6 +114,7 @@
     <string name="vehicle_detail_reminders">Reminders</string>
     <string name="vehicle_detail_no_reminders">No reminders yet. Tap + to add one.</string>
     <string name="vehicle_detail_due_date">Due: %1$s</string>
+    <string name="vehicle_detail_forecast">≈ %1$s %2$s left · expect it around %3$s</string>
     <string name="vehicle_detail_due_at_odometer">Due at: %1$d km</string>
     <string name="vehicle_detail_cost_this_year">This Year</string>
     <string name="vehicle_detail_cost_all_time">All Time</string>

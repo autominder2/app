@@ -79,6 +79,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.domain.model.Reminder
+import com.autominder.app.domain.usecase.DuePrediction
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.domain.model.ServiceStatus
@@ -216,6 +217,7 @@ fun VehicleDetailScreen(
                         vehicle = v,
                         reminders = uiState.reminders,
                         reminderStatuses = uiState.reminderStatuses,
+                        reminderPredictions = uiState.reminderPredictions,
                         totalCostCents = uiState.totalCostCents,
                         yearCostCents = uiState.yearCostCents,
                         averageEfficiency = uiState.averageEfficiency,
@@ -287,6 +289,7 @@ private fun VehicleDetailContent(
     vehicle: Vehicle,
     reminders: List<Reminder>,
     reminderStatuses: Map<Long, ServiceStatus>,
+    reminderPredictions: Map<Long, DuePrediction>,
     totalCostCents: Int,
     yearCostCents: Int,
     averageEfficiency: Double,
@@ -670,6 +673,7 @@ private fun VehicleDetailContent(
                 ReminderCard(
                     reminder = reminder,
                     status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
+                    prediction = reminderPredictions[reminder.id],
                     onMarkComplete = { onMarkComplete(reminder.id) },
                     onSnooze = { onSnooze(reminder.id) },
                     onEdit = { onEditReminder(reminder.id) },
@@ -688,6 +692,7 @@ private fun VehicleDetailContent(
 private fun ReminderCard(
     reminder: Reminder,
     status: ServiceStatus,
+    prediction: DuePrediction?,
     onMarkComplete: () -> Unit,
     onSnooze: () -> Unit,
     onEdit: () -> Unit,
@@ -763,19 +768,38 @@ private fun ReminderCard(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    if (reminder.nextDueDate != null) {
+                    // Personalized forecast beats raw thresholds: "≈ 900 km left,
+                    // expect it around Aug 12" reads like a mechanic who knows
+                    // your car, not a database row.
+                    val kmLeft = prediction?.kmRemaining
+                    val expectedAt = prediction?.predictedAt
+                    if (kmLeft != null && expectedAt != null) {
                         Text(
-                            text = stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)),
+                            text = stringResource(
+                                R.string.vehicle_detail_forecast,
+                                DistanceUtil.kmToDisplay(kmLeft, LocalDistanceUnit.current).toString(),
+                                DistanceUtil.unitLabel(LocalDistanceUnit.current),
+                                DateFormatUtil.formatDate(expectedAt)
+                            ),
                             style = MaterialTheme.typography.bodySmall,
-                            color = contentColor.copy(alpha = 0.75f)
+                            fontWeight = FontWeight.Medium,
+                            color = contentColor.copy(alpha = 0.9f)
                         )
-                    }
-                    if (reminder.nextDueOdometer != null) {
-                        Text(
-                            text = stringResource(R.string.vehicle_detail_due_at_dynamic, DistanceUtil.kmToDisplay(reminder.nextDueOdometer, LocalDistanceUnit.current).toString(), DistanceUtil.unitLabel(LocalDistanceUnit.current)),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = contentColor.copy(alpha = 0.75f)
-                        )
+                    } else {
+                        if (reminder.nextDueDate != null) {
+                            Text(
+                                text = stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = contentColor.copy(alpha = 0.75f)
+                            )
+                        }
+                        if (reminder.nextDueOdometer != null) {
+                            Text(
+                                text = stringResource(R.string.vehicle_detail_due_at_dynamic, DistanceUtil.kmToDisplay(reminder.nextDueOdometer, LocalDistanceUnit.current).toString(), DistanceUtil.unitLabel(LocalDistanceUnit.current)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = contentColor.copy(alpha = 0.75f)
+                            )
+                        }
                     }
 
                     if (!reminder.isCompleted) {

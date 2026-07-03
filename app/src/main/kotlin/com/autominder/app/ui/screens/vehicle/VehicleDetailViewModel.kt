@@ -19,6 +19,9 @@ import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.usecase.CalculateEfficiencyUseCase
 import com.autominder.app.data.export.ExportServiceHistoryUseCase
+import com.autominder.app.domain.usecase.DuePrediction
+import com.autominder.app.domain.usecase.OdometerPoint
+import com.autominder.app.domain.usecase.PredictDueUseCase
 import com.autominder.app.domain.usecase.StatusCalculator
 import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +50,7 @@ data class VehicleDetailUiState(
     val vehicle: Vehicle? = null,
     val reminders: List<Reminder> = emptyList(),
     val reminderStatuses: Map<Long, ServiceStatus> = emptyMap(),
+    val reminderPredictions: Map<Long, DuePrediction> = emptyMap(),
     val totalCostCents: Int = 0,
     val yearCostCents: Int = 0,
     val averageEfficiency: Double = 0.0,
@@ -78,6 +82,7 @@ class VehicleDetailViewModel @Inject constructor(
     private val mileageLogRepository: IMileageLogRepository,
     private val exportServiceHistory: ExportServiceHistoryUseCase,
     private val calculateEfficiency: CalculateEfficiencyUseCase,
+    private val predictDue: PredictDueUseCase,
     private val analyticsHelper: AnalyticsHelper,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -109,6 +114,7 @@ class VehicleDetailViewModel @Inject constructor(
             serviceRepository.getCostSince(vehicleId, startOfYear),
             fuelRepository.getFuelEntriesForVehicle(vehicleId),
             serviceRepository.getServicesForVehicle(vehicleId),
+            mileageLogRepository.getLogsForVehicle(vehicleId),
             _actionState
         ) { args ->
             val vehicle = args[0] as? com.autominder.app.domain.model.Vehicle
@@ -117,7 +123,8 @@ class VehicleDetailViewModel @Inject constructor(
             val yearCost = args[3] as Int
             val fuelEntries = args[4] as List<com.autominder.app.domain.model.FuelEntry>
             val services = args[5] as List<com.autominder.app.domain.model.Service>
-            val action = args[6] as ActionState
+            val mileageLogs = args[6] as List<MileageLogEntry>
+            val action = args[7] as ActionState
 
         if (action.isArchived) {
             VehicleDetailUiState(isArchived = true)
@@ -133,10 +140,20 @@ class VehicleDetailViewModel @Inject constructor(
                     isCompleted = r.isCompleted
                 )
             }
+            // Learn the driving rate from every dated odometer observation the
+            // vehicle has — mileage logs and fuel fill-ups both count.
+            val odometerPoints =
+                mileageLogs.map { OdometerPoint(it.odometer, it.loggedAt) } +
+                fuelEntries.map { OdometerPoint(it.odometer, it.date.time) }
+            val dailyRate = predictDue.dailyKmRate(odometerPoints)
+            val predictions = reminders.associate { r ->
+                r.id to predictDue.predict(r, vehicle.currentOdometer, dailyRate, now)
+            }
             VehicleDetailUiState(
                 vehicle = vehicle,
                 reminders = reminders,
                 reminderStatuses = statuses,
+                reminderPredictions = predictions,
                 totalCostCents = totalCost,
                 yearCostCents = yearCost,
                 averageEfficiency = calculateEfficiency.calculateAverage(fuelEntries),
