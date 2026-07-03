@@ -225,6 +225,17 @@
     <string name="onboarding_get_started">Get Started</string>
     <string name="onboarding_skip">Skip</string>
     <string name="cd_onboarding_next">Next page</string>
+    <string name="onboarding_welcome_value">Log services in seconds, get reminded before anything is due — all offline, all yours.</string>
+    <string name="onboarding_add_my_car">Add my car</string>
+    <string name="onboarding_skip_for_now">Skip for now</string>
+    <string name="onboarding_add_car_title">Which car should we look after?</string>
+    <string name="onboarding_add_car_subtitle">Just the make and model — everything else can wait.</string>
+    <string name="onboarding_save_my_car">Save my car</string>
+    <string name="onboarding_do_this_later">I\'ll do this later</string>
+    <string name="onboarding_turn_on_reminders">Turn on reminders</string>
+    <string name="onboarding_maybe_later">Maybe later</string>
+    <string name="onboarding_error_brand_model">Brand and model are required</string>
+    <string name="onboarding_error_save_failed">Couldn\'t save your car. Please try again.</string>
 
     <!-- Add Vehicle form -->
     <string name="add_vehicle_photo_hint">Optional — makes your garage feel like home</string>
