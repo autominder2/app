@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.Brush
@@ -90,6 +91,7 @@ import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.ProFeatureGate
 import com.autominder.app.ui.components.QuickMileageSheet
+import com.autominder.app.ui.components.ReminderDetailSheet
 import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.ui.components.charts.CostByTypeDonut
 import com.autominder.app.ui.components.charts.FuelEfficiencyChart
@@ -312,6 +314,31 @@ private fun VehicleDetailContent(
     val mileageSheetState = rememberModalBottomSheetState()
     val distanceUnit = LocalDistanceUnit.current
     val haptic = LocalHapticFeedback.current
+
+    // Consumer-grade issue detail (the FIXD pattern): tap a reminder to get
+    // plain language, "can it wait?", and the personalized forecast.
+    var detailReminder by remember { mutableStateOf<Reminder?>(null) }
+    val onReminderClick: (Reminder) -> Unit = { detailReminder = it }
+    detailReminder?.let { selected ->
+        ReminderDetailSheet(
+            reminder = selected,
+            status = reminderStatuses[selected.id] ?: ServiceStatus.UNKNOWN,
+            prediction = reminderPredictions[selected.id],
+            onMarkComplete = {
+                detailReminder = null
+                onMarkComplete(selected.id)
+            },
+            onSnooze = {
+                detailReminder = null
+                onSnooze(selected.id)
+            },
+            onEdit = {
+                detailReminder = null
+                onEditReminder(selected.id)
+            },
+            onDismiss = { detailReminder = null }
+        )
+    }
 
     if (showMileageSheet) {
         QuickMileageSheet(
@@ -669,18 +696,74 @@ private fun VehicleDetailContent(
                 )
             }
         } else {
-            items(reminders, key = { it.id }) { reminder ->
-                ReminderCard(
-                    reminder = reminder,
-                    status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
-                    prediction = reminderPredictions[reminder.id],
-                    onMarkComplete = { onMarkComplete(reminder.id) },
-                    onSnooze = { onSnooze(reminder.id) },
-                    onEdit = { onEditReminder(reminder.id) },
-                    modifier = Modifier
-                        .animateItem()
-                        .padding(horizontal = 16.dp)
-                )
+            // BMW-style split: faults never share a stream with routine
+            // services. Attention items lead; everything healthy waits below.
+            val needsAttention = reminders.filter {
+                (reminderStatuses[it.id] ?: ServiceStatus.UNKNOWN) in
+                    setOf(ServiceStatus.OVERDUE, ServiceStatus.DUE_SOON)
+            }
+            val upcoming = reminders.filterNot { it in needsAttention }
+
+            if (needsAttention.isNotEmpty()) {
+                item(key = "section_attention") {
+                    SectionLabel(
+                        text = stringResource(R.string.vehicle_detail_needs_attention),
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.animateItem()
+                    )
+                }
+                items(needsAttention, key = { it.id }) { reminder ->
+                    ReminderCard(
+                        reminder = reminder,
+                        status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
+                        prediction = reminderPredictions[reminder.id],
+                        onClick = { onReminderClick(reminder) },
+                        onMarkComplete = { onMarkComplete(reminder.id) },
+                        onSnooze = { onSnooze(reminder.id) },
+                        onEdit = { onEditReminder(reminder.id) },
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+            } else {
+                // Tesla's curation principle: when nothing is wrong, say so in
+                // one calm sentence — with the forecast date when we have one.
+                item(key = "section_all_clear") {
+                    val nextDue = upcoming
+                        .mapNotNull { reminderPredictions[it.id]?.predictedAt }
+                        .minOrNull()
+                    AllClearBanner(
+                        nextDueMillis = nextDue,
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+            }
+
+            if (upcoming.isNotEmpty()) {
+                item(key = "section_upcoming") {
+                    SectionLabel(
+                        text = stringResource(R.string.vehicle_detail_upcoming),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.animateItem()
+                    )
+                }
+                items(upcoming, key = { it.id }) { reminder ->
+                    ReminderCard(
+                        reminder = reminder,
+                        status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
+                        prediction = reminderPredictions[reminder.id],
+                        onClick = { onReminderClick(reminder) },
+                        onMarkComplete = { onMarkComplete(reminder.id) },
+                        onSnooze = { onSnooze(reminder.id) },
+                        onEdit = { onEditReminder(reminder.id) },
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
             }
         }
 
@@ -689,10 +772,58 @@ private fun VehicleDetailContent(
 }
 
 @Composable
+private fun SectionLabel(
+    text: String,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = color,
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+    )
+}
+
+@Composable
+private fun AllClearBanner(
+    nextDueMillis: Long?,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Default.CheckCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = if (nextDueMillis != null) {
+                stringResource(R.string.vehicle_detail_all_clear_until, DateFormatUtil.formatDate(nextDueMillis))
+            } else {
+                stringResource(R.string.vehicle_detail_all_clear)
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    }
+}
+
+@Composable
 private fun ReminderCard(
     reminder: Reminder,
     status: ServiceStatus,
     prediction: DuePrediction?,
+    onClick: () -> Unit,
     onMarkComplete: () -> Unit,
     onSnooze: () -> Unit,
     onEdit: () -> Unit,
@@ -727,6 +858,7 @@ private fun ReminderCard(
             )
     ) {
         ElevatedCard(
+            onClick = onClick,
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.elevatedCardColors(containerColor = cardColor),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = elevation)

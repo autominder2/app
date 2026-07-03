@@ -115,6 +115,55 @@
     <string name="vehicle_detail_no_reminders">No reminders yet. Tap + to add one.</string>
     <string name="vehicle_detail_due_date">Due: %1$s</string>
     <string name="vehicle_detail_forecast">≈ %1$s %2$s left · expect it around %3$s</string>
+    <string name="vehicle_detail_needs_attention">Needs attention</string>
+    <string name="vehicle_detail_upcoming">Upcoming</string>
+    <string name="vehicle_detail_all_clear">All clear — nothing needs attention.</string>
+    <string name="vehicle_detail_all_clear_until">All clear — next service expected around %1$s.</string>
+
+    <!-- Reminder detail sheet -->
+    <string name="reminder_detail_severity_overdue">Overdue — act now</string>
+    <string name="reminder_detail_severity_due_soon">Due soon — plan it</string>
+    <string name="reminder_detail_severity_snoozed">Snoozed</string>
+    <string name="reminder_detail_severity_ok">On schedule</string>
+    <string name="reminder_detail_timing">Your timing</string>
+    <string name="reminder_detail_timing_overdue">This is past due — schedule it as soon as you can.</string>
+    <string name="reminder_detail_timing_unset">No schedule set — edit this reminder to add one.</string>
+    <string name="reminder_detail_what_it_means">What it means</string>
+    <string name="reminder_detail_can_it_wait">Can it wait?</string>
+
+    <!-- Service knowledge base — plain language, no jargon -->
+    <string name="info_oil_what">Engine oil lubricates and cools the engine\'s moving parts. It degrades with distance and with time — even when the car mostly sits.</string>
+    <string name="info_oil_wait">A little while, yes. But running long past the interval accelerates engine wear — the most expensive damage a routine service can prevent.</string>
+    <string name="info_tires_what">Front and rear tires wear at different rates. Rotating them evens out the wear so the set lasts longer and grips predictably.</string>
+    <string name="info_tires_wait">Briefly, yes — but uneven wear compounds. Skipped rotations can cut thousands of kilometres from a tire set\'s life.</string>
+    <string name="info_brakes_what">Pads, discs and brake fluid wear gradually. An inspection catches thinning pads before they start damaging the discs.</string>
+    <string name="info_brakes_wait">Not if you hear grinding or feel vibration when braking. Worn pads quickly ruin discs and multiply the repair cost — brakes are not a wait-and-see system.</string>
+    <string name="info_battery_what">Car batteries age chemically, typically lasting 3–5 years. Cold mornings and lots of short trips age them faster.</string>
+    <string name="info_battery_wait">Usually it warns you first — slow cranking on cold starts. If yours is past 4 years, have it tested before winter rather than waiting for a no-start.</string>
+    <string name="info_airfilter_what">The engine air filter keeps dust out of the combustion chambers. A clogged filter chokes airflow.</string>
+    <string name="info_airfilter_wait">Yes, for a while — a dirty filter costs fuel economy and performance long before it causes any damage.</string>
+    <string name="info_cabinfilter_what">Filters the air you breathe inside the car — pollen, dust and soot.</string>
+    <string name="info_cabinfilter_wait">Yes — there\'s no mechanical risk. But a saturated filter means weak airflow, windows that fog up, and musty smells.</string>
+    <string name="info_transmission_what">Transmission fluid lubricates and cools the gearbox. It degrades slowly and is the easiest interval to forget.</string>
+    <string name="info_transmission_wait">You can schedule ahead, but don\'t skip it — old fluid is a leading cause of transmission failure, one of the costliest repairs on any car.</string>
+    <string name="info_coolant_what">Coolant carries heat away from the engine and prevents corrosion inside it. Its protective additives wear out over the years.</string>
+    <string name="info_coolant_wait">Short-term, yes. Long-term, degraded coolant corrodes the radiator and water pump from the inside out.</string>
+    <string name="info_sparkplugs_what">Spark plugs ignite the fuel. Worn plugs misfire, waste fuel, and strain the ignition coils.</string>
+    <string name="info_sparkplugs_wait">For a while — but severely worn plugs can take the much pricier ignition coils with them.</string>
+    <string name="info_timingbelt_what">The timing belt keeps the engine\'s rotating parts synchronized. It\'s rubber — it ages whether you drive or not.</string>
+    <string name="info_timingbelt_wait">This is the one interval never to gamble on. If the belt snaps, the engine destroys itself in seconds. Replace it on schedule.</string>
+    <string name="info_wipers_what">Wiper rubber hardens and splits with sun and frost, usually within a year or two.</string>
+    <string name="info_wipers_wait">Only until the first heavy rain at night. Streaking wipers are a visibility risk, and the fix takes minutes.</string>
+    <string name="info_insurance_what">Your policy has a fixed expiry date, and driving uninsured is illegal in most places.</string>
+    <string name="info_insurance_wait">No. A lapse can void claims, bring fines, and raise your future premiums.</string>
+    <string name="info_registration_what">Vehicle registration must be renewed on the schedule set by your local authority.</string>
+    <string name="info_registration_wait">No — driving on expired registration risks fines and can complicate insurance claims.</string>
+    <string name="info_inspection_what">Periodic technical inspection verifies the car is roadworthy and legal to drive.</string>
+    <string name="info_inspection_wait">Only until the deadline. Driving past it usually means fines, and it can void insurance cover.</string>
+    <string name="info_emissions_what">Emissions testing checks that the exhaust system meets legal limits.</string>
+    <string name="info_emissions_wait">Only until the deadline — an expired certificate carries the same legal risk as a failed one.</string>
+    <string name="info_custom_what">A reminder you created for this vehicle.</string>
+    <string name="info_custom_wait">You set this schedule — you know it best. Check the notes you saved with it.</string>
     <string name="vehicle_detail_due_at_odometer">Due at: %1$d km</string>
     <string name="vehicle_detail_cost_this_year">This Year</string>
     <string name="vehicle_detail_cost_all_time">All Time</string>
