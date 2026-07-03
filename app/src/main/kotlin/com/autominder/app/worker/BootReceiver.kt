@@ -10,6 +10,7 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             Timber.d("BootReceiver: rescheduling reminder worker")
             WorkScheduler.scheduleReminderChecks(context)
+            WorkScheduler.scheduleWeeklyDigest(context)
         }
     }
 }

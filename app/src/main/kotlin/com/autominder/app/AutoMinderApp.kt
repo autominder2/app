@@ -45,6 +45,7 @@ class AutoMinderApp : Application(), Configuration.Provider {
         // Initialize Core Services
         NotificationHelper.createChannel(this)
         WorkScheduler.scheduleReminderChecks(this)
+        WorkScheduler.scheduleWeeklyDigest(this)
         subscriptionManager.initialize()
 
         setupGlobalExceptionHandler()

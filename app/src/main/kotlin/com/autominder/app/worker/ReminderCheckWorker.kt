@@ -33,8 +33,11 @@ class ReminderCheckWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
 
     companion object {
-        /** Don't re-notify if we notified less than 24 hours ago. */
-        private const val NOTIFICATION_COOLDOWN_MS = 24 * 60 * 60 * 1000L
+        /** OVERDUE is urgent — daily re-notification is correct. */
+        private const val OVERDUE_COOLDOWN_MS = 24 * 60 * 60 * 1000L
+
+        /** DUE_SOON is planning info — every 3 days gives time without spam. */
+        private const val DUE_SOON_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000L
     }
 
     override suspend fun doWork(): Result {
@@ -74,9 +77,11 @@ class ReminderCheckWorker @AssistedInject constructor(
                     continue
                 }
 
-                // Check cooldown: skip if we notified less than 24 hours ago
+                // Severity-gated cooldown: urgent items daily, planning items
+                // every 3 days — notification fatigue is the #1 uninstall cause.
+                val cooldown = if (status == ServiceStatus.OVERDUE) OVERDUE_COOLDOWN_MS else DUE_SOON_COOLDOWN_MS
                 val lastNotified = reminder.lastNotifiedAt
-                if (lastNotified != null && (now - lastNotified) < NOTIFICATION_COOLDOWN_MS) {
+                if (lastNotified != null && (now - lastNotified) < cooldown) {
                     Timber.d("ReminderCheckWorker: skipping reminder ${reminder.id}, notified ${(now - lastNotified) / 3600000}h ago")
                     continue
                 }

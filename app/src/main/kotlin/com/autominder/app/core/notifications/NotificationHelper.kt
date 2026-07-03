@@ -18,7 +18,14 @@ object NotificationHelper {
     private const val CHANNEL_ID = "autominder_reminders"
     private const val CHANNEL_NAME = "Maintenance Reminders"
 
+    // Weekly digest gets its own quieter channel: it's a planning summary, not
+    // an alert, so users can tune each independently (Tesla's two-tier model).
+    private const val DIGEST_CHANNEL_ID = "autominder_digest"
+    private const val DIGEST_CHANNEL_NAME = "Weekly Summary"
+    private const val DIGEST_NOTIFICATION_ID = -1000
+
     fun createChannel(context: Context) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(
             CHANNEL_ID,
             CHANNEL_NAME,
@@ -28,8 +35,60 @@ object NotificationHelper {
             vibrationPattern = longArrayOf(0L, 300L, 200L, 300L)
             enableVibration(true)
         }
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
+
+        val digestChannel = NotificationChannel(
+            DIGEST_CHANNEL_ID,
+            DIGEST_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "One weekly roll-up of everything due on your vehicles"
+        }
+        manager.createNotificationChannel(digestChannel)
+    }
+
+    /**
+     * One grouped weekly notification listing every item that needs attention.
+     * Fixes the classic complaint "the app only told me about one of the three
+     * services due" — all lines ship in a single InboxStyle card.
+     */
+    fun showWeeklyDigest(
+        context: Context,
+        title: String,
+        summary: String,
+        lines: List<String>
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) return
+        }
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            DIGEST_NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val style = NotificationCompat.InboxStyle().setSummaryText(summary)
+        lines.forEach { style.addLine(it) }
+
+        val notification = NotificationCompat.Builder(context, DIGEST_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(summary)
+            .setStyle(style)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(DIGEST_NOTIFICATION_ID, notification)
     }
 
     fun showReminderNotification(

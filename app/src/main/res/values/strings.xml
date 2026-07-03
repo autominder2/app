@@ -120,6 +120,12 @@
     <string name="vehicle_detail_all_clear">All clear — nothing needs attention.</string>
     <string name="vehicle_detail_all_clear_until">All clear — next service expected around %1$s.</string>
 
+    <!-- Weekly digest notification -->
+    <string name="digest_title">Your weekly car check</string>
+    <string name="digest_summary">%1$d services need attention</string>
+    <string name="digest_status_overdue">overdue</string>
+    <string name="digest_status_due_soon">due soon</string>
+
     <!-- Reminder detail sheet -->
     <string name="reminder_detail_severity_overdue">Overdue — act now</string>
     <string name="reminder_detail_severity_due_soon">Due soon — plan it</string>
