@@ -118,29 +118,66 @@ class SubscriptionManager @Inject constructor(
     }
 
     private fun queryProducts() {
-        val subProducts = listOf(PRODUCT_MONTHLY, PRODUCT_YEARLY).map { productId ->
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(productId)
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build()
-        }
-        val inAppProducts = listOf(
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(PRODUCT_LIFETIME)
-                .setProductType(BillingClient.ProductType.INAPP)
-                .build()
-        )
-
-        val allProducts = subProducts + inAppProducts
-        val params = QueryProductDetailsParams.newBuilder()
-            .setProductList(allProducts)
+        // The Billing library forbids mixing product types in one
+        // QueryProductDetailsParams — SUBS and INAPP must be queried
+        // separately, then merged.
+        val subsParams = QueryProductDetailsParams.newBuilder()
+            .setProductList(
+                listOf(PRODUCT_MONTHLY, PRODUCT_YEARLY).map { productId ->
+                    QueryProductDetailsParams.Product.newBuilder()
+                        .setProductId(productId)
+                        .setProductType(BillingClient.ProductType.SUBS)
+                        .build()
+                }
+            )
             .build()
 
-        billingClient?.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                _productDetails.value = productDetailsList
-                Timber.d("Products loaded: ${productDetailsList.size}")
+        billingClient?.queryProductDetailsAsync(subsParams) { subsResult, subsDetails ->
+            val subs = if (subsResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                logMissingProducts(listOf(PRODUCT_MONTHLY, PRODUCT_YEARLY), subsDetails)
+                subsDetails
+            } else {
+                Timber.w("Subs product query failed (${subsResult.responseCode}): ${subsResult.debugMessage}")
+                emptyList()
             }
+
+            val inAppParams = QueryProductDetailsParams.newBuilder()
+                .setProductList(
+                    listOf(
+                        QueryProductDetailsParams.Product.newBuilder()
+                            .setProductId(PRODUCT_LIFETIME)
+                            .setProductType(BillingClient.ProductType.INAPP)
+                            .build()
+                    )
+                )
+                .build()
+
+            billingClient?.queryProductDetailsAsync(inAppParams) { inAppResult, inAppDetails ->
+                val inApp = if (inAppResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    logMissingProducts(listOf(PRODUCT_LIFETIME), inAppDetails)
+                    inAppDetails
+                } else {
+                    Timber.w("In-app product query failed (${inAppResult.responseCode}): ${inAppResult.debugMessage}")
+                    emptyList()
+                }
+
+                val merged = subs + inApp
+                // Keep any previously loaded catalog on a fully failed refresh
+                // rather than blanking the paywall.
+                if (merged.isNotEmpty()) {
+                    _productDetails.value = merged
+                }
+                Timber.d("Products loaded: ${merged.size} (subs=${subs.size}, inapp=${inApp.size})")
+            }
+        }
+    }
+
+    /** Billing 7 has no unfetched-product callback — diff requested vs returned. */
+    private fun logMissingProducts(requested: List<String>, returned: List<ProductDetails>) {
+        val returnedIds = returned.map { it.productId }.toSet()
+        val missing = requested.filterNot { it in returnedIds }
+        if (missing.isNotEmpty()) {
+            Timber.w("Products not returned by Play (not created/active in Console?): $missing")
         }
     }
 
@@ -150,7 +187,8 @@ class SubscriptionManager @Inject constructor(
             .build()
 
         billingClient?.queryPurchasesAsync(subsParams) { billingResult, purchases ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+            val subsQueryOk = billingResult.responseCode == BillingClient.BillingResponseCode.OK
+            if (subsQueryOk) {
                 // Acknowledge anything that slipped through (e.g. app killed
                 // right after purchase) — unacknowledged purchases are
                 // auto-refunded by Play after 3 days.
@@ -163,6 +201,8 @@ class SubscriptionManager @Inject constructor(
                     setProEntitlement(true)
                     return@queryPurchasesAsync
                 }
+            } else {
+                Timber.w("Subs purchase query failed (${billingResult.responseCode}): ${billingResult.debugMessage}")
             }
 
             val inAppParams = QueryPurchasesParams.newBuilder()
@@ -170,14 +210,25 @@ class SubscriptionManager @Inject constructor(
                 .build()
 
             billingClient?.queryPurchasesAsync(inAppParams) { inAppResult, inAppPurchases ->
-                if (inAppResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                    inAppPurchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
-                        .forEach { acknowledgePurchase(it) }
-                    val hasLifetime = inAppPurchases.any {
-                        it.products.contains(PRODUCT_LIFETIME) &&
-                            it.purchaseState == Purchase.PurchaseState.PURCHASED
-                    }
-                    setProEntitlement(hasLifetime)
+                if (inAppResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                    // Query failed — keep the cached entitlement; a transient
+                    // Play error must never strip Pro from a paying user.
+                    Timber.w("In-app purchase query failed (${inAppResult.responseCode}): ${inAppResult.debugMessage}; keeping cached entitlement")
+                    return@queryPurchasesAsync
+                }
+
+                inAppPurchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+                    .forEach { acknowledgePurchase(it) }
+                val hasLifetime = inAppPurchases.any {
+                    it.products.contains(PRODUCT_LIFETIME) &&
+                        it.purchaseState == Purchase.PurchaseState.PURCHASED
+                }
+                when {
+                    hasLifetime -> setProEntitlement(true)
+                    // Downgrade only on complete evidence: both queries
+                    // succeeded and neither found an entitlement.
+                    subsQueryOk -> setProEntitlement(false)
+                    else -> Timber.w("Skipping entitlement downgrade: subs query failed; keeping cached entitlement")
                 }
             }
         }
@@ -219,6 +270,13 @@ class SubscriptionManager @Inject constructor(
             BillingClient.BillingResponseCode.USER_CANCELED -> {
                 _purchaseState.value = PurchaseState.Cancelled
             }
+            BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+                // User already owns this (e.g. reinstall before reconcile) —
+                // that's an entitlement to restore, not an error to show.
+                Timber.i("Purchase reported already-owned; re-querying entitlements")
+                queryExistingPurchases()
+                _purchaseState.value = PurchaseState.Success
+            }
             else -> {
                 _purchaseState.value = PurchaseState.Error(billingResult.debugMessage)
                 analyticsHelper.logEvent(
@@ -238,6 +296,10 @@ class SubscriptionManager @Inject constructor(
             billingClient?.acknowledgePurchase(params) { billingResult ->
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     Timber.d("Purchase acknowledged")
+                } else {
+                    // Not fatal: queryExistingPurchases() re-acks on every
+                    // connect, well inside Play's 3-day refund window.
+                    Timber.w("Acknowledge failed (${billingResult.responseCode}): ${billingResult.debugMessage}; will retry on next purchase query")
                 }
             }
         }
