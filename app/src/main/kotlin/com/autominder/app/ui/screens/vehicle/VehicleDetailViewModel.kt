@@ -1,10 +1,12 @@
 package com.autominder.app.ui.screens.vehicle
 
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
@@ -59,7 +61,8 @@ data class VehicleDetailUiState(
     val efficiencySeries: List<Double> = emptyList(),
     val costPerKmCents: Double? = null,
     val isLoading: Boolean = false,
-    val error: String? = null,
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList(),
     val isArchived: Boolean = false,
     val exportUri: Uri? = null
 )
@@ -161,15 +164,19 @@ class VehicleDetailViewModel @Inject constructor(
                 costByType = computeCostByType(services),
                 efficiencySeries = computeEfficiencySeries(fuelEntries),
                 costPerKmCents = computeCostPerKm(totalCost, services, fuelEntries, vehicle.currentOdometer),
-                error = action.error,
+                errorRes = action.errorRes,
+                errorArgs = action.errorArgs,
                 exportUri = action.exportUri
             )
         } else {
-            VehicleDetailUiState(error = "Vehicle not found")
+            VehicleDetailUiState(errorRes = R.string.error_vehicle_not_found)
         }
     }
     }
-        .catch { e -> emit(VehicleDetailUiState(error = e.message ?: "Failed to load vehicle")) }
+        .catch { e ->
+            Timber.e(e, "Failed to load vehicle")
+            emit(VehicleDetailUiState(errorRes = R.string.error_load_vehicle_failed))
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -271,7 +278,7 @@ class VehicleDetailViewModel @Inject constructor(
                 )
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update odometer")
-                _actionState.update { it.copy(error = e.message ?: "Failed to update odometer") }
+                _actionState.update { it.copy(errorRes = R.string.error_update_odometer_failed, errorArgs = emptyList()) }
             }
         }
     }
@@ -284,7 +291,7 @@ class VehicleDetailViewModel @Inject constructor(
                 analyticsHelper.logEvent(AnalyticsEvents.HISTORY_EXPORTED)
             } catch (e: Exception) {
                 Timber.e(e, "Export failed")
-                _actionState.update { it.copy(error = e.message ?: "Export failed") }
+                _actionState.update { it.copy(errorRes = R.string.error_export_failed, errorArgs = emptyList()) }
             }
         }
     }
@@ -304,7 +311,7 @@ class VehicleDetailViewModel @Inject constructor(
                 _actionState.value = _actionState.value.copy(isArchived = true)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to archive vehicle")
-                _actionState.value = _actionState.value.copy(error = e.message ?: "Failed to archive vehicle")
+                _actionState.value = _actionState.value.copy(errorRes = R.string.error_archive_vehicle_failed, errorArgs = emptyList())
             }
         }
     }
@@ -317,7 +324,7 @@ class VehicleDetailViewModel @Inject constructor(
                 scheduleNextOccurrence(reminder)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to complete reminder")
-                _actionState.value = _actionState.value.copy(error = e.message ?: "Failed to complete reminder")
+                _actionState.value = _actionState.value.copy(errorRes = R.string.error_complete_reminder_failed, errorArgs = emptyList())
             }
         }
     }
@@ -355,7 +362,7 @@ class VehicleDetailViewModel @Inject constructor(
                 reminderRepository.snoozeReminder(reminderId, snoozeUntil)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to snooze reminder")
-                _actionState.value = _actionState.value.copy(error = e.message ?: "Failed to snooze reminder")
+                _actionState.value = _actionState.value.copy(errorRes = R.string.error_snooze_reminder_failed, errorArgs = emptyList())
             }
         }
     }
@@ -369,6 +376,7 @@ class VehicleDetailViewModel @Inject constructor(
 
 private data class ActionState(
     val isArchived: Boolean = false,
-    val error: String? = null,
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList(),
     val exportUri: Uri? = null
 )

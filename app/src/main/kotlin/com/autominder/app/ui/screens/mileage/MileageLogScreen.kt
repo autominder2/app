@@ -89,10 +89,11 @@ fun MileageLogScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+        val loadErrorRes = uiState.loadErrorRes
         when {
             uiState.isLoading -> ListSkeleton()
-            uiState.loadError != null -> ErrorState(
-                message = uiState.loadError!!,
+            loadErrorRes != null -> ErrorState(
+                message = stringResource(loadErrorRes),
                 onRetry = { viewModel.onEvent(MileageLogUiEvent.Retry) }
             )
             else -> {
@@ -109,7 +110,8 @@ fun MileageLogScreen(
                     MileageInputSection(
                         newOdometer = uiState.newOdometer,
                         newNotes = uiState.newNotes,
-                        error = uiState.error,
+                        errorRes = uiState.errorRes,
+                        errorArgs = uiState.errorArgs,
                         onOdometerChanged = { viewModel.onEvent(MileageLogUiEvent.NewOdometerChanged(it)) },
                         onNotesChanged = { viewModel.onEvent(MileageLogUiEvent.NewNotesChanged(it)) },
                         onAddClicked = {
@@ -171,7 +173,8 @@ fun MileageLogScreen(
 private fun MileageInputSection(
     newOdometer: String,
     newNotes: String,
-    error: String?,
+    @androidx.annotation.StringRes errorRes: Int?,
+    errorArgs: List<Any>,
     onOdometerChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
     onAddClicked: () -> Unit
@@ -208,10 +211,10 @@ private fun MileageInputSection(
             singleLine = true
         )
 
-        if (error != null) {
+        if (errorRes != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = error,
+                text = stringResource(errorRes, *errorArgs.toTypedArray()),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )

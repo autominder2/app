@@ -59,10 +59,11 @@ fun FuelHistoryScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            val errorRes = uiState.errorRes
             when {
                 uiState.isLoading -> ListSkeleton()
-                uiState.error != null -> ErrorState(
-                    message = uiState.error!!,
+                errorRes != null -> ErrorState(
+                    message = stringResource(errorRes),
                     onRetry = { viewModel.retry() }
                 )
                 uiState.entries.isEmpty() -> EmptyState(

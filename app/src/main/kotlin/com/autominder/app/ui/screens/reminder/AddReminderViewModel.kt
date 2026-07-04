@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.reminder
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
@@ -33,7 +35,8 @@ data class AddReminderUiState(
     val intervalDays: String = "",
     val serviceType: ServiceType = ServiceType.OIL_CHANGE,
     val isLoading: Boolean = false,
-    val error: String? = null,
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList(),
     val isSaved: Boolean = false,
     val shouldRequestNotificationPermission: Boolean = false
 )
@@ -140,17 +143,17 @@ class AddReminderViewModel @Inject constructor(
         val state = _uiState.value
 
         if (state.serviceType == ServiceType.CUSTOM && state.title.isBlank()) {
-            _uiState.value = _uiState.value.copy(error = "Please specify a name for your custom reminder")
+            _uiState.value = _uiState.value.copy(errorRes = R.string.error_custom_reminder_name_required, errorArgs = emptyList())
             return
         }
 
         if (state.dueDateLong == null && state.dueKm.isBlank()) {
-            _uiState.value = _uiState.value.copy(error = "Please specify a due date or due odometer")
+            _uiState.value = _uiState.value.copy(errorRes = R.string.error_reminder_due_required, errorArgs = emptyList())
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 // Check if this is the first reminder for this vehicle
                 val existingReminders = reminderRepository.getAllRemindersForVehicle(vehicleId).first()
@@ -184,7 +187,7 @@ class AddReminderViewModel @Inject constructor(
                 )
             } catch (e: Exception) {
                 Timber.e(e, "Failed to save reminder")
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Failed to save reminder")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorRes = R.string.error_save_reminder_failed, errorArgs = emptyList())
             }
         }
     }

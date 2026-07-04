@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.mileage
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.repository.IMileageLogRepository
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class MileageLogUiState(
@@ -25,8 +28,9 @@ data class MileageLogUiState(
     val newOdometer: String = "",
     val newNotes: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null,
-    val loadError: String? = null
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList(),
+    @StringRes val loadErrorRes: Int? = null
 )
 
 sealed class MileageLogUiEvent {
@@ -57,12 +61,13 @@ class MileageLogViewModel @Inject constructor(
 
     private fun loadLogs() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, loadError = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, loadErrorRes = null)
             mileageLogRepository.getLogsForVehicle(vehicleId)
                 .catch { e ->
+                    Timber.e(e, "Failed to load mileage logs")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        loadError = e.message ?: "Failed to load mileage logs"
+                        loadErrorRes = R.string.error_load_mileage_failed
                     )
                 }
                 .collect { logs ->
@@ -91,8 +96,10 @@ class MileageLogViewModel @Inject constructor(
                 // DAO insert uses REPLACE, so re-inserting with the original id restores it
                 mileageLogRepository.insertLog(log)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to restore log entry")
                 _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "Failed to restore log entry"
+                    errorRes = R.string.error_restore_mileage_failed,
+                    errorArgs = emptyList()
                 )
             }
         }
@@ -102,20 +109,21 @@ class MileageLogViewModel @Inject constructor(
         val state = _uiState.value
         val odometerInt = state.newOdometer.toIntOrNull()
         if (odometerInt == null || odometerInt < 0) {
-            _uiState.value = state.copy(error = "Please enter a valid odometer reading")
+            _uiState.value = state.copy(errorRes = R.string.error_invalid_odometer, errorArgs = emptyList())
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(error = null)
+            _uiState.value = _uiState.value.copy(errorRes = null, errorArgs = emptyList())
             try {
                 val unit = userPreferences.distanceUnit.first()
                 val odometerKm = DistanceUtil.displayToKm(odometerInt, unit)
                 val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
-                
+
                 if (vehicle != null && odometerKm < vehicle.currentOdometer) {
                     _uiState.value = _uiState.value.copy(
-                        error = "Odometer reading cannot be lower than current (${DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit)})"
+                        errorRes = R.string.error_odometer_below_current,
+                        errorArgs = listOf(DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit))
                     )
                     return@launch
                 }
@@ -135,8 +143,10 @@ class MileageLogViewModel @Inject constructor(
                     newNotes = ""
                 )
             } catch (e: Exception) {
+                Timber.e(e, "Failed to add mileage log")
                 _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "Failed to add mileage log"
+                    errorRes = R.string.error_add_mileage_failed,
+                    errorArgs = emptyList()
                 )
             }
         }
@@ -147,8 +157,10 @@ class MileageLogViewModel @Inject constructor(
             try {
                 mileageLogRepository.deleteLog(log)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to delete log entry")
                 _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "Failed to delete log entry"
+                    errorRes = R.string.error_delete_mileage_failed,
+                    errorArgs = emptyList()
                 )
             }
         }

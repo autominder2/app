@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.reminder
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.ui.navigation.NavRoutes
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class EditReminderUiState(
@@ -26,7 +29,8 @@ data class EditReminderUiState(
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val isDeleted: Boolean = false,
-    val error: String? = null
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList()
 )
 
 sealed class EditReminderUiEvent {
@@ -60,7 +64,7 @@ class EditReminderViewModel @Inject constructor(
 
     private fun loadReminder() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val reminder = reminderRepository.getReminderById(reminderId).firstOrNull()
                 if (reminder != null) {
@@ -78,13 +82,14 @@ class EditReminderViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Reminder not found"
+                        errorRes = R.string.error_reminder_not_found
                     )
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to load reminder")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to load reminder"
+                    errorRes = R.string.error_load_reminder_failed
                 )
             }
         }
@@ -108,17 +113,17 @@ class EditReminderViewModel @Inject constructor(
         val state = _uiState.value
 
         if (state.serviceType == ServiceType.CUSTOM && state.customLabel.isBlank()) {
-            _uiState.value = state.copy(error = "Please specify a name for your custom reminder")
+            _uiState.value = state.copy(errorRes = R.string.error_custom_reminder_name_required, errorArgs = emptyList())
             return
         }
 
         if (state.dueDateLong == null && state.dueKm.isBlank()) {
-            _uiState.value = state.copy(error = "Please specify a due date or due odometer")
+            _uiState.value = state.copy(errorRes = R.string.error_reminder_due_required, errorArgs = emptyList())
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val existing = originalReminder
                 if (existing != null) {
@@ -137,13 +142,14 @@ class EditReminderViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Reminder not found"
+                        errorRes = R.string.error_reminder_not_found
                     )
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to save reminder")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to save reminder"
+                    errorRes = R.string.error_save_reminder_failed
                 )
             }
         }
@@ -151,7 +157,7 @@ class EditReminderViewModel @Inject constructor(
 
     private fun deleteReminder() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val existing = originalReminder
                 if (existing != null) {
@@ -159,9 +165,10 @@ class EditReminderViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(isLoading = false, isDeleted = true)
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to delete reminder")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to delete reminder"
+                    errorRes = R.string.error_delete_reminder_failed
                 )
             }
         }

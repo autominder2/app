@@ -1,7 +1,9 @@
 package com.autominder.app.ui.screens.service
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autominder.app.R
 import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -23,7 +26,9 @@ import javax.inject.Inject
 
 data class ServiceWithVehicle(
     val service: Service,
-    val vehicleName: String
+    // Null when the vehicle record is missing (e.g. deleted) — the
+    // Composable resolves the "Unknown Vehicle" fallback via stringResource.
+    val vehicleName: String?
 )
 
 data class ServiceGroup(
@@ -34,7 +39,7 @@ data class ServiceGroup(
 sealed class ServiceHistoryUiState {
     object Loading : ServiceHistoryUiState()
     object Empty : ServiceHistoryUiState()
-    data class Error(val message: String) : ServiceHistoryUiState()
+    data class Error(@StringRes val messageRes: Int) : ServiceHistoryUiState()
     data class Success(val groups: List<ServiceGroup>) : ServiceHistoryUiState()
 }
 
@@ -61,7 +66,7 @@ class ServiceHistoryViewModel @Inject constructor(
         services.map { service ->
             ServiceWithVehicle(
                 service = service,
-                vehicleName = vehicleNameMap[service.vehicleId] ?: "Unknown Vehicle"
+                vehicleName = vehicleNameMap[service.vehicleId]
             )
         }
     }
@@ -78,7 +83,10 @@ class ServiceHistoryViewModel @Inject constructor(
                 ServiceHistoryUiState.Success(groups = grouped)
             }
         }
-        .catch { e -> emit(ServiceHistoryUiState.Error(e.message ?: "Failed to load service history")) }
+        .catch { e ->
+            Timber.e(e, "Failed to load records")
+            emit(ServiceHistoryUiState.Error(R.string.error_load_records_failed))
+        }
     }
         .stateIn(
             scope = viewModelScope,

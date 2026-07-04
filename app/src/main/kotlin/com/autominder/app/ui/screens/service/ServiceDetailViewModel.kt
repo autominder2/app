@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.service
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.ui.navigation.NavRoutes
@@ -12,12 +14,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class ServiceDetailUiState(
     val service: Service? = null,
     val isLoading: Boolean = false,
-    val error: String? = null,
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList(),
     val isDeleted: Boolean = false
 )
 
@@ -44,7 +48,7 @@ class ServiceDetailViewModel @Inject constructor(
 
     private fun loadService() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 serviceRepository.getServiceById(serviceId).collect { service ->
                     if (service != null) {
@@ -55,14 +59,15 @@ class ServiceDetailViewModel @Inject constructor(
                     } else {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = "Service not found"
+                            errorRes = R.string.error_service_not_found
                         )
                     }
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to load service")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to load service"
+                    errorRes = R.string.error_load_service_failed
                 )
             }
         }
@@ -77,14 +82,15 @@ class ServiceDetailViewModel @Inject constructor(
     private fun deleteService() {
         val service = _uiState.value.service ?: return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 serviceRepository.deleteService(service)
                 _uiState.value = _uiState.value.copy(isLoading = false, isDeleted = true)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to delete service")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to delete service"
+                    errorRes = R.string.error_delete_service_failed
                 )
             }
         }

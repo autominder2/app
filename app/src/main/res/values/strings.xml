@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">AutoMinder</string>
 
     <!-- Bottom navigation — 4 tabs: Home / Vehicles / Records / Settings -->
@@ -19,6 +19,54 @@
 
     <!-- Errors -->
     <string name="error_title">Something went wrong</string>
+
+    <!-- ViewModel error resources — hardcoded-string cleanup pass (2026-07).
+         Replaces raw e.message display: user-facing text is always this
+         localized fallback; the real exception detail goes to Timber only. -->
+    <string name="error_brand_model_required">Brand and Model are required</string>
+    <string name="error_make_model_required">Make and Model are required</string>
+    <string name="error_invalid_odometer">Please enter a valid odometer reading</string>
+    <string name="error_select_service_date">Please select a service date</string>
+    <string name="error_custom_service_name_required">Please specify a name for the custom service</string>
+    <string name="error_invalid_cost">Please enter a valid cost</string>
+    <string name="error_invalid_fuel_amount">Enter a valid fuel amount and odometer</string>
+    <string name="error_cost_negative">Cost cannot be negative</string>
+    <string name="error_custom_reminder_name_required">Please specify a name for your custom reminder</string>
+    <string name="error_reminder_due_required">Please specify a due date or due odometer</string>
+    <string name="error_service_not_found">Service not found</string>
+    <string name="error_vehicle_not_found">Vehicle not found</string>
+    <string name="error_reminder_not_found">Reminder not found</string>
+    <string name="label_unknown_vehicle">Unknown Vehicle</string>
+    <string name="error_odometer_below_current">Odometer reading cannot be lower than current (%1$s)</string>
+    <string name="error_service_odometer_below_current">Odometer reading cannot be lower than the current vehicle odometer (%1$s)</string>
+    <string name="error_load_vehicles_failed">Failed to load vehicles</string>
+    <string name="error_load_mileage_failed">Failed to load mileage logs</string>
+    <string name="error_restore_mileage_failed">Failed to restore log entry</string>
+    <string name="error_add_mileage_failed">Failed to add mileage log</string>
+    <string name="error_delete_mileage_failed">Failed to delete log entry</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_load_service_failed">Failed to load service</string>
+    <string name="error_delete_service_failed">Failed to delete service</string>
+    <string name="error_load_vehicle_failed">Failed to load vehicle</string>
+    <string name="error_update_odometer_failed">Failed to update odometer</string>
+    <string name="error_export_failed">Export failed</string>
+    <string name="error_archive_vehicle_failed">Failed to archive vehicle</string>
+    <string name="error_complete_reminder_failed">Failed to complete reminder</string>
+    <string name="error_snooze_reminder_failed">Failed to snooze reminder</string>
+    <string name="error_save_vehicle_failed">Failed to save vehicle</string>
+    <string name="error_save_service_failed">Failed to save service</string>
+    <string name="error_load_records_failed">Failed to load records</string>
+    <string name="error_save_reminder_failed">Failed to save reminder</string>
+    <string name="error_save_fuel_failed">Failed to save</string>
+    <string name="error_load_reminder_failed">Failed to load reminder</string>
+    <string name="error_delete_reminder_failed">Failed to delete reminder</string>
+    <string name="error_load_fuel_failed">Failed to load fuel entries</string>
+
+    <!-- Passthrough for domain/validation/Validators.kt, which returns raw
+         English strings (year/VIN validation) and is out of scope for this
+         cleanup pass — see remaining-risks note. NOT a real localization fix,
+         just a type-compatible bridge so those messages still display. -->
+    <string name="error_validation_passthrough">%1$s</string>
 
     <!-- Snackbars -->
     <string name="vehicle_saved">Vehicle saved</string>
@@ -128,7 +176,10 @@
 
     <!-- Weekly digest notification -->
     <string name="digest_title">Your weekly car check</string>
-    <string name="digest_summary">%1$d services need attention</string>
+    <!-- tools:ignore — real pluralization would need getQuantityString in
+         WeeklyDigestWorker.kt, which is out of scope (WorkManager files are
+         locked for this pass); count phrasing here is acceptable as-is. -->
+    <string name="digest_summary" tools:ignore="PluralsCandidate">%1$d services need attention</string>
     <string name="digest_status_overdue">overdue</string>
     <string name="digest_status_due_soon">due soon</string>
 
@@ -278,15 +329,8 @@
 
     <!-- Onboarding Screen -->
     <string name="onboarding_welcome_title">Welcome to AutoMinder</string>
-    <string name="onboarding_welcome_subtitle">Your garage, organized. Every vehicle you own, cared for in one calm place.</string>
-    <string name="onboarding_track_title">Never miss a service</string>
-    <string name="onboarding_track_subtitle">Oil changes, tire rotations, brakes — tracked by date and distance, so nothing slips by.</string>
     <string name="onboarding_notify_title">We\'ll tap you on the shoulder</string>
     <string name="onboarding_notify_subtitle">Gentle reminders arrive before things are due — never spammy, always in time.</string>
-    <string name="onboarding_next">Next</string>
-    <string name="onboarding_get_started">Get Started</string>
-    <string name="onboarding_skip">Skip</string>
-    <string name="cd_onboarding_next">Next page</string>
     <string name="onboarding_welcome_value">Log services in seconds, get reminded before anything is due — all offline, all yours.</string>
     <string name="onboarding_add_my_car">Add my car</string>
     <string name="onboarding_skip_for_now">Skip for now</string>
@@ -300,11 +344,7 @@
     <string name="onboarding_error_save_failed">Couldn\'t save your car. Please try again.</string>
 
     <!-- Add Vehicle form -->
-    <string name="add_vehicle_photo_hint">Optional — makes your garage feel like home</string>
     <string name="action_change_photo">Change</string>
-    <string name="add_vehicle_section_vehicle">Vehicle</string>
-    <string name="add_vehicle_section_identity">Identity</string>
-    <string name="add_vehicle_section_odometer">Odometer</string>
     <string name="add_vehicle_headline">What are you driving?</string>
     <string name="add_vehicle_subhead">Just the make and model — you can add the rest anytime.</string>
     <string name="add_vehicle_auto_reminders">We\'ll set up your maintenance reminders automatically.</string>

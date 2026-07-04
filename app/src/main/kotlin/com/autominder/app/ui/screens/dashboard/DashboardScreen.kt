@@ -260,7 +260,7 @@ fun DashboardScreen(
                     hint = stringResource(R.string.dashboard_add_first_vehicle_hint)
                 )
                 is DashboardUiState.Error -> ErrorState(
-                    message = state.message ?: stringResource(R.string.dashboard_error),
+                    message = stringResource(state.messageRes ?: R.string.dashboard_error),
                     onRetry = { viewModel.retry() }
                 )
                 is DashboardUiState.Success -> DashboardContent(

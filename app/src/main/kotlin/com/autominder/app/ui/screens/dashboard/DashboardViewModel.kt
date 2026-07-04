@@ -1,8 +1,10 @@
 package com.autominder.app.ui.screens.dashboard
 
 import android.app.Activity
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autominder.app.R
 import com.autominder.app.core.util.ReviewHelper
 import com.autominder.app.domain.usecase.GetDashboardDataUseCase
 import com.autominder.app.domain.usecase.VehicleWithStatus
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -24,7 +27,7 @@ import javax.inject.Inject
 sealed class DashboardUiState {
     object Loading : DashboardUiState()
     object Empty : DashboardUiState()
-    data class Error(val message: String? = null) : DashboardUiState()
+    data class Error(@StringRes val messageRes: Int? = null) : DashboardUiState()
     data class Success(
         val vehicles: List<VehicleWithStatus>,
         val alertsCount: Int
@@ -57,7 +60,10 @@ class DashboardViewModel @Inject constructor(
             }
         }
     }
-        .catch { e -> emit(DashboardUiState.Error(e.message ?: "Unknown error")) }
+        .catch { e ->
+            Timber.e(e, "Dashboard failed to load")
+            emit(DashboardUiState.Error(R.string.error_unknown))
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

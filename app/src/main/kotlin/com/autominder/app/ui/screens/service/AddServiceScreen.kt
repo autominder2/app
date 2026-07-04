@@ -119,8 +119,8 @@ fun AddServiceScreen(
         }
     }
 
-    LaunchedEffect(uiState.error) {
-        if (uiState.error != null) {
+    LaunchedEffect(uiState.errorRes) {
+        if (uiState.errorRes != null) {
             haptic.performHapticFeedback(HapticFeedbackType.Reject)
         }
     }
@@ -300,10 +300,10 @@ fun AddServiceScreen(
                 }
             }
 
-            if (uiState.error != null) {
+            uiState.errorRes?.let { errorRes ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = uiState.error!!,
+                    text = stringResource(errorRes, *uiState.errorArgs.toTypedArray()),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )

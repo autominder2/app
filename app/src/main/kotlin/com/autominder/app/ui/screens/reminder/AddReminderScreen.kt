@@ -270,10 +270,10 @@ fun AddReminderScreen(
                 minLines = 3
             )
 
-            if (uiState.error != null) {
+            uiState.errorRes?.let { errorRes ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = uiState.error!!,
+                    text = stringResource(errorRes, *uiState.errorArgs.toTypedArray()),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )

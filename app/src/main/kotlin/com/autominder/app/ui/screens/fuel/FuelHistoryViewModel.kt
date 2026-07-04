@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.fuel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.domain.model.FuelEntry
 import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.usecase.CalculateEfficiencyUseCase
@@ -11,6 +13,7 @@ import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class FuelHistoryUiState(
@@ -18,7 +21,7 @@ data class FuelHistoryUiState(
     val entries: List<FuelEntryWithEfficiency> = emptyList(),
     val averageEfficiency: Double = 0.0,
     val isLoading: Boolean = false,
-    val error: String? = null
+    @StringRes val errorRes: Int? = null
 )
 
 data class FuelEntryWithEfficiency(
@@ -59,7 +62,10 @@ class FuelHistoryViewModel @Inject constructor(
                     )
                 }
             }
-            .catch { e -> emit(FuelHistoryUiState(vehicleId = vehicleId, error = e.message)) }
+            .catch { e ->
+                Timber.e(e, "Failed to load fuel entries")
+                emit(FuelHistoryUiState(vehicleId = vehicleId, errorRes = R.string.error_load_fuel_failed))
+            }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

@@ -240,9 +240,9 @@ private fun EditVehicleForm(
             }
         }
 
-        if (uiState.error != null) {
+        uiState.errorRes?.let { errorRes ->
             Text(
-                text = uiState.error,
+                text = stringResource(errorRes, *uiState.errorArgs.toTypedArray()),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )

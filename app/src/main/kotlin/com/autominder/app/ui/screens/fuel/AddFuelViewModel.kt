@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.fuel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
@@ -34,7 +36,8 @@ data class AddFuelUiState(
     val notes: String = "",
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
-    val error: String? = null
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList()
 )
 
 @HiltViewModel
@@ -117,15 +120,15 @@ class AddFuelViewModel @Inject constructor(
         val odoInt = state.odometer.toIntOrNull() ?: 0
 
         if (volumeDbl <= 0 || odoInt <= 0) {
-            _uiState.update { it.copy(error = "Enter a valid fuel amount and odometer") }
+            _uiState.update { it.copy(errorRes = R.string.error_invalid_fuel_amount, errorArgs = emptyList()) }
             return
         }
         if (costDbl < 0) {
-            _uiState.update { it.copy(error = "Cost cannot be negative") }
+            _uiState.update { it.copy(errorRes = R.string.error_cost_negative, errorArgs = emptyList()) }
             return
         }
 
-        _uiState.update { it.copy(isSaving = true, error = null) }
+        _uiState.update { it.copy(isSaving = true, errorRes = null, errorArgs = emptyList()) }
 
         viewModelScope.launch {
             try {
@@ -155,7 +158,7 @@ class AddFuelViewModel @Inject constructor(
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to save fuel entry")
-                _uiState.update { it.copy(isSaving = false, error = e.message ?: "Failed to save") }
+                _uiState.update { it.copy(isSaving = false, errorRes = R.string.error_save_fuel_failed, errorArgs = emptyList()) }
             }
         }
     }

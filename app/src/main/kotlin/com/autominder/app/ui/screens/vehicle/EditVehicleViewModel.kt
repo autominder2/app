@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.vehicle
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.util.DistanceUtil
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import com.autominder.app.domain.validation.Validators
 import javax.inject.Inject
 
@@ -29,7 +32,8 @@ data class EditVehicleUiState(
     val photoUri: String? = null,
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
-    val error: String? = null
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList()
 )
 
 sealed class EditVehicleUiEvent {
@@ -62,7 +66,7 @@ class EditVehicleViewModel @Inject constructor(
 
     private fun loadVehicle() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
                 if (vehicle != null) {
@@ -81,13 +85,14 @@ class EditVehicleViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Vehicle not found"
+                        errorRes = R.string.error_vehicle_not_found
                     )
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to load vehicle")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to load vehicle"
+                    errorRes = R.string.error_load_vehicle_failed
                 )
             }
         }
@@ -110,20 +115,25 @@ class EditVehicleViewModel @Inject constructor(
     private fun saveVehicle() {
         val state = _uiState.value
         if (state.make.isBlank() || state.model.isBlank()) {
-            _uiState.value = state.copy(error = "Make and Model are required")
+            _uiState.value = state.copy(errorRes = R.string.error_make_model_required, errorArgs = emptyList())
             return
         }
 
         val yearInt = state.year.toIntOrNull() ?: 0
+        // Validators.kt returns raw English text (out of scope for this
+        // cleanup pass) — passed through error_validation_passthrough.
         Validators.validateYear(yearInt)?.let { errorMsg ->
-            _uiState.value = state.copy(error = errorMsg)
+            _uiState.value = state.copy(
+                errorRes = R.string.error_validation_passthrough,
+                errorArgs = listOf(errorMsg)
+            )
             return
         }
         val odometerDisplay = state.currentOdometer.toIntOrNull() ?: 0
         val vinValue = state.vin.ifBlank { null }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val unit = userPreferences.distanceUnit.first()
                 val odometerKm = DistanceUtil.displayToKm(odometerDisplay, unit)
@@ -145,13 +155,14 @@ class EditVehicleViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Vehicle not found"
+                        errorRes = R.string.error_vehicle_not_found
                     )
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to save vehicle")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to save vehicle"
+                    errorRes = R.string.error_save_vehicle_failed
                 )
             }
         }

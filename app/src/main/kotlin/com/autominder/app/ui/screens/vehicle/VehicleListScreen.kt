@@ -111,7 +111,7 @@ fun VehicleListScreen(
                     actionLabel = stringResource(R.string.action_add_vehicle)
                 )
                 is VehicleListUiState.Error -> ErrorState(
-                    message = state.message,
+                    message = stringResource(state.messageRes),
                     onRetry = { viewModel.retry() }
                 )
                 is VehicleListUiState.Success -> VehicleListContent(

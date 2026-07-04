@@ -1,7 +1,9 @@
 package com.autominder.app.ui.screens.vehicle
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autominder.app.R
 import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.repository.IVehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,12 +16,13 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import timber.log.Timber
 import javax.inject.Inject
 
 sealed class VehicleListUiState {
     object Loading : VehicleListUiState()
     object Empty : VehicleListUiState()
-    data class Error(val message: String) : VehicleListUiState()
+    data class Error(@StringRes val messageRes: Int) : VehicleListUiState()
     data class Success(val vehicles: List<Vehicle>) : VehicleListUiState()
 }
 
@@ -41,7 +44,10 @@ class VehicleListViewModel @Inject constructor(
                     else VehicleListUiState.Success(vehicles)
                 }
                 .onStart<VehicleListUiState> { emit(VehicleListUiState.Loading) }
-                .catch { e -> emit(VehicleListUiState.Error(e.message ?: "Failed to load vehicles")) }
+                .catch { e ->
+                    Timber.e(e, "Failed to load vehicles")
+                    emit(VehicleListUiState.Error(R.string.error_load_vehicles_failed))
+                }
         }
         .stateIn(
             scope = viewModelScope,

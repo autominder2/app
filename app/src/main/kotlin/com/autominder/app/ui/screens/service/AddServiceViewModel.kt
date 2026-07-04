@@ -1,9 +1,11 @@
 package com.autominder.app.ui.screens.service
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
@@ -41,7 +43,8 @@ data class AddServiceUiState(
     val remindIntervalMonths: String = "",
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
-    val error: String? = null
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList()
 )
 
 sealed class AddServiceUiEvent {
@@ -165,17 +168,17 @@ class AddServiceViewModel @Inject constructor(
 
         val odometerInt = state.odometer.toIntOrNull()
         if (odometerInt == null || odometerInt < 0) {
-            _uiState.value = state.copy(error = "Please enter a valid odometer reading")
+            _uiState.value = state.copy(errorRes = R.string.error_invalid_odometer, errorArgs = emptyList())
             return
         }
 
         if (state.serviceDate == null) {
-            _uiState.value = state.copy(error = "Please select a service date")
+            _uiState.value = state.copy(errorRes = R.string.error_select_service_date, errorArgs = emptyList())
             return
         }
 
         if (state.serviceType == ServiceType.CUSTOM && state.customLabel.isBlank()) {
-            _uiState.value = state.copy(error = "Please specify a name for the custom service")
+            _uiState.value = state.copy(errorRes = R.string.error_custom_service_name_required, errorArgs = emptyList())
             return
         }
 
@@ -184,14 +187,14 @@ class AddServiceViewModel @Inject constructor(
         } else {
             val costDouble = state.cost.toDoubleOrNull()
             if (costDouble == null || costDouble < 0) {
-                _uiState.value = state.copy(error = "Please enter a valid cost")
+                _uiState.value = state.copy(errorRes = R.string.error_invalid_cost, errorArgs = emptyList())
                 return
             }
             (costDouble * 100).toInt()
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val unit = userPreferences.distanceUnit.first()
                 val odometerKm = DistanceUtil.displayToKm(odometerInt, unit)
@@ -200,7 +203,8 @@ class AddServiceViewModel @Inject constructor(
                 if (vehicle != null && odometerKm < vehicle.currentOdometer) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Odometer reading cannot be lower than the current vehicle odometer (${DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit)})"
+                        errorRes = R.string.error_service_odometer_below_current,
+                        errorArgs = listOf(DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit))
                     )
                     return@launch
                 }
@@ -288,7 +292,8 @@ class AddServiceViewModel @Inject constructor(
                 Timber.e(e, "Failed to save service")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Failed to save service"
+                    errorRes = R.string.error_save_service_failed,
+                    errorArgs = emptyList()
                 )
             }
         }

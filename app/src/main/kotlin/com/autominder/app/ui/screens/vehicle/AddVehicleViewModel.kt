@@ -1,8 +1,10 @@
 package com.autominder.app.ui.screens.vehicle
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
@@ -31,7 +33,8 @@ data class AddVehicleUiState(
     val photoUri: String? = null,
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
-    val error: String? = null
+    @StringRes val errorRes: Int? = null,
+    val errorArgs: List<Any> = emptyList()
 )
 
 sealed class AddVehicleUiEvent {
@@ -99,7 +102,7 @@ class AddVehicleViewModel @Inject constructor(
     private fun saveVehicle() {
         val state = _uiState.value
         if (state.brand.isBlank() || state.model.isBlank()) {
-            _uiState.value = state.copy(error = "Brand and Model are required")
+            _uiState.value = state.copy(errorRes = R.string.error_brand_model_required, errorArgs = emptyList())
             return
         }
 
@@ -107,19 +110,27 @@ class AddVehicleViewModel @Inject constructor(
         // so "just make + model" can be saved without touching year.
         val yearInt = state.year.toIntOrNull() ?: 0
         if (state.year.isNotBlank()) {
+            // Validators.kt returns raw English text (out of scope for this
+            // cleanup pass) — passed through error_validation_passthrough.
             Validators.validateYear(yearInt)?.let { errorMsg ->
-                _uiState.value = state.copy(error = errorMsg)
+                _uiState.value = state.copy(
+                    errorRes = R.string.error_validation_passthrough,
+                    errorArgs = listOf(errorMsg)
+                )
                 return
             }
         }
         Validators.validateVin(state.vin)?.let { errorMsg ->
-            _uiState.value = state.copy(error = errorMsg)
+            _uiState.value = state.copy(
+                errorRes = R.string.error_validation_passthrough,
+                errorArgs = listOf(errorMsg)
+            )
             return
         }
         val odometerDisplay = state.currentOdometer.toIntOrNull() ?: 0
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val unit = userPreferences.distanceUnit.first()
                 val odometerKm = DistanceUtil.displayToKm(odometerDisplay, unit)
@@ -154,7 +165,7 @@ class AddVehicleViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to save vehicle")
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Failed to save vehicle")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorRes = R.string.error_save_vehicle_failed, errorArgs = emptyList())
             }
         }
     }

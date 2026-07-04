@@ -211,7 +211,8 @@ fun VehicleDetailScreen(
                     subtitle = stringResource(R.string.vehicle_detail_not_found_subtitle)
                 )
                 ScreenState.Error -> ErrorState(
-                    message = uiState.error ?: stringResource(R.string.vehicle_detail_unknown_error),
+                    message = uiState.errorRes?.let { stringResource(it, *uiState.errorArgs.toTypedArray()) }
+                        ?: stringResource(R.string.vehicle_detail_unknown_error),
                     onRetry = { viewModel.retry() }
                 )
                 ScreenState.Success -> uiState.vehicle?.let { v ->
@@ -277,7 +278,7 @@ private enum class ScreenState {
         fun fromUiState(uiState: VehicleDetailUiState): ScreenState {
             return when {
                 uiState.isLoading -> Loading
-                uiState.error != null -> Error
+                uiState.errorRes != null -> Error
                 uiState.vehicle == null -> Empty
                 else -> Success
             }

@@ -134,10 +134,11 @@ fun ServiceDetailScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            val errorRes = uiState.errorRes
             when {
                 uiState.isLoading -> LoadingState()
-                uiState.error != null -> ErrorState(
-                    message = uiState.error!!,
+                errorRes != null -> ErrorState(
+                    message = stringResource(errorRes, *uiState.errorArgs.toTypedArray()),
                     onRetry = { viewModel.retry() }
                 )
                 uiState.service == null -> EmptyState(

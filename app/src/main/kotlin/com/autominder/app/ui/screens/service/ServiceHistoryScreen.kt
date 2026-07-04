@@ -92,7 +92,7 @@ fun ServiceHistoryScreen(
                     hint = stringResource(R.string.empty_service_hint)
                 )
                 is ServiceHistoryUiState.Error -> ErrorState(
-                    message = state.message,
+                    message = stringResource(state.messageRes),
                     onRetry = { viewModel.retry() }
                 )
                 is ServiceHistoryUiState.Success -> ServiceHistoryContent(
@@ -206,7 +206,7 @@ private fun ServiceHistoryCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = serviceWithVehicle.vehicleName,
+                text = serviceWithVehicle.vehicleName ?: stringResource(R.string.label_unknown_vehicle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
