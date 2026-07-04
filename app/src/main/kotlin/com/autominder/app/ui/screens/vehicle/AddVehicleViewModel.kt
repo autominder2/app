@@ -13,6 +13,7 @@ import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.usecase.CreateDefaultRemindersUseCase
 import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.domain.validation.ValidationErrorCode
 import com.autominder.app.domain.validation.Validators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,20 +111,18 @@ class AddVehicleViewModel @Inject constructor(
         // so "just make + model" can be saved without touching year.
         val yearInt = state.year.toIntOrNull() ?: 0
         if (state.year.isNotBlank()) {
-            // Validators.kt returns raw English text (out of scope for this
-            // cleanup pass) — passed through error_validation_passthrough.
-            Validators.validateYear(yearInt)?.let { errorMsg ->
+            Validators.validateYear(yearInt)?.let { validationError ->
                 _uiState.value = state.copy(
-                    errorRes = R.string.error_validation_passthrough,
-                    errorArgs = listOf(errorMsg)
+                    errorRes = validationError.code.toStringRes(),
+                    errorArgs = validationError.args
                 )
                 return
             }
         }
-        Validators.validateVin(state.vin)?.let { errorMsg ->
+        Validators.validateVin(state.vin)?.let { validationError ->
             _uiState.value = state.copy(
-                errorRes = R.string.error_validation_passthrough,
-                errorArgs = listOf(errorMsg)
+                errorRes = validationError.code.toStringRes(),
+                errorArgs = validationError.args
             )
             return
         }
@@ -169,4 +168,19 @@ class AddVehicleViewModel @Inject constructor(
             }
         }
     }
+}
+
+/**
+ * Maps a pure-domain [ValidationErrorCode] to its display string resource.
+ * Validators.kt stays framework-free; this boundary mapping is the only
+ * place that knows about Android resource IDs.
+ */
+@androidx.annotation.StringRes
+private fun ValidationErrorCode.toStringRes(): Int = when (this) {
+    ValidationErrorCode.YEAR_TOO_EARLY -> R.string.validation_year_too_early
+    ValidationErrorCode.YEAR_TOO_LATE -> R.string.validation_year_too_late
+    ValidationErrorCode.ODOMETER_NEGATIVE -> R.string.validation_odometer_negative
+    ValidationErrorCode.FIELD_REQUIRED -> R.string.validation_field_required
+    ValidationErrorCode.VIN_INVALID_FORMAT -> R.string.validation_vin_invalid_format
+    ValidationErrorCode.COST_NEGATIVE -> R.string.error_cost_negative
 }

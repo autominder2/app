@@ -62,11 +62,14 @@
     <string name="error_delete_reminder_failed">Failed to delete reminder</string>
     <string name="error_load_fuel_failed">Failed to load fuel entries</string>
 
-    <!-- Passthrough for domain/validation/Validators.kt, which returns raw
-         English strings (year/VIN validation) and is out of scope for this
-         cleanup pass — see remaining-risks note. NOT a real localization fix,
-         just a type-compatible bridge so those messages still display. -->
-    <string name="error_validation_passthrough">%1$s</string>
+    <!-- domain/validation/Validators.kt messages — mapped from
+         ValidationErrorCode at the ViewModel boundary (Validators.kt itself
+         stays pure Kotlin, no Android imports). -->
+    <string name="validation_year_too_early">Year must be 1900 or later</string>
+    <string name="validation_year_too_late">Year cannot be later than %1$d</string>
+    <string name="validation_odometer_negative">Odometer reading cannot be negative</string>
+    <string name="validation_field_required">%1$s is required</string>
+    <string name="validation_vin_invalid_format">VIN must be exactly 17 alphanumeric characters</string>
 
     <!-- Snackbars -->
     <string name="vehicle_saved">Vehicle saved</string>

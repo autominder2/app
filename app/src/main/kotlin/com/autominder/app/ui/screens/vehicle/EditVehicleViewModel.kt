@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.autominder.app.domain.validation.ValidationErrorCode
 import com.autominder.app.domain.validation.Validators
 import javax.inject.Inject
 
@@ -120,12 +121,10 @@ class EditVehicleViewModel @Inject constructor(
         }
 
         val yearInt = state.year.toIntOrNull() ?: 0
-        // Validators.kt returns raw English text (out of scope for this
-        // cleanup pass) — passed through error_validation_passthrough.
-        Validators.validateYear(yearInt)?.let { errorMsg ->
+        Validators.validateYear(yearInt)?.let { validationError ->
             _uiState.value = state.copy(
-                errorRes = R.string.error_validation_passthrough,
-                errorArgs = listOf(errorMsg)
+                errorRes = validationError.code.toStringRes(),
+                errorArgs = validationError.args
             )
             return
         }
@@ -167,4 +166,19 @@ class EditVehicleViewModel @Inject constructor(
             }
         }
     }
+}
+
+/**
+ * Maps a pure-domain [ValidationErrorCode] to its display string resource.
+ * Validators.kt stays framework-free; this boundary mapping is the only
+ * place that knows about Android resource IDs.
+ */
+@androidx.annotation.StringRes
+private fun ValidationErrorCode.toStringRes(): Int = when (this) {
+    ValidationErrorCode.YEAR_TOO_EARLY -> R.string.validation_year_too_early
+    ValidationErrorCode.YEAR_TOO_LATE -> R.string.validation_year_too_late
+    ValidationErrorCode.ODOMETER_NEGATIVE -> R.string.validation_odometer_negative
+    ValidationErrorCode.FIELD_REQUIRED -> R.string.validation_field_required
+    ValidationErrorCode.VIN_INVALID_FORMAT -> R.string.validation_vin_invalid_format
+    ValidationErrorCode.COST_NEGATIVE -> R.string.error_cost_negative
 }

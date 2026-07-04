@@ -46,7 +46,8 @@ class ValidatorsTest {
     fun `blank required field returns error`() {
         val result = Validators.validateRequired("", "Make")
         assertNotNull(result)
-        assertTrue(result!!.contains("Make"))
+        assertEquals(ValidationErrorCode.FIELD_REQUIRED, result!!.code)
+        assertTrue(result.args.contains("Make"))
     }
 
     @Test
