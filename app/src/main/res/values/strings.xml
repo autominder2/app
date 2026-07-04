@@ -431,6 +431,18 @@
     <string name="paywall_monthly_price">$2.99 / month</string>
     <string name="paywall_lifetime_price">$59.99 one-time • Pay once, own forever</string>
     <string name="paywall_restore">Restore Purchases</string>
+    <!-- Billing feedback — purchase and restore outcomes -->
+    <string name="purchase_success">Purchase successful! Welcome to Pro.</string>
+    <string name="purchase_cancelled">Purchase cancelled.</string>
+    <string name="purchase_pending">Your purchase is pending. We\'ll activate Pro once it completes.</string>
+    <string name="restore_success">Purchase restored!</string>
+    <string name="restore_not_found">No active purchase found to restore.</string>
+    <string name="restore_error">Couldn\'t restore your purchase. Please try again.</string>
+    <string name="billing_error_no_connection">Couldn\'t connect to Google Play. Please try again.</string>
+    <string name="billing_error_unavailable">Billing isn\'t available on this device.</string>
+    <string name="billing_error_item_unavailable">This item isn\'t available right now.</string>
+    <string name="billing_error_network">Network error. Please check your connection and try again.</string>
+    <string name="billing_error_generic">Something went wrong with your purchase. Please try again.</string>
     <string name="paywall_trial_info">Start your 7-day free trial. Cancel anytime. No charge until trial ends.</string>
     <string name="paywall_feature_vehicles">Vehicles</string>
     <string name="paywall_feature_reminders">Maintenance reminders</string>

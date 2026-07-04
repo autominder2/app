@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,6 +43,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,9 +56,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.autominder.app.billing.PurchaseState
+import com.autominder.app.billing.RestoreState
 import com.autominder.app.billing.SubscriptionManager
 import com.autominder.app.BuildConfig
 import com.autominder.app.R
+import com.autominder.app.ui.components.LocalSnackbarHostState
 import com.autominder.app.ui.components.ProPaywall
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,10 +72,40 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isProUser by viewModel.isProUser.collectAsStateWithLifecycle()
+    val purchaseState by viewModel.purchaseState.collectAsStateWithLifecycle()
+    val restoreState by viewModel.restoreState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context as? Activity
     var showPaywall by remember { mutableStateOf(false) }
     val paywallSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val snackbarHostState = LocalSnackbarHostState.current
+
+    val purchaseMessage: String? = when (val state = purchaseState) {
+        is PurchaseState.Success -> stringResource(R.string.purchase_success)
+        is PurchaseState.Cancelled -> stringResource(R.string.purchase_cancelled)
+        is PurchaseState.Pending -> stringResource(R.string.purchase_pending)
+        is PurchaseState.Error -> stringResource(state.messageRes)
+        else -> null
+    }
+    LaunchedEffect(purchaseState) {
+        if (purchaseMessage != null) {
+            snackbarHostState.showSnackbar(message = purchaseMessage, duration = SnackbarDuration.Short)
+            viewModel.resetPurchaseState()
+        }
+    }
+
+    val restoreMessage: String? = when (val state = restoreState) {
+        is RestoreState.Success -> stringResource(R.string.restore_success)
+        is RestoreState.NotFound -> stringResource(R.string.restore_not_found)
+        is RestoreState.Error -> stringResource(state.messageRes)
+        else -> null
+    }
+    LaunchedEffect(restoreState) {
+        if (restoreMessage != null) {
+            snackbarHostState.showSnackbar(message = restoreMessage, duration = SnackbarDuration.Short)
+            viewModel.resetRestoreState()
+        }
+    }
 
     val permissionLauncher = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
         androidx.activity.compose.rememberLauncherForActivityResult(
@@ -460,7 +495,10 @@ fun SettingsScreen(
                 activity?.let { viewModel.launchPurchase(it, SubscriptionManager.PRODUCT_LIFETIME) }
                 showPaywall = false
             },
-            onRestorePurchases = { showPaywall = false }
+            onRestorePurchases = {
+                viewModel.restorePurchases()
+                showPaywall = false
+            }
         )
     }
 }

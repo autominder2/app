@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.billingclient.api.ProductDetails
 import com.autominder.app.billing.PurchaseState
+import com.autominder.app.billing.RestoreState
 import com.autominder.app.billing.SubscriptionManager
 import com.autominder.app.data.local.preferences.UserPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +31,7 @@ class SettingsViewModel @Inject constructor(
     val isProUser: StateFlow<Boolean> = subscriptionManager.isProUser
     val productDetails: StateFlow<List<ProductDetails>> = subscriptionManager.productDetails
     val purchaseState: StateFlow<PurchaseState> = subscriptionManager.purchaseState
+    val restoreState: StateFlow<RestoreState> = subscriptionManager.restoreState
 
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferences.notificationsEnabled,
@@ -55,6 +57,14 @@ class SettingsViewModel @Inject constructor(
 
     fun resetPurchaseState() {
         subscriptionManager.resetPurchaseState()
+    }
+
+    fun restorePurchases() {
+        subscriptionManager.restorePurchases()
+    }
+
+    fun resetRestoreState() {
+        subscriptionManager.resetRestoreState()
     }
 
     fun setNotificationsEnabled(enabled: Boolean) {

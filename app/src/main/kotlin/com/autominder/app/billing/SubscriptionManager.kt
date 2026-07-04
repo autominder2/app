@@ -2,6 +2,7 @@ package com.autominder.app.billing
 
 import android.app.Activity
 import android.content.Context
+import androidx.annotation.StringRes
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
@@ -13,6 +14,7 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.PendingPurchasesParams
+import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
@@ -57,6 +59,9 @@ class SubscriptionManager @Inject constructor(
 
     private val _purchaseState = MutableStateFlow<PurchaseState>(PurchaseState.Idle)
     val purchaseState: StateFlow<PurchaseState> = _purchaseState.asStateFlow()
+
+    private val _restoreState = MutableStateFlow<RestoreState>(RestoreState.Idle)
+    val restoreState: StateFlow<RestoreState> = _restoreState.asStateFlow()
 
     private var billingClient: BillingClient? = null
 
@@ -181,12 +186,29 @@ class SubscriptionManager @Inject constructor(
         }
     }
 
-    private fun queryExistingPurchases() {
+    /**
+     * Reconciles local entitlement against Play. [onComplete] is optional and
+     * only used by [restorePurchases] to report a user-facing outcome — the
+     * automatic reconcile-on-connect call site passes nothing, preserving its
+     * existing silent behavior exactly.
+     *
+     * @param onComplete (found, queryFailed) — found is true if an active
+     *   entitlement was confirmed; queryFailed is true if we couldn't get a
+     *   trustworthy answer (a query errored), distinct from "queried fine,
+     *   genuinely nothing there".
+     */
+    private fun queryExistingPurchases(onComplete: ((found: Boolean, queryFailed: Boolean) -> Unit)? = null) {
+        val client = billingClient
+        if (client == null || !client.isReady) {
+            onComplete?.invoke(false, true)
+            return
+        }
+
         val subsParams = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
-        billingClient?.queryPurchasesAsync(subsParams) { billingResult, purchases ->
+        client.queryPurchasesAsync(subsParams) { billingResult, purchases ->
             val subsQueryOk = billingResult.responseCode == BillingClient.BillingResponseCode.OK
             if (subsQueryOk) {
                 // Acknowledge anything that slipped through (e.g. app killed
@@ -199,6 +221,7 @@ class SubscriptionManager @Inject constructor(
                 }
                 if (hasActiveSub) {
                     setProEntitlement(true)
+                    onComplete?.invoke(true, false)
                     return@queryPurchasesAsync
                 }
             } else {
@@ -214,6 +237,7 @@ class SubscriptionManager @Inject constructor(
                     // Query failed — keep the cached entitlement; a transient
                     // Play error must never strip Pro from a paying user.
                     Timber.w("In-app purchase query failed (${inAppResult.responseCode}): ${inAppResult.debugMessage}; keeping cached entitlement")
+                    onComplete?.invoke(false, true)
                     return@queryPurchasesAsync
                 }
 
@@ -224,17 +248,59 @@ class SubscriptionManager @Inject constructor(
                         it.purchaseState == Purchase.PurchaseState.PURCHASED
                 }
                 when {
-                    hasLifetime -> setProEntitlement(true)
+                    hasLifetime -> {
+                        setProEntitlement(true)
+                        onComplete?.invoke(true, false)
+                    }
                     // Downgrade only on complete evidence: both queries
                     // succeeded and neither found an entitlement.
-                    subsQueryOk -> setProEntitlement(false)
-                    else -> Timber.w("Skipping entitlement downgrade: subs query failed; keeping cached entitlement")
+                    subsQueryOk -> {
+                        setProEntitlement(false)
+                        onComplete?.invoke(false, false)
+                    }
+                    else -> {
+                        Timber.w("Skipping entitlement downgrade: subs query failed; keeping cached entitlement")
+                        onComplete?.invoke(false, true)
+                    }
                 }
             }
         }
     }
 
+    /**
+     * Public restore entry point — re-queries Play and reports a user-facing
+     * [RestoreState] outcome. Reuses [queryExistingPurchases] so restore and
+     * the silent startup reconcile share one entitlement/downgrade-safety
+     * code path.
+     */
+    fun restorePurchases() {
+        val client = billingClient
+        if (client == null || !client.isReady) {
+            _restoreState.value = RestoreState.Error(R.string.billing_error_no_connection)
+            return
+        }
+        _restoreState.value = RestoreState.InProgress
+        queryExistingPurchases { found, queryFailed ->
+            _restoreState.value = when {
+                queryFailed -> RestoreState.Error(R.string.restore_error)
+                found -> RestoreState.Success
+                else -> RestoreState.NotFound
+            }
+        }
+    }
+
+    fun resetRestoreState() {
+        _restoreState.value = RestoreState.Idle
+    }
+
     fun launchPurchase(activity: Activity, productDetails: ProductDetails, offerToken: String? = null) {
+        val client = billingClient
+        if (client == null || !client.isReady) {
+            // Never leave the UI at Processing with no way out.
+            _purchaseState.value = PurchaseState.Error(R.string.billing_error_no_connection)
+            return
+        }
+
         val productDetailsParamsBuilder = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(productDetails)
 
@@ -248,22 +314,40 @@ class SubscriptionManager @Inject constructor(
 
         _purchaseState.value = PurchaseState.Processing
 
-        billingClient?.launchBillingFlow(activity, billingFlowParams)
+        val launchResult = client.launchBillingFlow(activity, billingFlowParams)
+        if (launchResult.responseCode != BillingClient.BillingResponseCode.OK) {
+            Timber.w("launchBillingFlow failed immediately (${launchResult.responseCode}): ${launchResult.debugMessage}")
+            _purchaseState.value = if (launchResult.responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
+                PurchaseState.Cancelled
+            } else {
+                PurchaseState.Error(launchResult.toErrorRes())
+            }
+        }
     }
 
     override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
         when (billingResult.responseCode) {
             BillingClient.BillingResponseCode.OK -> {
                 purchases?.forEach { purchase ->
-                    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                        acknowledgePurchase(purchase)
-                        setProEntitlement(true)
-                        _purchaseState.value = PurchaseState.Success
+                    when (purchase.purchaseState) {
+                        Purchase.PurchaseState.PURCHASED -> {
+                            acknowledgePurchase(purchase)
+                            setProEntitlement(true)
+                            _purchaseState.value = PurchaseState.Success
 
-                        analyticsHelper.logEvent(
-                            AnalyticsEvents.PURCHASE_SUCCESS,
-                            mapOf(AnalyticsParams.PRODUCT_ID to purchase.products.joinToString())
-                        )
+                            analyticsHelper.logEvent(
+                                AnalyticsEvents.PURCHASE_SUCCESS,
+                                mapOf(AnalyticsParams.PRODUCT_ID to purchase.products.joinToString())
+                            )
+                        }
+                        Purchase.PurchaseState.PENDING -> {
+                            // Do not grant Pro and do not acknowledge — Play
+                            // requires acknowledgment only after the purchase
+                            // transitions to PURCHASED, which the next
+                            // queryExistingPurchases() reconcile will pick up.
+                            _purchaseState.value = PurchaseState.Pending
+                        }
+                        else -> Unit // UNSPECIFIED_STATE — nothing to do
                     }
                 }
             }
@@ -278,7 +362,7 @@ class SubscriptionManager @Inject constructor(
                 _purchaseState.value = PurchaseState.Success
             }
             else -> {
-                _purchaseState.value = PurchaseState.Error(billingResult.debugMessage)
+                _purchaseState.value = PurchaseState.Error(billingResult.toErrorRes())
                 analyticsHelper.logEvent(
                     AnalyticsEvents.PURCHASE_FAILED,
                     mapOf(AnalyticsParams.ERROR_MESSAGE to billingResult.debugMessage)
@@ -315,10 +399,36 @@ class SubscriptionManager @Inject constructor(
     }
 }
 
+/**
+ * Maps a Billing response code to a stable, localized string resource.
+ * BillingResult.debugMessage is a developer diagnostic string, never shown
+ * to users — only logged.
+ */
+@StringRes
+private fun BillingResult.toErrorRes(): Int = when (responseCode) {
+    BillingClient.BillingResponseCode.SERVICE_DISCONNECTED,
+    BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
+    BillingClient.BillingResponseCode.SERVICE_TIMEOUT -> R.string.billing_error_no_connection
+    BillingClient.BillingResponseCode.BILLING_UNAVAILABLE,
+    BillingClient.BillingResponseCode.FEATURE_NOT_SUPPORTED -> R.string.billing_error_unavailable
+    BillingClient.BillingResponseCode.ITEM_UNAVAILABLE -> R.string.billing_error_item_unavailable
+    BillingClient.BillingResponseCode.NETWORK_ERROR -> R.string.billing_error_network
+    else -> R.string.billing_error_generic
+}
+
 sealed class PurchaseState {
     object Idle : PurchaseState()
     object Processing : PurchaseState()
     object Success : PurchaseState()
     object Cancelled : PurchaseState()
-    data class Error(val message: String?) : PurchaseState()
+    object Pending : PurchaseState()
+    data class Error(@StringRes val messageRes: Int) : PurchaseState()
+}
+
+sealed class RestoreState {
+    object Idle : RestoreState()
+    object InProgress : RestoreState()
+    object Success : RestoreState()
+    object NotFound : RestoreState()
+    data class Error(@StringRes val messageRes: Int) : RestoreState()
 }
