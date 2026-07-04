@@ -59,9 +59,11 @@ ABSOLUTE RULES:
 Routes file: NavRoutes.kt — @Serializable sealed objects ONLY
 CORRECT:   navController.navigate(VehicleDetail(vehicleId = id))
 FORBIDDEN: navController.navigate("vehicle/42")  ← crashes silently
-Bottom nav: Dashboard | VehicleList | Settings (3 tabs ONLY — no more, no less)
-ServiceHistory: VehicleDetail tab (NOT a bottom tab — architecture bug)
+Bottom nav: Home | Vehicles | Records | Settings (4 tabs — verified 2026-07, matches code)
+  Records = ServiceHistory route. Cross-vehicle (ServiceWithVehicle), grouped by month.
+  A real top-level destination, not a per-vehicle detail screen — earned its tab.
 FuelScreen: VehicleDetail tab (NOT a bottom tab)
+Nav labels: strings.xml (nav_home/nav_vehicles/nav_records/nav_settings) — never hardcode in BottomNavBar.kt
 
 ## BRAND / DESIGN TOKENS
 Primary color:  #006B5F (Racing Teal 700) — NOT the old #4CAF82

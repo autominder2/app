@@ -2,6 +2,12 @@
 <resources>
     <string name="app_name">AutoMinder</string>
 
+    <!-- Bottom navigation — 4 tabs: Home / Vehicles / Records / Settings -->
+    <string name="nav_home">Home</string>
+    <string name="nav_vehicles">Vehicles</string>
+    <string name="nav_records">Records</string>
+    <string name="nav_settings">Settings</string>
+
     <!-- Dashboard -->
     <string name="dashboard_title">My Vehicles</string>
     <string name="dashboard_empty_title">No vehicles yet</string>
@@ -218,7 +224,7 @@
     <string name="service_detail_not_found_subtitle">This service record may have been deleted.</string>
 
     <!-- Service History Screen -->
-    <string name="service_history_title">Service History</string>
+    <string name="service_history_title">Records</string>
     <string name="service_history_empty_title">No service records</string>
     <string name="service_history_empty_subtitle">Service records will appear here once you log maintenance for your vehicles.</string>
 
