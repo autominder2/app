@@ -77,7 +77,11 @@ class WeeklyDigestWorker @AssistedInject constructor(
             NotificationHelper.showWeeklyDigest(
                 context = applicationContext,
                 title = applicationContext.getString(R.string.digest_title),
-                summary = applicationContext.getString(R.string.digest_summary, lines.size),
+                summary = applicationContext.resources.getQuantityString(
+                    R.plurals.digest_summary,
+                    lines.size,
+                    lines.size
+                ),
                 lines = lines
             )
             Timber.d("WeeklyDigestWorker: sent digest with ${lines.size} lines")

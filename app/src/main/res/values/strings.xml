@@ -182,7 +182,10 @@
     <!-- tools:ignore — real pluralization would need getQuantityString in
          WeeklyDigestWorker.kt, which is out of scope (WorkManager files are
          locked for this pass); count phrasing here is acceptable as-is. -->
-    <string name="digest_summary" tools:ignore="PluralsCandidate">%1$d services need attention</string>
+    <plurals name="digest_summary">
+        <item quantity="one">%1$d service needs attention</item>
+        <item quantity="other">%1$d services need attention</item>
+    </plurals>
     <string name="digest_status_overdue">overdue</string>
     <string name="digest_status_due_soon">due soon</string>
 
