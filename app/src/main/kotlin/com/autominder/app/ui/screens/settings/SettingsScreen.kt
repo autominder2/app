@@ -74,6 +74,9 @@ fun SettingsScreen(
     val isProUser by viewModel.isProUser.collectAsStateWithLifecycle()
     val purchaseState by viewModel.purchaseState.collectAsStateWithLifecycle()
     val restoreState by viewModel.restoreState.collectAsStateWithLifecycle()
+    val monthlyPrice by viewModel.monthlyPriceText.collectAsStateWithLifecycle()
+    val yearlyPrice by viewModel.yearlyPriceText.collectAsStateWithLifecycle()
+    val lifetimePrice by viewModel.lifetimePriceText.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context as? Activity
     var showPaywall by remember { mutableStateOf(false) }
@@ -482,6 +485,9 @@ fun SettingsScreen(
     if (showPaywall) {
         ProPaywall(
             sheetState = paywallSheetState,
+            monthlyPrice = monthlyPrice,
+            yearlyPrice = yearlyPrice,
+            lifetimePrice = lifetimePrice,
             onDismiss = { showPaywall = false },
             onSelectMonthly = {
                 activity?.let { viewModel.launchPurchase(it, SubscriptionManager.PRODUCT_MONTHLY) }

@@ -38,12 +38,18 @@ import com.autominder.app.R
 @Composable
 fun ProPaywall(
     sheetState: SheetState,
+    // Product-details-driven prices — null while Play's product query is
+    // still loading. Never hardcoded, never assumed.
+    monthlyPrice: String?,
+    yearlyPrice: String?,
+    lifetimePrice: String?,
     onDismiss: () -> Unit,
     onSelectMonthly: () -> Unit,
     onSelectYearly: () -> Unit,
     onSelectLifetime: () -> Unit,
     onRestorePurchases: () -> Unit
 ) {
+    val loadingPriceText = stringResource(R.string.paywall_price_loading)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -85,15 +91,16 @@ fun ProPaywall(
 
             Button(
                 onClick = onSelectYearly,
+                enabled = yearlyPrice != null,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = stringResource(R.string.paywall_yearly_price),
+                        text = stringResource(R.string.paywall_yearly_label, yearlyPrice ?: loadingPriceText),
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = stringResource(R.string.paywall_yearly_savings),
+                        text = stringResource(R.string.paywall_yearly_best_value),
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -103,18 +110,20 @@ fun ProPaywall(
 
             OutlinedButton(
                 onClick = onSelectMonthly,
+                enabled = monthlyPrice != null,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(R.string.paywall_monthly_price))
+                Text(text = stringResource(R.string.paywall_monthly_label, monthlyPrice ?: loadingPriceText))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(
                 onClick = onSelectLifetime,
+                enabled = lifetimePrice != null,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = stringResource(R.string.paywall_lifetime_price))
+                Text(text = stringResource(R.string.paywall_lifetime_label, lifetimePrice ?: loadingPriceText))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -126,13 +135,7 @@ fun ProPaywall(
                 )
             }
 
-            Text(
-                text = stringResource(R.string.paywall_trial_info),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 32.dp, top = 4.dp)
-            )
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -145,7 +148,8 @@ private fun FeatureComparisonTable() {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            FeatureRow(stringResource(R.string.paywall_feature_vehicles), free = "2", pro = stringResource(R.string.paywall_unlimited))
+            // No vehicle-count gate exists in v1.0 — both tiers are unlimited.
+            FeatureRow(stringResource(R.string.paywall_feature_vehicles), free = true, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             FeatureRow(stringResource(R.string.paywall_feature_reminders), free = true, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))

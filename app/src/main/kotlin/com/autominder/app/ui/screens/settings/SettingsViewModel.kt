@@ -12,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,6 +33,40 @@ class SettingsViewModel @Inject constructor(
     val productDetails: StateFlow<List<ProductDetails>> = subscriptionManager.productDetails
     val purchaseState: StateFlow<PurchaseState> = subscriptionManager.purchaseState
     val restoreState: StateFlow<RestoreState> = subscriptionManager.restoreState
+
+    // Product-details-driven prices for the paywall — null until Play's
+    // product query resolves. Never hardcoded, never assumed.
+    val monthlyPriceText: StateFlow<String?> = productDetails
+        .map { extractPrice(it, SubscriptionManager.PRODUCT_MONTHLY) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = null)
+
+    val yearlyPriceText: StateFlow<String?> = productDetails
+        .map { extractPrice(it, SubscriptionManager.PRODUCT_YEARLY) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = null)
+
+    val lifetimePriceText: StateFlow<String?> = productDetails
+        .map { extractPrice(it, SubscriptionManager.PRODUCT_LIFETIME) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5_000), initialValue = null)
+
+    /**
+     * For subscriptions, takes the last pricing phase (the steady-state
+     * recurring price after any trial/intro phase Play Console may apply —
+     * none is assumed or claimed by app copy). For the one-time lifetime
+     * product, reads the one-time offer's formatted price directly.
+     */
+    private fun extractPrice(details: List<ProductDetails>, productId: String): String? {
+        val product = details.find { it.productId == productId } ?: return null
+        return if (productId == SubscriptionManager.PRODUCT_LIFETIME) {
+            product.oneTimePurchaseOfferDetails?.formattedPrice
+        } else {
+            product.subscriptionOfferDetails
+                ?.firstOrNull()
+                ?.pricingPhases
+                ?.pricingPhaseList
+                ?.lastOrNull()
+                ?.formattedPrice
+        }
+    }
 
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferences.notificationsEnabled,

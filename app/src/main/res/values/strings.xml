@@ -426,10 +426,13 @@
     <!-- Pro Paywall -->
     <string name="paywall_title">Upgrade to AutoMinder Pro</string>
     <string name="paywall_subtitle">Smarter maintenance. Zero ads. Your data backed up safely.</string>
-    <string name="paywall_yearly_price">$24.99 / year</string>
-    <string name="paywall_yearly_savings">Save 30% vs monthly • 7-day free trial</string>
-    <string name="paywall_monthly_price">$2.99 / month</string>
-    <string name="paywall_lifetime_price">$59.99 one-time • Pay once, own forever</string>
+    <!-- Prices are product-details-driven (Play formattedPrice), never
+         hardcoded — see ProPaywall.kt. %1$s is the localized price string. -->
+    <string name="paywall_yearly_label">Yearly · %1$s</string>
+    <string name="paywall_yearly_best_value">Best value</string>
+    <string name="paywall_monthly_label">Monthly · %1$s</string>
+    <string name="paywall_lifetime_label">Lifetime · %1$s — Pay once, own forever</string>
+    <string name="paywall_price_loading">Loading price…</string>
     <string name="paywall_restore">Restore Purchases</string>
     <!-- Billing feedback — purchase and restore outcomes -->
     <string name="purchase_success">Purchase successful! Welcome to Pro.</string>
@@ -443,7 +446,6 @@
     <string name="billing_error_item_unavailable">This item isn\'t available right now.</string>
     <string name="billing_error_network">Network error. Please check your connection and try again.</string>
     <string name="billing_error_generic">Something went wrong with your purchase. Please try again.</string>
-    <string name="paywall_trial_info">Start your 7-day free trial. Cancel anytime. No charge until trial ends.</string>
     <string name="paywall_feature_vehicles">Vehicles</string>
     <string name="paywall_feature_reminders">Maintenance reminders</string>
     <string name="paywall_feature_fuel_log">Fuel tracking</string>
@@ -453,7 +455,6 @@
     <string name="paywall_feature_export">PDF + CSV export</string>
     <string name="paywall_feature_ad_free">Ad-free experience</string>
     <string name="paywall_feature_widgets">Premium widgets</string>
-    <string name="paywall_unlimited">Unlimited</string>
     <string name="paywall_pro_badge">PRO</string>
     <string name="paywall_locked_feature">Unlock with Pro</string>
 
