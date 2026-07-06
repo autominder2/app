@@ -148,6 +148,29 @@ private fun FeatureComparisonTable() {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = stringResource(R.string.paywall_column_free),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(0.3f)
+                )
+                Text(
+                    text = stringResource(R.string.paywall_column_pro),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(0.3f)
+                )
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             // No vehicle-count gate exists in v1.0 — both tiers are unlimited.
             FeatureRow(stringResource(R.string.paywall_feature_vehicles), free = true, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
@@ -164,8 +187,6 @@ private fun FeatureComparisonTable() {
             FeatureRow(stringResource(R.string.paywall_feature_export), free = false, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             FeatureRow(stringResource(R.string.paywall_feature_ad_free), free = false, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_widgets), free = false, pro = true)
         }
     }
 }

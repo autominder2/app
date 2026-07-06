@@ -35,8 +35,13 @@ fun StatusChip(
             MaterialTheme.colorScheme.primaryContainer,
             MaterialTheme.colorScheme.onPrimaryContainer
         )
-        else -> Triple(
-            R.string.status_ok, // Default to OK for now
+        ServiceStatus.COMPLETED -> Triple(
+            R.string.status_completed,
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        ServiceStatus.UNKNOWN -> Triple(
+            R.string.status_unknown,
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant
         )

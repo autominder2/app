@@ -101,6 +101,8 @@ import androidx.compose.material3.SnackbarDuration
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import com.autominder.app.ui.util.DistanceFormat
+import com.autominder.app.ui.util.localizedLabel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehicleDetailScreen(
@@ -315,6 +317,20 @@ private fun VehicleDetailContent(
     val mileageSheetState = rememberModalBottomSheetState()
     val distanceUnit = LocalDistanceUnit.current
     val haptic = LocalHapticFeedback.current
+    // ProFeatureGate has no direct route to the Settings paywall sheet from
+    // here (that would require wiring through NavGraph.kt) — nudge the user
+    // there rather than leaving the tap silently do nothing.
+    val upgradeScope = rememberCoroutineScope()
+    val upgradeSnackbarHostState = LocalSnackbarHostState.current
+    val upgradeHintMessage = stringResource(R.string.vehicle_detail_upgrade_hint)
+    val onUpgradeClick: () -> Unit = {
+        upgradeScope.launch {
+            upgradeSnackbarHostState.showSnackbar(
+                message = upgradeHintMessage,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
 
     // Consumer-grade issue detail (the FIXD pattern): tap a reminder to get
     // plain language, "can it wait?", and the personalized forecast.
@@ -325,6 +341,7 @@ private fun VehicleDetailContent(
             reminder = selected,
             status = reminderStatuses[selected.id] ?: ServiceStatus.UNKNOWN,
             prediction = reminderPredictions[selected.id],
+            currentOdometerKm = vehicle.currentOdometer,
             onMarkComplete = {
                 detailReminder = null
                 onMarkComplete(selected.id)
@@ -398,11 +415,13 @@ private fun VehicleDetailContent(
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = stringResource(R.string.vehicle_detail_year, vehicle.year),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.White.copy(alpha = 0.85f)
-                        )
+                        if (vehicle.year > 0) {
+                            Text(
+                                text = stringResource(R.string.vehicle_detail_year, vehicle.year),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
                     }
                 }
             } else {
@@ -422,11 +441,13 @@ private fun VehicleDetailContent(
                             text = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model),
                             style = MaterialTheme.typography.headlineMedium
                         )
-                        Text(
-                            text = stringResource(R.string.vehicle_detail_year, vehicle.year),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        if (vehicle.year > 0) {
+                            Text(
+                                text = stringResource(R.string.vehicle_detail_year, vehicle.year),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -453,8 +474,12 @@ private fun VehicleDetailContent(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    val heroDistanceUnit = LocalDistanceUnit.current
+                    val formattedHeroOdometer = remember(vehicle.currentOdometer, heroDistanceUnit) {
+                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, heroDistanceUnit))
+                    }
                     Text(
-                        text = "${DistanceUtil.kmToDisplay(vehicle.currentOdometer, LocalDistanceUnit.current)} ${DistanceUtil.unitLabel(LocalDistanceUnit.current)}",
+                        text = "$formattedHeroOdometer ${DistanceUtil.unitLabel(heroDistanceUnit)}",
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -483,7 +508,7 @@ private fun VehicleDetailContent(
             item {
                 ProFeatureGate(
                     isProUser = isProUser,
-                    onUpgradeClick = {},
+                    onUpgradeClick = onUpgradeClick,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 ) {
                 ElevatedCard(
@@ -569,7 +594,7 @@ private fun VehicleDetailContent(
             item {
                 ProFeatureGate(
                     isProUser = isProUser,
-                    onUpgradeClick = {},
+                    onUpgradeClick = onUpgradeClick,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                 ElevatedCard(
@@ -718,6 +743,7 @@ private fun VehicleDetailContent(
                         reminder = reminder,
                         status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
                         prediction = reminderPredictions[reminder.id],
+                        currentOdometerKm = vehicle.currentOdometer,
                         onClick = { onReminderClick(reminder) },
                         onMarkComplete = { onMarkComplete(reminder.id) },
                         onSnooze = { onSnooze(reminder.id) },
@@ -756,6 +782,7 @@ private fun VehicleDetailContent(
                         reminder = reminder,
                         status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
                         prediction = reminderPredictions[reminder.id],
+                        currentOdometerKm = vehicle.currentOdometer,
                         onClick = { onReminderClick(reminder) },
                         onMarkComplete = { onMarkComplete(reminder.id) },
                         onSnooze = { onSnooze(reminder.id) },
@@ -824,6 +851,7 @@ private fun ReminderCard(
     reminder: Reminder,
     status: ServiceStatus,
     prediction: DuePrediction?,
+    currentOdometerKm: Int,
     onClick: () -> Unit,
     onMarkComplete: () -> Unit,
     onSnooze: () -> Unit,
@@ -831,6 +859,7 @@ private fun ReminderCard(
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
+    val distanceUnit = LocalDistanceUnit.current
 
     val cardColor by animateColorAsState(
         targetValue = when (status) {
@@ -882,7 +911,7 @@ private fun ReminderCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = reminder.customLabel ?: reminder.serviceType.label,
+                            text = reminder.customLabel ?: reminder.serviceType.localizedLabel(),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = contentColor,
@@ -906,12 +935,43 @@ private fun ReminderCard(
                     // your car, not a database row.
                     val kmLeft = prediction?.kmRemaining
                     val expectedAt = prediction?.predictedAt
-                    if (kmLeft != null && expectedAt != null) {
+                    // Overdue cards must lead with why they're overdue — never with a
+                    // future-looking date when the mileage trigger is what fired.
+                    val overdueByMileage = status == ServiceStatus.OVERDUE &&
+                        reminder.nextDueOdometer != null &&
+                        currentOdometerKm >= reminder.nextDueOdometer
+                    if (overdueByMileage) {
+                        val overBy = currentOdometerKm - reminder.nextDueOdometer!!
+                        val formattedOverBy = remember(overBy, distanceUnit) {
+                            DistanceFormat.grouped(DistanceUtil.kmToDisplay(overBy, distanceUnit))
+                        }
+                        Text(
+                            text = stringResource(
+                                R.string.vehicle_detail_overdue_by_km,
+                                formattedOverBy,
+                                DistanceUtil.unitLabel(distanceUnit)
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = contentColor
+                        )
+                        // Original due date kept as de-emphasized reference context.
+                        if (reminder.nextDueDate != null) {
+                            Text(
+                                text = stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = contentColor.copy(alpha = 0.6f)
+                            )
+                        }
+                    } else if (kmLeft != null && expectedAt != null) {
+                        val formattedKmLeft = remember(kmLeft, distanceUnit) {
+                            DistanceFormat.grouped(DistanceUtil.kmToDisplay(kmLeft, distanceUnit))
+                        }
                         Text(
                             text = stringResource(
                                 R.string.vehicle_detail_forecast,
-                                DistanceUtil.kmToDisplay(kmLeft, LocalDistanceUnit.current).toString(),
-                                DistanceUtil.unitLabel(LocalDistanceUnit.current),
+                                formattedKmLeft,
+                                DistanceUtil.unitLabel(distanceUnit),
                                 DateFormatUtil.formatDate(expectedAt)
                             ),
                             style = MaterialTheme.typography.bodySmall,
@@ -927,8 +987,11 @@ private fun ReminderCard(
                             )
                         }
                         if (reminder.nextDueOdometer != null) {
+                            val formattedDueOdometer = remember(reminder.nextDueOdometer, distanceUnit) {
+                                DistanceFormat.grouped(DistanceUtil.kmToDisplay(reminder.nextDueOdometer, distanceUnit))
+                            }
                             Text(
-                                text = stringResource(R.string.vehicle_detail_due_at_dynamic, DistanceUtil.kmToDisplay(reminder.nextDueOdometer, LocalDistanceUnit.current).toString(), DistanceUtil.unitLabel(LocalDistanceUnit.current)),
+                                text = stringResource(R.string.vehicle_detail_due_at_dynamic, formattedDueOdometer, DistanceUtil.unitLabel(distanceUnit)),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = contentColor.copy(alpha = 0.75f)
                             )

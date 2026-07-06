@@ -55,6 +55,7 @@ import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.pressScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import com.autominder.app.ui.util.DistanceFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -209,13 +210,19 @@ private fun VehicleListCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                if (vehicle.year > 0) {
+                    Text(
+                        text = "${vehicle.year}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                val distanceUnit = LocalDistanceUnit.current
+                val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+                    DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
+                }
                 Text(
-                    text = "${vehicle.year}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${DistanceUtil.kmToDisplay(vehicle.currentOdometer, LocalDistanceUnit.current)} ${DistanceUtil.unitLabel(LocalDistanceUnit.current)}",
+                    text = "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )

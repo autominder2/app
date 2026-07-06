@@ -31,10 +31,13 @@ import com.autominder.app.R
 import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.ServiceType
+import androidx.compose.runtime.remember
 import com.autominder.app.domain.usecase.DuePrediction
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.DistanceFormat
+import com.autominder.app.ui.util.localizedLabel
 
 /**
  * Static consumer-language knowledge for each service type: what the service
@@ -75,6 +78,7 @@ fun ReminderDetailSheet(
     reminder: Reminder,
     status: ServiceStatus,
     prediction: DuePrediction?,
+    currentOdometerKm: Int,
     onMarkComplete: () -> Unit,
     onSnooze: () -> Unit,
     onEdit: () -> Unit,
@@ -117,7 +121,7 @@ fun ReminderDetailSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = reminder.customLabel ?: reminder.serviceType.label,
+                    text = reminder.customLabel ?: reminder.serviceType.localizedLabel(),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
@@ -131,33 +135,63 @@ fun ReminderDetailSheet(
             SheetSection(title = stringResource(R.string.reminder_detail_timing)) {
                 val kmLeft = prediction?.kmRemaining
                 val expectedAt = prediction?.predictedAt
-                val timing = when {
-                    status == ServiceStatus.OVERDUE ->
-                        stringResource(R.string.reminder_detail_timing_overdue)
-                    kmLeft != null && expectedAt != null ->
-                        stringResource(
-                            R.string.vehicle_detail_forecast,
-                            DistanceUtil.kmToDisplay(kmLeft, unit).toString(),
-                            DistanceUtil.unitLabel(unit),
-                            DateFormatUtil.formatDate(expectedAt)
-                        )
-                    expectedAt != null ->
-                        stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(expectedAt))
-                    reminder.nextDueDate != null ->
-                        stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate))
-                    reminder.nextDueOdometer != null ->
-                        stringResource(
-                            R.string.vehicle_detail_due_at_dynamic,
-                            DistanceUtil.kmToDisplay(reminder.nextDueOdometer, unit).toString(),
+                // Same rule as VehicleDetail's ReminderCard: an overdue-by-mileage
+                // reminder leads with the mileage story, never a future date.
+                val overdueByMileage = status == ServiceStatus.OVERDUE &&
+                    reminder.nextDueOdometer != null &&
+                    currentOdometerKm >= reminder.nextDueOdometer
+                if (overdueByMileage) {
+                    val overBy = currentOdometerKm - reminder.nextDueOdometer!!
+                    val formattedOverBy = remember(overBy, unit) {
+                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(overBy, unit))
+                    }
+                    Text(
+                        text = stringResource(
+                            R.string.vehicle_detail_overdue_by_km,
+                            formattedOverBy,
                             DistanceUtil.unitLabel(unit)
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    // Original due date demoted to secondary reference context.
+                    if (reminder.nextDueDate != null) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    else -> stringResource(R.string.reminder_detail_timing_unset)
+                    }
+                } else {
+                    val timing = when {
+                        status == ServiceStatus.OVERDUE ->
+                            stringResource(R.string.reminder_detail_timing_overdue)
+                        kmLeft != null && expectedAt != null ->
+                            stringResource(
+                                R.string.vehicle_detail_forecast,
+                                DistanceFormat.grouped(DistanceUtil.kmToDisplay(kmLeft, unit)),
+                                DistanceUtil.unitLabel(unit),
+                                DateFormatUtil.formatDate(expectedAt)
+                            )
+                        expectedAt != null ->
+                            stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(expectedAt))
+                        reminder.nextDueDate != null ->
+                            stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate))
+                        reminder.nextDueOdometer != null ->
+                            stringResource(
+                                R.string.vehicle_detail_due_at_dynamic,
+                                DistanceFormat.grouped(DistanceUtil.kmToDisplay(reminder.nextDueOdometer, unit)),
+                                DistanceUtil.unitLabel(unit)
+                            )
+                        else -> stringResource(R.string.reminder_detail_timing_unset)
+                    }
+                    Text(
+                        text = timing,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
-                Text(
-                    text = timing,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
             }
 
             SheetSection(title = stringResource(R.string.reminder_detail_what_it_means)) {

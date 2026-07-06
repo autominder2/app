@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.ui.theme.Motion
 import com.autominder.app.ui.util.icon
+import com.autominder.app.ui.util.localizedLabel
 
 /**
  * 4-column tappable grid of service types — one tap to pick, ~40% faster
@@ -88,7 +89,7 @@ fun ServiceTypeGrid(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = type.label,
+                                text = type.localizedLabel(),
                                 style = MaterialTheme.typography.labelSmall,
                                 textAlign = TextAlign.Center,
                                 maxLines = 2,

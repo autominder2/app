@@ -83,6 +83,8 @@
     <string name="status_due_soon">Due Soon</string>
     <string name="status_snoozed">Snoozed</string>
     <string name="status_ok">OK</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_unknown">Unknown</string>
 
     <!-- Notifications -->
     <string name="notification_channel_description">Vehicle service and maintenance reminders</string>
@@ -172,6 +174,8 @@
     <string name="vehicle_detail_no_reminders">No reminders yet. Tap + to add one.</string>
     <string name="vehicle_detail_due_date">Due: %1$s</string>
     <string name="vehicle_detail_forecast">≈ %1$s %2$s left · expect it around %3$s</string>
+    <string name="vehicle_detail_overdue_by_km">Overdue by %1$s %2$s</string>
+    <string name="vehicle_detail_upgrade_hint">Open Settings → Upgrade to Pro to unlock this</string>
     <string name="vehicle_detail_needs_attention">Needs attention</string>
     <string name="vehicle_detail_upcoming">Upcoming</string>
     <string name="vehicle_detail_all_clear">All clear — nothing needs attention.</string>
@@ -249,6 +253,24 @@
     <!-- Add Service Screen -->
     <string name="add_service_title">Log Service</string>
     <string name="add_service_type_label">Service Type</string>
+
+    <!-- Service type labels (UI-layer localization of domain ServiceType) -->
+    <string name="service_type_oil_change">Oil Change</string>
+    <string name="service_type_tire_rotation">Tire Rotation</string>
+    <string name="service_type_brake_service">Brake Service</string>
+    <string name="service_type_battery">Battery</string>
+    <string name="service_type_air_filter">Air Filter</string>
+    <string name="service_type_cabin_filter">Cabin Filter</string>
+    <string name="service_type_transmission">Transmission</string>
+    <string name="service_type_coolant">Coolant</string>
+    <string name="service_type_spark_plugs">Spark Plugs</string>
+    <string name="service_type_timing_belt">Timing Belt</string>
+    <string name="service_type_wiper_blades">Wiper Blades</string>
+    <string name="service_type_insurance">Insurance</string>
+    <string name="service_type_registration">Registration</string>
+    <string name="service_type_inspection">Inspection</string>
+    <string name="service_type_emissions_test">Emissions Test</string>
+    <string name="service_type_custom">Custom</string>
     <string name="add_service_name_label">Service Name</string>
     <string name="add_service_name_placeholder">e.g. Brake Fluid Flush</string>
     <string name="add_service_odometer_label">Odometer at Service (%1$s)</string>
@@ -454,7 +476,8 @@
     <string name="paywall_feature_backup">Cloud backup</string>
     <string name="paywall_feature_export">PDF + CSV export</string>
     <string name="paywall_feature_ad_free">Ad-free experience</string>
-    <string name="paywall_feature_widgets">Premium widgets</string>
+    <string name="paywall_column_free">Free</string>
+    <string name="paywall_column_pro">Pro</string>
     <string name="paywall_pro_badge">PRO</string>
     <string name="paywall_locked_feature">Unlock with Pro</string>
 

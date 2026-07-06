@@ -93,6 +93,7 @@ import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import com.autominder.app.ui.util.DistanceFormat
 
 private enum class QuickAction { LOG_SERVICE, ADD_FUEL }
 
@@ -372,7 +373,14 @@ private fun VehicleCard(
     modifier: Modifier = Modifier
 ) {
     val vehicle = vehicleWithStatus.vehicle
-    val statusLabel = vehicleWithStatus.status.name.lowercase().replace("_", " ")
+    val statusLabel = when (vehicleWithStatus.status) {
+        ServiceStatus.OVERDUE -> stringResource(R.string.status_overdue)
+        ServiceStatus.DUE_SOON -> stringResource(R.string.status_due_soon)
+        ServiceStatus.SNOOZED -> stringResource(R.string.status_snoozed)
+        ServiceStatus.OK -> stringResource(R.string.status_ok)
+        ServiceStatus.COMPLETED -> stringResource(R.string.status_completed)
+        ServiceStatus.UNKNOWN -> stringResource(R.string.status_unknown)
+    }
 
     val targetCornerDp = when (vehicleWithStatus.status) {
         ServiceStatus.OVERDUE -> 8f
@@ -465,8 +473,17 @@ private fun VehicleCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
+                    val distanceUnit = LocalDistanceUnit.current
+                    val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
+                    }
+                    val subtitleText = if (vehicle.year > 0) {
+                        "${vehicle.year} • $formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
+                    } else {
+                        "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
+                    }
                     Text(
-                        text = "${vehicle.year} • ${DistanceUtil.kmToDisplay(vehicle.currentOdometer, LocalDistanceUnit.current)} ${DistanceUtil.unitLabel(LocalDistanceUnit.current)}",
+                        text = subtitleText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
