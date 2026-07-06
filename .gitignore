@@ -51,6 +51,9 @@ findings.txt
 .gradle-user-home/
 .kotlin/
 .agents/
-.claude/
+# Claude Code: keep local settings ignored, but version skills and agents
+.claude/*
+!.claude/skills/
+!.claude/agents/
 competitor_*.md
 *_reels_*.md
