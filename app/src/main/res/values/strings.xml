@@ -133,7 +133,6 @@
     <string name="cd_add_reminder">Add Reminder</string>
     <string name="cd_vehicle_photo_description">%1$s %2$s</string>
     <string name="cd_vehicle_no_photo">No vehicle photo</string>
-    <string name="cd_open_vehicle_details">Open details for %1$s %2$s</string>
 
     <!-- Shared Formatted -->
     <string name="vehicle_make_model">%1$s %2$s</string>
@@ -141,6 +140,19 @@
     <!-- Dashboard Screen -->
     <string name="dashboard_top_bar_title">AutoMinder</string>
     <string name="dashboard_subtitle">Your car maintenance summary</string>
+    <plurals name="dashboard_attention_headline">
+        <item quantity="one">%1$d service needs attention</item>
+        <item quantity="other">%1$d services need attention</item>
+    </plurals>
+    <string name="dashboard_all_clear_headline">All clear</string>
+    <string name="dashboard_all_clear_supporting">Nothing needs attention right now.</string>
+    <string name="dashboard_cockpit_supporting">Fix the small stuff before it becomes expensive.</string>
+    <string name="dashboard_metric_overdue">Overdue</string>
+    <string name="dashboard_metric_due_soon">Due soon</string>
+    <string name="dashboard_section_attention">Needs attention</string>
+    <string name="dashboard_section_vehicles">Your vehicles</string>
+    <string name="dashboard_attention_cta">View vehicle</string>
+    <string name="cd_health_score">Health score out of 100: %1$d</string>
     <string name="dashboard_no_vehicles_title">No vehicles yet</string>
     <string name="dashboard_no_vehicles_subtitle">Add your first vehicle to start tracking maintenance.</string>
     <string name="dashboard_error">Could not load dashboard</string>

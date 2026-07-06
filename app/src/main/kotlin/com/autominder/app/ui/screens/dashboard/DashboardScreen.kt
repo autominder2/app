@@ -94,6 +94,16 @@ import com.autominder.app.ui.theme.LocalDistanceUnit
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import com.autominder.app.ui.util.DistanceFormat
+import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.localizedLabel
+import com.autominder.app.domain.usecase.ReminderWithStatus
+import com.autominder.app.ui.components.premium.HealthCockpitCard
+import com.autominder.app.ui.components.premium.InsightMetricCard
+import com.autominder.app.ui.components.premium.InsightMetricRow
+import com.autominder.app.ui.components.premium.PremiumSectionHeader
+import com.autominder.app.ui.components.premium.ProactiveAttentionCard
+import com.autominder.app.ui.components.premium.VehicleHeroCard
+import androidx.compose.ui.res.pluralStringResource
 
 private enum class QuickAction { LOG_SERVICE, ADD_FUEL }
 
@@ -266,6 +276,7 @@ fun DashboardScreen(
                 )
                 is DashboardUiState.Success -> DashboardContent(
                     vehicles = state.vehicles,
+                    attentionReminders = state.attentionReminders,
                     onVehicleClick = onNavigateToVehicleDetail,
                     listState = listState
                 )
@@ -341,171 +352,188 @@ private fun DashboardTopBar(scrollBehavior: TopAppBarScrollBehavior) {
 @Composable
 private fun DashboardContent(
     vehicles: List<VehicleWithStatus>,
+    attentionReminders: List<ReminderWithStatus>,
     onVehicleClick: (Long) -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState
 ) {
+    val distanceUnit = LocalDistanceUnit.current
+    val totalOverdue = remember(vehicles) { vehicles.sumOf { it.overdueCount } }
+    val totalDueSoon = remember(vehicles) { vehicles.sumOf { it.dueSoonCount } }
+    val attentionTotal = totalOverdue + totalDueSoon
+    // Same math the old fleet ring used — kept as the secondary instrument.
+    val fleetScore = remember(vehicles) {
+        (100 - totalOverdue * 25 - totalDueSoon * 10).coerceIn(0, 100)
+    }
+    val worstStatus = when {
+        totalOverdue > 0 -> ServiceStatus.OVERDUE
+        totalDueSoon > 0 -> ServiceStatus.DUE_SOON
+        else -> ServiceStatus.OK
+    }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item(key = "health_score") {
-            FleetHealthScore(
-                vehicles = vehicles,
+        // The cockpit verdict: a sentence, not a naked number.
+        item(key = "cockpit") {
+            HealthCockpitCard(
+                headlineText = if (attentionTotal > 0) {
+                    pluralStringResource(
+                        R.plurals.dashboard_attention_headline, attentionTotal, attentionTotal
+                    )
+                } else {
+                    stringResource(R.string.dashboard_all_clear_headline)
+                },
+                supportingText = if (attentionTotal > 0) {
+                    stringResource(R.string.dashboard_cockpit_supporting)
+                } else {
+                    stringResource(R.string.dashboard_all_clear_supporting)
+                },
+                status = worstStatus,
+                score = fleetScore,
+                scoreDescription = stringResource(R.string.cd_health_score, fleetScore),
+                modifier = Modifier.animateItem()
+            )
+        }
+
+        if (attentionTotal > 0) {
+            item(key = "metrics") {
+                InsightMetricRow(modifier = Modifier.animateItem()) {
+                    InsightMetricCard(
+                        label = stringResource(R.string.dashboard_metric_overdue),
+                        value = totalOverdue.toString(),
+                        modifier = Modifier.weight(1f)
+                    )
+                    InsightMetricCard(
+                        label = stringResource(R.string.dashboard_metric_due_soon),
+                        value = totalDueSoon.toString(),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        if (attentionReminders.isNotEmpty()) {
+            item(key = "attention_header") {
+                PremiumSectionHeader(
+                    title = stringResource(R.string.dashboard_section_attention),
+                    countText = attentionTotal.toString(),
+                    modifier = Modifier.animateItem()
+                )
+            }
+            items(attentionReminders, key = { "attention_${it.reminder.id}" }) { entry ->
+                val vehicle = entry.vehicle
+                ProactiveAttentionCard(
+                    title = entry.reminder.customLabel
+                        ?: entry.reminder.serviceType.localizedLabel(),
+                    reasonText = attentionReason(entry, distanceUnit),
+                    status = entry.status,
+                    ctaLabel = if (vehicle != null) {
+                        stringResource(R.string.dashboard_attention_cta)
+                    } else {
+                        null
+                    },
+                    onCta = vehicle?.let { v -> { onVehicleClick(v.id) } },
+                    onClick = vehicle?.let { v -> { onVehicleClick(v.id) } },
+                    modifier = Modifier.animateItem()
+                )
+            }
+        }
+
+        item(key = "vehicles_header") {
+            PremiumSectionHeader(
+                title = stringResource(R.string.dashboard_section_vehicles),
+                countText = vehicles.size.toString(),
                 modifier = Modifier.animateItem()
             )
         }
         items(vehicles, key = { it.vehicle.id }) { vehicleWithStatus ->
-            VehicleCard(
-                vehicleWithStatus = vehicleWithStatus,
-                onClick = { onVehicleClick(vehicleWithStatus.vehicle.id) },
+            val vehicle = vehicleWithStatus.vehicle
+            val title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model)
+            val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+                DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit)) +
+                    " " + DistanceUtil.unitLabel(distanceUnit)
+            }
+            val statusLabel = statusLabelFor(vehicleWithStatus.status)
+            val overdueSuffix = if (vehicleWithStatus.overdueCount > 0) {
+                ", " + stringResource(R.string.dashboard_overdue_count, vehicleWithStatus.overdueCount)
+            } else {
+                ""
+            } + if (vehicleWithStatus.dueSoonCount > 0) {
+                ", " + stringResource(R.string.dashboard_due_soon_count, vehicleWithStatus.dueSoonCount)
+            } else {
+                ""
+            }
+            VehicleHeroCard(
+                title = title,
+                yearText = vehicle.year.takeIf { it > 0 }?.toString(),
+                odometerText = formattedOdometer,
+                photoUri = vehicle.photoUri,
+                mergedContentDescription = "$title, $formattedOdometer, $statusLabel$overdueSuffix",
+                statusChip = { StatusChip(status = vehicleWithStatus.status) },
+                onClick = { onVehicleClick(vehicle.id) },
                 modifier = Modifier.animateItem()
             )
         }
+
+        // Clearance so the FAB never covers the last card's actions.
+        item(key = "fab_spacer") { Spacer(modifier = Modifier.height(80.dp)) }
     }
 }
 
+/** Localized display label for a status — used in merged TalkBack summaries. */
 @Composable
-private fun VehicleCard(
-    vehicleWithStatus: VehicleWithStatus,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val vehicle = vehicleWithStatus.vehicle
-    val statusLabel = when (vehicleWithStatus.status) {
-        ServiceStatus.OVERDUE -> stringResource(R.string.status_overdue)
-        ServiceStatus.DUE_SOON -> stringResource(R.string.status_due_soon)
-        ServiceStatus.SNOOZED -> stringResource(R.string.status_snoozed)
-        ServiceStatus.OK -> stringResource(R.string.status_ok)
-        ServiceStatus.COMPLETED -> stringResource(R.string.status_completed)
-        ServiceStatus.UNKNOWN -> stringResource(R.string.status_unknown)
+private fun statusLabelFor(status: ServiceStatus): String = stringResource(
+    when (status) {
+        ServiceStatus.OVERDUE -> R.string.status_overdue
+        ServiceStatus.DUE_SOON -> R.string.status_due_soon
+        ServiceStatus.SNOOZED -> R.string.status_snoozed
+        ServiceStatus.OK -> R.string.status_ok
+        ServiceStatus.COMPLETED -> R.string.status_completed
+        ServiceStatus.UNKNOWN -> R.string.status_unknown
     }
+)
 
-    val targetCornerDp = when (vehicleWithStatus.status) {
-        ServiceStatus.OVERDUE -> 8f
-        ServiceStatus.DUE_SOON -> 16f
-        else -> 28f
-    }
-    val cornerRadius by animateFloatAsState(
-        targetValue = targetCornerDp,
-        animationSpec = spring(
-            dampingRatio = 0.7f,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "cardCorner"
-    )
+/**
+ * One-line human reason for an attention card — same truth contract as the
+ * reminder cards: a mileage-fired overdue leads with the mileage story,
+ * never a future-looking date.
+ */
+@Composable
+private fun attentionReason(
+    entry: ReminderWithStatus,
+    distanceUnit: String
+): String {
+    val reminder = entry.reminder
+    val currentOdometer = entry.vehicle?.currentOdometer
+    val dueOdometer = reminder.nextDueOdometer
 
-    val pressInteraction = remember { MutableInteractionSource() }
-    ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .pressScale(pressInteraction)
-            .clickable(
-                interactionSource = pressInteraction,
-                indication = LocalIndication.current,
-                onClickLabel = stringResource(R.string.cd_open_vehicle_details, vehicle.make, vehicle.model),
-                onClick = onClick
-            )
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                )
-            )
-            // Expertise: Professional Accessibility semantics
-            .semantics(mergeDescendants = true) {
-                contentDescription = "${vehicle.year} ${vehicle.make} ${vehicle.model}. " +
-                        "${DistanceUtil.kmToDisplay(vehicle.currentOdometer, "km")} km tracked."
-                stateDescription = "Status: $statusLabel. " +
-                        if (vehicleWithStatus.overdueCount > 0) "${vehicleWithStatus.overdueCount} items overdue." else ""
-            },
-        shape = RoundedCornerShape(cornerRadius.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-    ) {
-        Column {
-            if (vehicle.photoUri != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(vehicle.photoUri)
-                        .crossfade(300)
-                        .build(),
-                    contentDescription = null, // decorative hero image
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(140.dp),
-                    contentScale = ContentScale.Crop
+    val overdueByMileage = entry.status == ServiceStatus.OVERDUE &&
+        dueOdometer != null && currentOdometer != null && currentOdometer >= dueOdometer
+    return when {
+        overdueByMileage -> {
+            val overBy = remember(currentOdometer, dueOdometer, distanceUnit) {
+                DistanceFormat.grouped(
+                    DistanceUtil.kmToDisplay(currentOdometer!! - dueOdometer!!, distanceUnit)
                 )
             }
-
-            Row(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (vehicle.photoUri == null) {
-                    Card(
-                        modifier = Modifier.size(40.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Commute,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    val distanceUnit = LocalDistanceUnit.current
-                    val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
-                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
-                    }
-                    val subtitleText = if (vehicle.year > 0) {
-                        "${vehicle.year} • $formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
-                    } else {
-                        "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
-                    }
-                    Text(
-                        text = subtitleText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    if (vehicleWithStatus.overdueCount > 0 || vehicleWithStatus.dueSoonCount > 0) {
-                        val overdueText = if (vehicleWithStatus.overdueCount > 0) stringResource(R.string.dashboard_overdue_count, vehicleWithStatus.overdueCount) else ""
-                        val dueSoonText = if (vehicleWithStatus.dueSoonCount > 0) stringResource(R.string.dashboard_due_soon_count, vehicleWithStatus.dueSoonCount) else ""
-                        val alertText = buildString {
-                            if (overdueText.isNotEmpty()) append(overdueText)
-                            if (overdueText.isNotEmpty() && dueSoonText.isNotEmpty()) append(", ")
-                            if (dueSoonText.isNotEmpty()) append(dueSoonText)
-                        }
-                        Text(
-                            text = alertText,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (vehicleWithStatus.overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                StatusChip(status = vehicleWithStatus.status)
-            }
+            stringResource(
+                R.string.vehicle_detail_overdue_by_km, overBy, DistanceUtil.unitLabel(distanceUnit)
+            )
         }
+        reminder.nextDueDate != null -> stringResource(
+            R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)
+        )
+        dueOdometer != null -> {
+            val dueAt = remember(dueOdometer, distanceUnit) {
+                DistanceFormat.grouped(DistanceUtil.kmToDisplay(dueOdometer, distanceUnit))
+            }
+            stringResource(
+                R.string.vehicle_detail_due_at_dynamic, dueAt, DistanceUtil.unitLabel(distanceUnit)
+            )
+        }
+        else -> statusLabelFor(entry.status)
     }
 }

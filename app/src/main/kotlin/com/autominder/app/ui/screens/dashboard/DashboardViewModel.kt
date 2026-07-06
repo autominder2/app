@@ -7,7 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.autominder.app.R
 import com.autominder.app.core.util.ReviewHelper
 import com.autominder.app.domain.usecase.GetDashboardDataUseCase
+import com.autominder.app.domain.usecase.ReminderWithStatus
 import com.autominder.app.domain.usecase.VehicleWithStatus
+import com.autominder.app.domain.model.ServiceStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +32,9 @@ sealed class DashboardUiState {
     data class Error(@StringRes val messageRes: Int? = null) : DashboardUiState()
     data class Success(
         val vehicles: List<VehicleWithStatus>,
-        val alertsCount: Int
+        val alertsCount: Int,
+        /** Top urgent reminders (display-only slice of the use case's sorted list). */
+        val attentionReminders: List<ReminderWithStatus> = emptyList()
     ) : DashboardUiState()
 }
 
@@ -55,7 +59,13 @@ class DashboardViewModel @Inject constructor(
             } else {
                 DashboardUiState.Success(
                     vehicles = data.vehiclesWithStatus,
-                    alertsCount = data.alertsCount
+                    alertsCount = data.alertsCount,
+                    attentionReminders = data.upcomingReminders
+                        .filter {
+                            it.status == ServiceStatus.OVERDUE ||
+                                it.status == ServiceStatus.DUE_SOON
+                        }
+                        .take(2)
                 )
             }
         }
