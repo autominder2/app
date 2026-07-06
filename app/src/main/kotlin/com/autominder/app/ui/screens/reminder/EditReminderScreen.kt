@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,7 +202,7 @@ fun EditReminderScreen(
                 onExpandedChange = { dropdownExpanded = !dropdownExpanded }
             ) {
                 OutlinedTextField(
-                    value = uiState.serviceType.label,
+                    value = uiState.serviceType.localizedLabel(),
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
@@ -217,7 +218,7 @@ fun EditReminderScreen(
                 ) {
                     ServiceType.entries.forEach { serviceType ->
                         DropdownMenuItem(
-                            text = { Text(serviceType.label) },
+                            text = { Text(serviceType.localizedLabel()) },
                             onClick = {
                                 viewModel.onEvent(EditReminderUiEvent.ServiceTypeChanged(serviceType))
                                 dropdownExpanded = false

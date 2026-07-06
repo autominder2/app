@@ -46,6 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.localizedLabel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -189,7 +190,7 @@ private fun ServiceHistoryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = service.customLabel ?: service.serviceType.label,
+                    text = service.customLabel ?: service.serviceType.localizedLabel(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )

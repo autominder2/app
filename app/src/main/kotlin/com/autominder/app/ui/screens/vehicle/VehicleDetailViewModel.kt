@@ -46,7 +46,20 @@ import java.text.SimpleDateFormat
 import javax.inject.Inject
 
 data class MonthlySpend(val label: String, val cents: Int)
-data class TypeSpend(val label: String, val cents: Int)
+
+/**
+ * Spend bucket for the cost-by-type donut. Carries the raw identity instead
+ * of a pre-baked display string so the chart can localize at render time:
+ * [customLabel] wins (user-entered, display-safe), else [serviceType] is
+ * mapped via ServiceType.localizedLabel(), and [isOther] marks the rollup
+ * bucket for everything past the top five.
+ */
+data class TypeSpend(
+    val serviceType: com.autominder.app.domain.model.ServiceType? = null,
+    val customLabel: String? = null,
+    val isOther: Boolean = false,
+    val cents: Int
+)
 
 data class VehicleDetailUiState(
     val vehicle: Vehicle? = null,
@@ -210,13 +223,21 @@ class VehicleDetailViewModel @Inject constructor(
     ): List<TypeSpend> {
         val byType = services
             .filter { (it.costCents ?: 0) > 0 }
-            .groupBy { it.customLabel ?: it.serviceType.label }
-            .map { (label, group) -> TypeSpend(label, group.sumOf { it.costCents ?: 0 }) }
+            // Stable, locale-independent grouping key: user label or enum name
+            .groupBy { it.customLabel ?: it.serviceType.name }
+            .map { (_, group) ->
+                val first = group.first()
+                TypeSpend(
+                    serviceType = if (first.customLabel == null) first.serviceType else null,
+                    customLabel = first.customLabel,
+                    cents = group.sumOf { it.costCents ?: 0 }
+                )
+            }
             .sortedByDescending { it.cents }
         if (byType.size <= 5) return byType
         val top = byType.take(5)
         val otherCents = byType.drop(5).sumOf { it.cents }
-        return top + TypeSpend("Other", otherCents)
+        return top + TypeSpend(isOther = true, cents = otherCents)
     }
 
     /** Chronological km/L per fill-up (needs 2+ entries per point). */

@@ -26,9 +26,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.autominder.app.R
 import com.autominder.app.ui.screens.vehicle.TypeSpend
 import com.autominder.app.ui.screens.vehicle.VehicleDetailViewModel
 import com.autominder.app.ui.theme.Motion
+import com.autominder.app.ui.util.localizedLabel
 
 /**
  * Donut of all-time spend per service type with a sweep-in animation and
@@ -102,8 +105,16 @@ fun CostByTypeDonut(
                         modifier = Modifier.size(10.dp)
                     ) {}
                     Spacer(modifier = Modifier.width(8.dp))
+                    // Localize at render time — the ViewModel groups by raw
+                    // identity and never bakes display text into TypeSpend.
+                    val sliceLabel = when {
+                        slice.isOther -> stringResource(R.string.chart_other)
+                        slice.customLabel != null -> slice.customLabel
+                        slice.serviceType != null -> slice.serviceType.localizedLabel()
+                        else -> stringResource(R.string.chart_other)
+                    }
                     Text(
-                        text = slice.label,
+                        text = sliceLabel,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.weight(1f, fill = false)
                     )

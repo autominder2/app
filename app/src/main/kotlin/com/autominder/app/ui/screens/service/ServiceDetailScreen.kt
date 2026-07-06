@@ -62,6 +62,7 @@ import com.autominder.app.ui.components.LoadingState
 import java.text.NumberFormat
 import java.util.Locale
 import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,7 +181,7 @@ private fun ServiceDetailContent(service: Service) {
                     text = if (service.serviceType == ServiceType.CUSTOM) {
                         service.customLabel ?: stringResource(R.string.service_detail_custom_service)
                     } else {
-                        service.serviceType.label
+                        service.serviceType.localizedLabel()
                     },
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
