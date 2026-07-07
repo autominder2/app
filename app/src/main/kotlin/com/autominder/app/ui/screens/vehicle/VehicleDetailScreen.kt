@@ -103,6 +103,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.autominder.app.ui.util.DistanceFormat
 import com.autominder.app.ui.util.localizedLabel
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.res.pluralStringResource
+import com.autominder.app.ui.components.premium.HealthCockpitCard
+import com.autominder.app.ui.components.premium.PremiumAction
+import com.autominder.app.ui.components.premium.PremiumActionGrid
+import com.autominder.app.ui.components.premium.PremiumSectionHeader
+import com.autominder.app.ui.components.premium.StatusReminderCard
+import com.autominder.app.ui.components.premium.VehicleHeroCard
+import com.autominder.app.ui.components.premium.VehicleHeroVariant
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehicleDetailScreen(
@@ -141,13 +151,29 @@ fun VehicleDetailScreen(
     }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // The hero already says the vehicle's name — the app bar stays quiet until
+    // the hero scrolls away, then takes over. Kills the duplicate-title read.
+    val showBarTitle by remember {
+        androidx.compose.runtime.derivedStateOf {
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 220
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 scrollBehavior = scrollBehavior,
-                title = { Text(uiState.vehicle?.let { stringResource(R.string.vehicle_make_model, it.make, it.model) } ?: stringResource(R.string.vehicle_detail_title)) },
+                title = {
+                    if (showBarTitle) {
+                        Text(
+                            uiState.vehicle?.let {
+                                stringResource(R.string.vehicle_make_model, it.make, it.model)
+                            } ?: stringResource(R.string.vehicle_detail_title)
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
@@ -159,9 +185,34 @@ fun VehicleDetailScreen(
                         IconButton(onClick = { onNavigateToEditVehicle(vehicle.id) }) {
                             Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit))
                         }
-                        var showArchiveDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-                        IconButton(onClick = { showArchiveDialog = true }) {
-                            Icon(Icons.Default.Archive, contentDescription = stringResource(R.string.action_archive))
+                        var showArchiveDialog by remember { mutableStateOf(false) }
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.cd_more_options)
+                            )
+                        }
+                        androidx.compose.material3.DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.vehicle_detail_export)) },
+                                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    viewModel.onEvent(VehicleDetailUiEvent.ExportClicked)
+                                }
+                            )
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_archive)) },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    showArchiveDialog = true
+                                }
+                            )
                         }
 
                         if (showArchiveDialog) {
@@ -220,6 +271,8 @@ fun VehicleDetailScreen(
                 ScreenState.Success -> uiState.vehicle?.let { v ->
                     VehicleDetailContent(
                         vehicle = v,
+                        listState = listState,
+                        onAddReminder = { onNavigateToAddReminder(v.id) },
                         reminders = uiState.reminders,
                         reminderStatuses = uiState.reminderStatuses,
                         reminderPredictions = uiState.reminderPredictions,
@@ -235,7 +288,6 @@ fun VehicleDetailScreen(
                         onMileageLogClick = { onNavigateToMileageLog(v.id) },
                         onAddFuelClick = { onNavigateToAddFuel(v.id) },
                         onFuelHistoryClick = { onNavigateToFuelHistory(v.id) },
-                        onExportClick = { viewModel.onEvent(VehicleDetailUiEvent.ExportClicked) },
                         onMarkComplete = { reminderId ->
                             viewModel.onEvent(VehicleDetailUiEvent.MarkReminderComplete(reminderId))
                             scope.launch {
@@ -292,6 +344,8 @@ private enum class ScreenState {
 @Composable
 private fun VehicleDetailContent(
     vehicle: Vehicle,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    onAddReminder: () -> Unit,
     reminders: List<Reminder>,
     reminderStatuses: Map<Long, ServiceStatus>,
     reminderPredictions: Map<Long, DuePrediction>,
@@ -307,13 +361,13 @@ private fun VehicleDetailContent(
     onMileageLogClick: () -> Unit,
     onAddFuelClick: () -> Unit,
     onFuelHistoryClick: () -> Unit,
-    onExportClick: () -> Unit,
     onMarkComplete: (Long) -> Unit,
     onSnooze: (Long) -> Unit,
     onEditReminder: (Long) -> Unit,
     onUpdateOdometer: (Int) -> Unit
 ) {
     var showMileageSheet by remember { mutableStateOf(false) }
+    var showAllAttention by remember { mutableStateOf(false) }
     val mileageSheetState = rememberModalBottomSheetState()
     val distanceUnit = LocalDistanceUnit.current
     val haptic = LocalHapticFeedback.current
@@ -372,135 +426,147 @@ private fun VehicleDetailContent(
         )
     }
 
+    // Worst active status drives the hero chip and the diagnosis card.
+    val worstStatus = remember(reminders, reminderStatuses) {
+        reminders
+            .mapNotNull { reminderStatuses[it.id] }
+            .maxByOrNull { it.severity }
+    }
+    // Triage lists — computed once per data change, in composable scope
+    // (LazyListScope builders can't call remember).
+    val needsAttention = remember(reminders, reminderStatuses) {
+        reminders
+            .filter {
+                (reminderStatuses[it.id] ?: ServiceStatus.UNKNOWN) in
+                    setOf(ServiceStatus.OVERDUE, ServiceStatus.DUE_SOON)
+            }
+            .sortedByDescending { reminderStatuses[it.id]?.severity ?: 0 }
+    }
+    val upcoming = remember(reminders, needsAttention) {
+        reminders.filterNot { it in needsAttention }
+    }
+
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Vehicle header — hero photo or icon fallback
-        item {
-            if (vehicle.photoUri != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp)
-                ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalPlatformContext.current)
-                            .data(vehicle.photoUri)
-                            .crossfade(300)
-                            .build(),
-                        contentDescription = stringResource(R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model),
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    // Gradient scrim for legible text
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f)),
-                                    startY = 60f
-                                )
-                            )
-                    )
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (vehicle.year > 0) {
-                            Text(
-                                text = stringResource(R.string.vehicle_detail_year, vehicle.year),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color.White.copy(alpha = 0.85f)
-                            )
-                        }
-                    }
-                }
-            } else {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.DirectionsCar,
-                        contentDescription = stringResource(R.string.cd_vehicle_no_photo),
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model),
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        if (vehicle.year > 0) {
-                            Text(
-                                text = stringResource(R.string.vehicle_detail_year, vehicle.year),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
+        // 1 — The car is the hero. Name appears exactly once on screen.
+        item(key = "hero") {
+            VehicleHeroCard(
+                title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model),
+                variant = VehicleHeroVariant.Expanded,
+                yearText = vehicle.year.takeIf { it > 0 }?.toString(),
+                photoUri = vehicle.photoUri,
+                photoContentDescription = stringResource(
+                    R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model
+                ),
+                statusChip = worstStatus?.let { s -> { StatusChip(status = s) } },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
 
-        item { Spacer(modifier = Modifier.height(4.dp)) }
-
-        // Odometer — tap to update via quick sheet
-        item {
+        // 2 — Odometer as a tappable instrument, not floating text.
+        item(key = "odometer") {
+            val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+                DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
+            }
             Surface(
                 onClick = { showMileageSheet = true },
-                color = androidx.compose.ui.graphics.Color.Transparent,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.padding(horizontal = 8.dp)
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ) {
-                Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = stringResource(R.string.vehicle_detail_odometer), style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.width(6.dp))
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.vehicle_detail_odometer),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}",
+                            style = MaterialTheme.typography.displaySmall.copy(
+                                fontFamily = com.autominder.app.ui.theme.JetBrainsMono
+                            ),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.vehicle_detail_tap_to_update),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Surface(
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = stringResource(R.string.vehicle_detail_tap_to_update),
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .size(20.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                    val heroDistanceUnit = LocalDistanceUnit.current
-                    val formattedHeroOdometer = remember(vehicle.currentOdometer, heroDistanceUnit) {
-                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, heroDistanceUnit))
-                    }
-                    Text(
-                        text = "$formattedHeroOdometer ${DistanceUtil.unitLabel(heroDistanceUnit)}",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.vehicle_detail_tap_to_update),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }
 
-        // Vehicle health score
-        item {
-            val vehicle = vehicle
-            val score = computeHealthScore(reminders, reminderStatuses)
-            HealthScoreCard(
-                score = score,
-                onAddReminderClick = { onAddServiceClick() }, // Repurpose the reminder add action
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+        // 3 — Calm diagnosis before any list of problems.
+        item(key = "diagnosis") {
+            val score = remember(reminders, reminderStatuses) {
+                computeHealthScore(reminders, reminderStatuses)
+            }
+            if (score == -1) {
+                // No reminders yet — actionable setup card with a truthful CTA.
+                HealthSetupCard(
+                    onAddReminderClick = onAddReminder,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            } else {
+                val attentionCount = remember(reminders, reminderStatuses) {
+                    reminders.count {
+                        (reminderStatuses[it.id] ?: ServiceStatus.UNKNOWN) in
+                            setOf(ServiceStatus.OVERDUE, ServiceStatus.DUE_SOON)
+                    }
+                }
+                val startWith = reminders
+                    .filter { reminderStatuses[it.id] == ServiceStatus.OVERDUE }
+                    .maxByOrNull { r ->
+                        r.nextDueOdometer?.let { vehicle.currentOdometer - it } ?: Int.MIN_VALUE
+                    }
+                HealthCockpitCard(
+                    headlineText = if (attentionCount > 0) {
+                        pluralStringResource(
+                            R.plurals.dashboard_attention_headline, attentionCount, attentionCount
+                        )
+                    } else {
+                        stringResource(R.string.dashboard_all_clear_headline)
+                    },
+                    supportingText = if (startWith != null) {
+                        stringResource(
+                            R.string.vehicle_detail_start_with,
+                            startWith.customLabel ?: startWith.serviceType.localizedLabel()
+                        )
+                    } else if (attentionCount == 0) {
+                        stringResource(R.string.dashboard_all_clear_supporting)
+                    } else {
+                        stringResource(R.string.dashboard_cockpit_supporting)
+                    },
+                    status = worstStatus,
+                    score = score,
+                    scoreDescription = stringResource(R.string.cd_health_score, score),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
 
         // Cost summary (Pro feature)
@@ -640,80 +706,38 @@ private fun VehicleDetailContent(
             }
         }
 
-        // Action buttons
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
+        // 4 — One emphasized next step; Export lives in the app-bar overflow.
+        item(key = "actions") {
+            PremiumActionGrid(
+                actions = listOf(
+                    PremiumAction(
+                        icon = Icons.Default.Build,
+                        label = stringResource(R.string.vehicle_detail_log_service),
                         onClick = onAddServiceClick,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Build, contentDescription = stringResource(R.string.vehicle_detail_log_service), modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.vehicle_detail_log_service))
-                    }
-                    OutlinedButton(
-                        onClick = onMileageLogClick,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.vehicle_detail_mileage), modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.vehicle_detail_mileage))
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onAddFuelClick,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.LocalGasStation, contentDescription = stringResource(R.string.fuel_add_title), modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.fuel_add_title))
-                    }
-                    OutlinedButton(
-                        onClick = onFuelHistoryClick,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.LocalGasStation, contentDescription = stringResource(R.string.fuel_history_title), modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.fuel_history_title))
-                    }
-                }
-                OutlinedButton(
-                    onClick = onExportClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.vehicle_detail_export), modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.vehicle_detail_export))
-                }
-            }
-        }
-
-        item {
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                Text(
-                    text = stringResource(R.string.vehicle_detail_reminders),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+                        emphasized = true
+                    ),
+                    PremiumAction(
+                        icon = Icons.Default.LocalGasStation,
+                        label = stringResource(R.string.fuel_add_title),
+                        onClick = onAddFuelClick
+                    ),
+                    PremiumAction(
+                        icon = Icons.Default.Speed,
+                        label = stringResource(R.string.vehicle_detail_mileage),
+                        onClick = onMileageLogClick
+                    ),
+                    PremiumAction(
+                        icon = Icons.Default.History,
+                        label = stringResource(R.string.fuel_history_title),
+                        onClick = onFuelHistoryClick
+                    )
+                ),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
 
         if (reminders.isEmpty()) {
-            item {
+            item(key = "no_reminders") {
                 Text(
                     text = stringResource(R.string.vehicle_detail_no_reminders),
                     style = MaterialTheme.typography.bodyMedium,
@@ -722,30 +746,44 @@ private fun VehicleDetailContent(
                 )
             }
         } else {
-            // BMW-style split: faults never share a stream with routine
-            // services. Attention items lead; everything healthy waits below.
-            val needsAttention = reminders.filter {
-                (reminderStatuses[it.id] ?: ServiceStatus.UNKNOWN) in
-                    setOf(ServiceStatus.OVERDUE, ServiceStatus.DUE_SOON)
+            // 5 — Triage, not a wall: worst three lead, the rest fold away,
+            // nothing becomes unreachable. Faults never share a stream with
+            // routine services.
+            val visibleAttention = if (showAllAttention) {
+                needsAttention
+            } else {
+                needsAttention.take(3)
             }
-            val upcoming = reminders.filterNot { it in needsAttention }
 
             if (needsAttention.isNotEmpty()) {
                 item(key = "section_attention") {
-                    SectionLabel(
-                        text = stringResource(R.string.vehicle_detail_needs_attention),
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.animateItem()
+                    PremiumSectionHeader(
+                        title = stringResource(R.string.vehicle_detail_needs_attention),
+                        countText = needsAttention.size.toString(),
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                     )
                 }
-                items(needsAttention, key = { it.id }) { reminder ->
-                    ReminderCard(
+                items(visibleAttention, key = { it.id }) { reminder ->
+                    val status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN
+                    val (timingPrimary, timingSecondary) = reminderTiming(
                         reminder = reminder,
-                        status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
+                        status = status,
                         prediction = reminderPredictions[reminder.id],
                         currentOdometerKm = vehicle.currentOdometer,
+                        distanceUnit = distanceUnit
+                    )
+                    StatusReminderCard(
+                        title = reminder.customLabel ?: reminder.serviceType.localizedLabel(),
+                        status = status,
+                        timingPrimary = timingPrimary,
+                        timingSecondary = timingSecondary,
+                        doneLabel = stringResource(R.string.action_done),
+                        snoozeLabel = stringResource(R.string.action_snooze),
+                        editContentDescription = stringResource(R.string.action_edit),
                         onClick = { onReminderClick(reminder) },
-                        onMarkComplete = { onMarkComplete(reminder.id) },
+                        onDone = { onMarkComplete(reminder.id) },
                         onSnooze = { onSnooze(reminder.id) },
                         onEdit = { onEditReminder(reminder.id) },
                         modifier = Modifier
@@ -753,9 +791,29 @@ private fun VehicleDetailContent(
                             .padding(horizontal = 16.dp)
                     )
                 }
+                if (needsAttention.size > 3) {
+                    item(key = "attention_expander") {
+                        TextButton(
+                            onClick = { showAllAttention = !showAllAttention },
+                            modifier = Modifier
+                                .animateItem()
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            Text(
+                                text = if (showAllAttention) {
+                                    stringResource(R.string.vehicle_detail_show_less)
+                                } else {
+                                    stringResource(
+                                        R.string.vehicle_detail_show_all, needsAttention.size
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
             } else {
-                // Tesla's curation principle: when nothing is wrong, say so in
-                // one calm sentence — with the forecast date when we have one.
+                // When nothing is wrong, say so in one calm sentence.
                 item(key = "section_all_clear") {
                     val nextDue = upcoming
                         .mapNotNull { reminderPredictions[it.id]?.predictedAt }
@@ -771,20 +829,33 @@ private fun VehicleDetailContent(
 
             if (upcoming.isNotEmpty()) {
                 item(key = "section_upcoming") {
-                    SectionLabel(
-                        text = stringResource(R.string.vehicle_detail_upcoming),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.animateItem()
+                    PremiumSectionHeader(
+                        title = stringResource(R.string.vehicle_detail_upcoming),
+                        countText = upcoming.size.toString(),
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                     )
                 }
                 items(upcoming, key = { it.id }) { reminder ->
-                    ReminderCard(
+                    val status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN
+                    val (timingPrimary, timingSecondary) = reminderTiming(
                         reminder = reminder,
-                        status = reminderStatuses[reminder.id] ?: ServiceStatus.UNKNOWN,
+                        status = status,
                         prediction = reminderPredictions[reminder.id],
                         currentOdometerKm = vehicle.currentOdometer,
+                        distanceUnit = distanceUnit
+                    )
+                    StatusReminderCard(
+                        title = reminder.customLabel ?: reminder.serviceType.localizedLabel(),
+                        status = status,
+                        timingPrimary = timingPrimary,
+                        timingSecondary = timingSecondary,
+                        doneLabel = stringResource(R.string.action_done),
+                        snoozeLabel = stringResource(R.string.action_snooze),
+                        editContentDescription = stringResource(R.string.action_edit),
                         onClick = { onReminderClick(reminder) },
-                        onMarkComplete = { onMarkComplete(reminder.id) },
+                        onDone = { onMarkComplete(reminder.id) },
                         onSnooze = { onSnooze(reminder.id) },
                         onEdit = { onEditReminder(reminder.id) },
                         modifier = Modifier
@@ -799,19 +870,64 @@ private fun VehicleDetailContent(
     }
 }
 
+/**
+ * Timing pair for a reminder row — primary line first, optional demoted
+ * second line. Same truth contract as Slice 1A: a mileage-fired overdue
+ * leads with "Overdue by X km"; a future date never leads on an overdue card.
+ */
 @Composable
-private fun SectionLabel(
-    text: String,
-    color: androidx.compose.ui.graphics.Color,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.SemiBold,
-        color = color,
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-    )
+private fun reminderTiming(
+    reminder: Reminder,
+    status: ServiceStatus,
+    prediction: DuePrediction?,
+    currentOdometerKm: Int,
+    distanceUnit: String
+): Pair<String, String?> {
+    val kmLeft = prediction?.kmRemaining
+    val expectedAt = prediction?.predictedAt
+    val overdueByMileage = status == ServiceStatus.OVERDUE &&
+        reminder.nextDueOdometer != null &&
+        currentOdometerKm >= reminder.nextDueOdometer
+    return when {
+        overdueByMileage -> {
+            val overBy = remember(currentOdometerKm, reminder.nextDueOdometer, distanceUnit) {
+                DistanceFormat.grouped(
+                    DistanceUtil.kmToDisplay(currentOdometerKm - reminder.nextDueOdometer!!, distanceUnit)
+                )
+            }
+            stringResource(
+                R.string.vehicle_detail_overdue_by_km, overBy, DistanceUtil.unitLabel(distanceUnit)
+            ) to reminder.nextDueDate?.let {
+                stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(it))
+            }
+        }
+        kmLeft != null && expectedAt != null -> {
+            val left = remember(kmLeft, distanceUnit) {
+                DistanceFormat.grouped(DistanceUtil.kmToDisplay(kmLeft, distanceUnit))
+            }
+            stringResource(
+                R.string.vehicle_detail_forecast,
+                left,
+                DistanceUtil.unitLabel(distanceUnit),
+                DateFormatUtil.formatDate(expectedAt)
+            ) to null
+        }
+        reminder.nextDueDate != null -> stringResource(
+            R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)
+        ) to reminder.nextDueOdometer?.let {
+            stringResource(
+                R.string.vehicle_detail_due_at_dynamic,
+                DistanceFormat.grouped(DistanceUtil.kmToDisplay(it, distanceUnit)),
+                DistanceUtil.unitLabel(distanceUnit)
+            )
+        }
+        reminder.nextDueOdometer != null -> stringResource(
+            R.string.vehicle_detail_due_at_dynamic,
+            DistanceFormat.grouped(DistanceUtil.kmToDisplay(reminder.nextDueOdometer, distanceUnit)),
+            DistanceUtil.unitLabel(distanceUnit)
+        ) to null
+        else -> stringResource(R.string.reminder_detail_timing_unset) to null
+    }
 }
 
 @Composable
@@ -846,183 +962,6 @@ private fun AllClearBanner(
     }
 }
 
-@Composable
-private fun ReminderCard(
-    reminder: Reminder,
-    status: ServiceStatus,
-    prediction: DuePrediction?,
-    currentOdometerKm: Int,
-    onClick: () -> Unit,
-    onMarkComplete: () -> Unit,
-    onSnooze: () -> Unit,
-    onEdit: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val haptic = LocalHapticFeedback.current
-    val distanceUnit = LocalDistanceUnit.current
-
-    val cardColor by animateColorAsState(
-        targetValue = when (status) {
-            ServiceStatus.OVERDUE  -> MaterialTheme.colorScheme.errorContainer
-            ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.tertiaryContainer
-            ServiceStatus.SNOOZED  -> MaterialTheme.colorScheme.surfaceVariant
-            else                   -> MaterialTheme.colorScheme.surface
-        },
-        label = "cardColor"
-    )
-    val contentColor = when (status) {
-        ServiceStatus.OVERDUE  -> MaterialTheme.colorScheme.onErrorContainer
-        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.onTertiaryContainer
-        else                   -> MaterialTheme.colorScheme.onSurface
-    }
-    val elevation = if (status == ServiceStatus.OVERDUE) 4.dp else 1.dp
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(
-                animationSpec = androidx.compose.animation.core.tween(
-                    durationMillis = 200,
-                    easing = androidx.compose.animation.core.EaseOutCubic
-                )
-            )
-    ) {
-        ElevatedCard(
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.elevatedCardColors(containerColor = cardColor),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = elevation)
-        ) {
-            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                // Left accent strip for OVERDUE — IntrinsicSize.Min gives the Row a
-                // bounded height so fillMaxHeight() on this strip resolves correctly
-                if (status == ServiceStatus.OVERDUE) {
-                    Box(
-                        modifier = Modifier
-                            .width(4.dp)
-                            .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.error)
-                    )
-                }
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = reminder.customLabel ?: reminder.serviceType.localizedLabel(),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = contentColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = onEdit) {
-                            Icon(
-                                Icons.Default.Edit,
-                                contentDescription = stringResource(R.string.action_edit),
-                                modifier = Modifier.size(18.dp),
-                                tint = contentColor.copy(alpha = 0.7f)
-                            )
-                        }
-                        StatusChip(status = status)
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Personalized forecast beats raw thresholds: "≈ 900 km left,
-                    // expect it around Aug 12" reads like a mechanic who knows
-                    // your car, not a database row.
-                    val kmLeft = prediction?.kmRemaining
-                    val expectedAt = prediction?.predictedAt
-                    // Overdue cards must lead with why they're overdue — never with a
-                    // future-looking date when the mileage trigger is what fired.
-                    val overdueByMileage = status == ServiceStatus.OVERDUE &&
-                        reminder.nextDueOdometer != null &&
-                        currentOdometerKm >= reminder.nextDueOdometer
-                    if (overdueByMileage) {
-                        val overBy = currentOdometerKm - reminder.nextDueOdometer!!
-                        val formattedOverBy = remember(overBy, distanceUnit) {
-                            DistanceFormat.grouped(DistanceUtil.kmToDisplay(overBy, distanceUnit))
-                        }
-                        Text(
-                            text = stringResource(
-                                R.string.vehicle_detail_overdue_by_km,
-                                formattedOverBy,
-                                DistanceUtil.unitLabel(distanceUnit)
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = contentColor
-                        )
-                        // Original due date kept as de-emphasized reference context.
-                        if (reminder.nextDueDate != null) {
-                            Text(
-                                text = stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor.copy(alpha = 0.6f)
-                            )
-                        }
-                    } else if (kmLeft != null && expectedAt != null) {
-                        val formattedKmLeft = remember(kmLeft, distanceUnit) {
-                            DistanceFormat.grouped(DistanceUtil.kmToDisplay(kmLeft, distanceUnit))
-                        }
-                        Text(
-                            text = stringResource(
-                                R.string.vehicle_detail_forecast,
-                                formattedKmLeft,
-                                DistanceUtil.unitLabel(distanceUnit),
-                                DateFormatUtil.formatDate(expectedAt)
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = contentColor.copy(alpha = 0.9f)
-                        )
-                    } else {
-                        if (reminder.nextDueDate != null) {
-                            Text(
-                                text = stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor.copy(alpha = 0.75f)
-                            )
-                        }
-                        if (reminder.nextDueOdometer != null) {
-                            val formattedDueOdometer = remember(reminder.nextDueOdometer, distanceUnit) {
-                                DistanceFormat.grouped(DistanceUtil.kmToDisplay(reminder.nextDueOdometer, distanceUnit))
-                            }
-                            Text(
-                                text = stringResource(R.string.vehicle_detail_due_at_dynamic, formattedDueOdometer, DistanceUtil.unitLabel(distanceUnit)),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor.copy(alpha = 0.75f)
-                            )
-                        }
-                    }
-
-                    if (!reminder.isCompleted) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                                onSnooze()
-                            }) {
-                                Text(stringResource(R.string.action_snooze), color = contentColor)
-                            }
-                            TextButton(onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                                onMarkComplete()
-                            }) {
-                                Text(stringResource(R.string.action_done), color = contentColor)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 private fun computeHealthScore(
     reminders: List<Reminder>,
     statuses: Map<Long, ServiceStatus>
@@ -1039,99 +978,47 @@ private fun computeHealthScore(
     return (total / reminders.size).coerceIn(0, 100)
 }
 
+/**
+ * Shown instead of the diagnosis card when the vehicle has zero reminders:
+ * an honest setup nudge whose CTA actually opens Add Reminder.
+ */
 @Composable
-private fun HealthScoreCard(
-    score: Int,
-    onAddReminderClick: (() -> Unit)? = null,
+private fun HealthSetupCard(
+    onAddReminderClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (score == -1) {
-        // Actionable empty state — nudge user to set up health tracking
-        ElevatedCard(
-            modifier = modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Build,
-                    contentDescription = stringResource(R.string.cd_vehicle_health),
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.vehicle_health_setup_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.vehicle_health_setup_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-                if (onAddReminderClick != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = onAddReminderClick) {
-                        Text(stringResource(R.string.vehicle_health_add_reminder))
-                    }
-                }
-            }
-        }
-        return
-    }
-
-    val (color, label) = when {
-        score >= 80 -> MaterialTheme.colorScheme.primary to stringResource(R.string.vehicle_health_great)
-        score >= 60 -> MaterialTheme.colorScheme.tertiary to stringResource(R.string.vehicle_health_good)
-        score >= 40 -> MaterialTheme.colorScheme.secondary to stringResource(R.string.vehicle_health_fair)
-        else        -> MaterialTheme.colorScheme.error to stringResource(R.string.vehicle_health_needs_attention)
-    }
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.vehicle_health_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = color,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { score / 100f },
-                    color = color,
-                    trackColor = color.copy(alpha = 0.15f),
-                    strokeWidth = 6.dp,
-                    modifier = Modifier.size(64.dp)
-                )
-                Text(
-                    text = "$score",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = color
-                )
+            Icon(
+                imageVector = Icons.Default.Build,
+                contentDescription = stringResource(R.string.cd_vehicle_health),
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.vehicle_health_setup_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.vehicle_health_setup_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(onClick = onAddReminderClick) {
+                Text(stringResource(R.string.vehicle_health_add_reminder))
             }
         }
     }
