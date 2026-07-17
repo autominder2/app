@@ -445,7 +445,7 @@ private fun VehicleField(
         label = { Text(label) },
         leadingIcon = { Icon(icon, contentDescription = null) },
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = MaterialTheme.shapes.medium,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = true
     )

@@ -181,8 +181,18 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Button(onClick = { showPaywall = true }) {
-                            Text(stringResource(R.string.settings_upgrade_button))
+                        // Visual affordance only — the whole card is the single
+                        // tap target, so TalkBack hears one button, not two.
+                        androidx.compose.material3.Surface(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_upgrade_button),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                            )
                         }
                     }
                 }
@@ -239,7 +249,7 @@ fun SettingsScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Notifications,
-                    contentDescription = stringResource(R.string.settings_enable_notifications),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Column(modifier = Modifier.weight(1f)) {
@@ -289,7 +299,7 @@ fun SettingsScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Palette,
-                    contentDescription = stringResource(R.string.settings_theme),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Column(modifier = Modifier.weight(1f)) {
@@ -328,7 +338,7 @@ fun SettingsScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Straighten,
-                    contentDescription = stringResource(R.string.settings_distance_unit),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Column(modifier = Modifier.weight(1f)) {
@@ -378,7 +388,7 @@ fun SettingsScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Info,
-                    contentDescription = stringResource(R.string.settings_about),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
@@ -388,7 +398,7 @@ fun SettingsScreen(
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = stringResource(R.string.settings_about),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -412,7 +422,7 @@ fun SettingsScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.PrivacyTip,
-                    contentDescription = stringResource(R.string.settings_privacy_policy),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
@@ -422,7 +432,7 @@ fun SettingsScreen(
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = stringResource(R.string.settings_privacy_policy),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -450,7 +460,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.PrivacyTip,
-                        contentDescription = stringResource(R.string.settings_ad_privacy),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
@@ -460,7 +470,7 @@ fun SettingsScreen(
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = stringResource(R.string.settings_ad_privacy),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

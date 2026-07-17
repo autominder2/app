@@ -329,7 +329,7 @@ private fun AddCarStep(
             label = { Text(stringResource(R.string.label_brand)) },
             leadingIcon = { Icon(Icons.Default.DirectionsCar, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
+            shape = MaterialTheme.shapes.medium,
             singleLine = true
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -339,7 +339,7 @@ private fun AddCarStep(
             label = { Text(stringResource(R.string.label_model)) },
             leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
+            shape = MaterialTheme.shapes.medium,
             singleLine = true
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -356,7 +356,7 @@ private fun AddCarStep(
             },
             leadingIcon = { Icon(Icons.Default.Speed, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
+            shape = MaterialTheme.shapes.medium,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true
         )

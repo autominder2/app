@@ -58,7 +58,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.FormField
-import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.ListSkeleton
 import java.text.NumberFormat
 import java.util.Locale
 import com.autominder.app.ui.util.DateFormatUtil
@@ -137,7 +137,7 @@ fun ServiceDetailScreen(
         ) {
             val errorRes = uiState.errorRes
             when {
-                uiState.isLoading -> LoadingState()
+                uiState.isLoading -> ListSkeleton(rows = 3)
                 errorRes != null -> ErrorState(
                     message = stringResource(errorRes, *uiState.errorArgs.toTypedArray()),
                     onRetry = { viewModel.retry() }

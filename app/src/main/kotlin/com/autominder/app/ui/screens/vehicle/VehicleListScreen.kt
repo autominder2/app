@@ -51,7 +51,7 @@ import com.autominder.app.domain.model.Vehicle
 import androidx.compose.runtime.remember
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
-import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.components.pressScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -104,7 +104,7 @@ fun VehicleListScreen(
                 .padding(padding)
         ) {
             when (val state = uiState) {
-                is VehicleListUiState.Loading -> LoadingState()
+                is VehicleListUiState.Loading -> ListSkeleton()
                 is VehicleListUiState.Empty -> EmptyState(
                     title = stringResource(R.string.vehicle_list_empty_title),
                     subtitle = stringResource(R.string.vehicle_list_empty_subtitle),

@@ -88,7 +88,7 @@ import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.LocalIsProUser
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
-import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.components.ProFeatureGate
 import com.autominder.app.ui.components.QuickMileageSheet
 import com.autominder.app.ui.components.ReminderDetailSheet
@@ -259,7 +259,7 @@ fun VehicleDetailScreen(
             modifier = Modifier.padding(padding)
         ) { state ->
             when (state) {
-                ScreenState.Loading -> LoadingState()
+                ScreenState.Loading -> ListSkeleton(rows = 5)
                 ScreenState.Empty -> EmptyState(
                     title = stringResource(R.string.vehicle_detail_not_found),
                     subtitle = stringResource(R.string.vehicle_detail_not_found_subtitle)

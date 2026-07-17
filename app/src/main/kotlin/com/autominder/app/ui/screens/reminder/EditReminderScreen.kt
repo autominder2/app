@@ -18,11 +18,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,8 +43,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.domain.model.ServiceType
+import com.autominder.app.ui.components.ServiceTypeGrid
 import com.autominder.app.ui.util.DateFormatUtil
-import com.autominder.app.ui.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +56,6 @@ fun EditReminderScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var dropdownExpanded by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
@@ -197,36 +192,12 @@ fun EditReminderScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            ExposedDropdownMenuBox(
-                expanded = dropdownExpanded,
-                onExpandedChange = { dropdownExpanded = !dropdownExpanded }
-            ) {
-                OutlinedTextField(
-                    value = uiState.serviceType.localizedLabel(),
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                )
-
-                ExposedDropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false }
-                ) {
-                    ServiceType.entries.forEach { serviceType ->
-                        DropdownMenuItem(
-                            text = { Text(serviceType.localizedLabel()) },
-                            onClick = {
-                                viewModel.onEvent(EditReminderUiEvent.ServiceTypeChanged(serviceType))
-                                dropdownExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
+            // Same one-tap grid as Add Service/Add Reminder — one selection
+            // pattern for the same concept everywhere.
+            ServiceTypeGrid(
+                selected = uiState.serviceType,
+                onSelected = { viewModel.onEvent(EditReminderUiEvent.ServiceTypeChanged(it)) }
+            )
 
             if (uiState.serviceType == ServiceType.CUSTOM) {
                 Spacer(modifier = Modifier.height(16.dp))
