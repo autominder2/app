@@ -24,6 +24,7 @@ import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import com.autominder.app.ui.components.SwipeToDeleteContainer
 import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.theme.JetBrainsMono
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
@@ -171,23 +172,23 @@ private fun FuelEntryCard(
                 Column {
                     Text(
                         stringResource(R.string.mileage_log_odometer_value, item.entry.odometer),
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge.copy(fontFamily = JetBrainsMono)
                     )
                     Text(
                         "${item.entry.volumeMilliliters / 1000.0} L",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = JetBrainsMono)
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         currencyFormat.format(item.entry.costCents / 100.0),
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontFamily = JetBrainsMono),
                         fontWeight = FontWeight.Bold
                     )
                     item.efficiency?.let {
                         Text(
                             stringResource(R.string.fuel_efficiency_value_km_l, it),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = JetBrainsMono),
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }

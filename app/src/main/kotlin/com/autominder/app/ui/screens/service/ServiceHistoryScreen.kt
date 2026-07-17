@@ -23,7 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.autominder.app.ui.theme.JetBrainsMono
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -170,7 +172,7 @@ private fun ServiceHistoryCard(
     modifier: Modifier = Modifier
 ) {
     val service = serviceWithVehicle.service
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
+    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale.getDefault()) }
 
     ElevatedCard(
         modifier = modifier
@@ -197,7 +199,7 @@ private fun ServiceHistoryCard(
                 if (service.costCents != null) {
                     Text(
                         text = currencyFormat.format(service.costCents / 100.0),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(fontFamily = JetBrainsMono),
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )

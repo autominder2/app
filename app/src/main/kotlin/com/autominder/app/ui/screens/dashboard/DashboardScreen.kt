@@ -1,7 +1,11 @@
 package com.autominder.app.ui.screens.dashboard
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import com.autominder.app.ui.theme.Motion
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -135,6 +139,9 @@ fun DashboardScreen(
     var fabMenuExpanded by remember { mutableStateOf(false) }
     var pendingAction by remember { mutableStateOf<QuickAction?>(null) }
 
+    // Back gesture closes the quick-actions menu instead of leaving the screen.
+    BackHandler(enabled = fabMenuExpanded) { fabMenuExpanded = false }
+
     fun launchQuickAction(action: QuickAction) {
         fabMenuExpanded = false
         when {
@@ -228,7 +235,7 @@ fun DashboardScreen(
 
                 val fabRotation by animateFloatAsState(
                     targetValue = if (fabMenuExpanded) 45f else 0f,
-                    animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium),
+                    animationSpec = Motion.springSnappy(),
                     label = "fab_rotation"
                 )
                 ExtendedFloatingActionButton(
@@ -255,30 +262,49 @@ fun DashboardScreen(
             }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when (val state = uiState) {
-                is DashboardUiState.Loading -> DashboardSkeleton()
-                is DashboardUiState.Empty -> EmptyState(
-                    title = stringResource(R.string.dashboard_no_vehicles_title),
-                    subtitle = stringResource(R.string.dashboard_no_vehicles_subtitle),
-                    onAction = onNavigateToAddVehicle,
-                    actionLabel = stringResource(R.string.action_add_vehicle),
-                    icon = Icons.Default.Commute,
-                    hint = stringResource(R.string.dashboard_add_first_vehicle_hint)
-                )
-                is DashboardUiState.Error -> ErrorState(
-                    message = stringResource(state.messageRes ?: R.string.dashboard_error),
-                    onRetry = { viewModel.retry() }
-                )
-                is DashboardUiState.Success -> DashboardContent(
-                    vehicles = state.vehicles,
-                    attentionReminders = state.attentionReminders,
-                    onVehicleClick = onNavigateToVehicleDetail,
-                    listState = listState
+            Column(modifier = Modifier.fillMaxSize()) {
+                when (val state = uiState) {
+                    is DashboardUiState.Loading -> DashboardSkeleton()
+                    is DashboardUiState.Empty -> EmptyState(
+                        title = stringResource(R.string.dashboard_no_vehicles_title),
+                        subtitle = stringResource(R.string.dashboard_no_vehicles_subtitle),
+                        onAction = onNavigateToAddVehicle,
+                        actionLabel = stringResource(R.string.action_add_vehicle),
+                        icon = Icons.Default.Commute,
+                        hint = stringResource(R.string.dashboard_add_first_vehicle_hint)
+                    )
+                    is DashboardUiState.Error -> ErrorState(
+                        message = stringResource(state.messageRes ?: R.string.dashboard_error),
+                        onRetry = { viewModel.retry() }
+                    )
+                    is DashboardUiState.Success -> DashboardContent(
+                        vehicles = state.vehicles,
+                        attentionReminders = state.attentionReminders,
+                        onVehicleClick = onNavigateToVehicleDetail,
+                        listState = listState
+                    )
+                }
+            }
+
+            // Scrim under the open quick-actions menu — tap anywhere to dismiss.
+            AnimatedVisibility(
+                visible = fabMenuExpanded,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { fabMenuExpanded = false }
                 )
             }
         }

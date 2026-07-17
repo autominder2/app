@@ -469,6 +469,14 @@
     <string name="paywall_lifetime_label">Lifetime · %1$s — Pay once, own forever</string>
     <string name="paywall_price_loading">Loading price…</string>
     <string name="paywall_restore">Restore Purchases</string>
+    <string name="paywall_plan_monthly">Monthly</string>
+    <string name="paywall_plan_yearly">Yearly</string>
+    <string name="paywall_plan_lifetime">Lifetime</string>
+    <string name="paywall_plan_lifetime_subtitle">Pay once, own forever</string>
+    <string name="paywall_continue">Continue</string>
+    <string name="paywall_price_unavailable">Unavailable</string>
+    <string name="cd_paywall_included">Included</string>
+    <string name="cd_paywall_not_included">Not included</string>
     <!-- Billing feedback — purchase and restore outcomes -->
     <string name="purchase_success">Purchase successful! Welcome to Pro.</string>
     <string name="purchase_cancelled">Purchase cancelled.</string>

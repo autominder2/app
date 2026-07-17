@@ -139,7 +139,7 @@ fun StatusReminderCard(
                     Text(
                         text = timingSecondary,
                         style = MaterialTheme.typography.bodySmall,
-                        color = contentColor.copy(alpha = 0.65f)
+                        color = contentColor.copy(alpha = 0.8f)
                     )
                 }
 
