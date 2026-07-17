@@ -15,12 +15,15 @@ Manual smoke test: open paywall from Settings (plan cards select, Continue launc
 Lint note: `paywall_yearly_label`, `paywall_monthly_label`, `paywall_lifetime_label` are now unused strings — safe to delete once the gate is green.
 
 ## 2. Remaining P1 UI work (code, needs its own sessions)
-- [ ] Skeletons for Vehicles tab + Vehicle Detail (replace spinners)
+- [x] Skeletons: Vehicles, Vehicle Detail, Service Detail (`2b57622`)
+- [x] Add/Edit Reminder → `ServiceTypeGrid` (`2b57622`)
+- [x] Settings decorative-icon a11y + single-target upgrade card (`2b57622`)
+- [x] Off-token corners 14dp → `shapes.medium` (`2b57622`)
 - [ ] Vehicles tab → `VehicleHeroCard(Compact)` + `StatusChip` (needs status in `VehicleListViewModel`)
 - [ ] Records → wire `RecordsTimelineCard` + `ServiceTypeIcons`
-- [ ] AddReminder → `ServiceTypeGrid` (replace dropdown); `FormSectionCard` on all 6 forms
+- [ ] `FormSectionCard` sectioning on the 6 form screens
 - [ ] Settings grouped-card sections; optional dynamic color toggle
-- [ ] Off-token corners (14dp → `shapes.medium`); shared `InfoBanner`; onboarding TalkBack liveRegion
+- [ ] Shared `InfoBanner`; onboarding TalkBack liveRegion (needs on-device TalkBack verification)
 
 ## 3. Figma file (design source of truth)
 https://www.figma.com/design/NkQV8bOTxpHa36QCbGZmNT — 16 screens done.
