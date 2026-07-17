@@ -68,6 +68,7 @@ import com.autominder.app.ui.components.ProPaywall
 @Composable
 fun SettingsScreen(
     onNavigateToAbout: () -> Unit,
+    openPaywallOnLaunch: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,7 +80,7 @@ fun SettingsScreen(
     val lifetimePrice by viewModel.lifetimePriceText.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context as? Activity
-    var showPaywall by remember { mutableStateOf(false) }
+    var showPaywall by remember { mutableStateOf(openPaywallOnLaunch) }
     val paywallSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val snackbarHostState = LocalSnackbarHostState.current
 

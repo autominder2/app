@@ -185,7 +185,6 @@
     <string name="vehicle_detail_due_date">Due: %1$s</string>
     <string name="vehicle_detail_forecast">≈ %1$s %2$s left · expect it around %3$s</string>
     <string name="vehicle_detail_overdue_by_km">Overdue by %1$s %2$s</string>
-    <string name="vehicle_detail_upgrade_hint">Open Settings → Upgrade to Pro to unlock this</string>
     <string name="vehicle_detail_show_all">Show all (%1$d)</string>
     <string name="vehicle_detail_show_less">Show less</string>
     <string name="vehicle_detail_start_with">Start with: %1$s</string>

@@ -15,6 +15,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.autominder.app.ui.theme.Motion
 import com.autominder.app.ui.screens.about.AboutScreen
 import com.autominder.app.ui.screens.dashboard.DashboardScreen
@@ -147,8 +148,10 @@ fun NavGraph(
             exitTransition = tabExit,
             popEnterTransition = tabEnter,
             popExitTransition = tabExit
-        ) {
+        ) { backStackEntry ->
+            val args = backStackEntry.toRoute<NavRoutes.Settings>()
             SettingsScreen(
+                openPaywallOnLaunch = args.openPaywall,
                 onNavigateToAbout = {
                     navController.navigate(NavRoutes.About)
                 }
@@ -185,6 +188,9 @@ fun NavGraph(
                 },
                 onNavigateToFuelHistory = { vehicleId ->
                     navController.navigate(NavRoutes.FuelHistory(vehicleId))
+                },
+                onNavigateToPaywall = {
+                    navController.navigate(NavRoutes.Settings(openPaywall = true))
                 }
             )
         }

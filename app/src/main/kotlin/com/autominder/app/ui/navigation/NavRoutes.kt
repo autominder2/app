@@ -19,7 +19,7 @@ sealed class NavRoutes {
     object ServiceHistory : NavRoutes()
 
     @Serializable
-    object Settings : NavRoutes()
+    data class Settings(val openPaywall: Boolean = false) : NavRoutes()
 
     // ── Vehicle Flow ──────────────────────────────────────────────────────
     @Serializable

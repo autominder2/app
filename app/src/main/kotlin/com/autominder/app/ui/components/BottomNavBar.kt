@@ -32,7 +32,7 @@ private val bottomNavItems = listOf(
     BottomNavItem(R.string.nav_home, Icons.Default.Dashboard, NavRoutes.Dashboard),
     BottomNavItem(R.string.nav_vehicles, Icons.Default.DirectionsCar, NavRoutes.VehicleList),
     BottomNavItem(R.string.nav_records, Icons.Default.History, NavRoutes.ServiceHistory),
-    BottomNavItem(R.string.nav_settings, Icons.Default.Settings, NavRoutes.Settings)
+    BottomNavItem(R.string.nav_settings, Icons.Default.Settings, NavRoutes.Settings())
 )
 
 @Composable

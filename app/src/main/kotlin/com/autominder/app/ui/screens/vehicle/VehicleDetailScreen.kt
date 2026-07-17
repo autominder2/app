@@ -124,6 +124,7 @@ fun VehicleDetailScreen(
     onNavigateToEditReminder: (Long) -> Unit = {},
     onNavigateToAddFuel: (Long) -> Unit = {},
     onNavigateToFuelHistory: (Long) -> Unit = {},
+    onNavigateToPaywall: () -> Unit = {},
     viewModel: VehicleDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -288,6 +289,7 @@ fun VehicleDetailScreen(
                         onMileageLogClick = { onNavigateToMileageLog(v.id) },
                         onAddFuelClick = { onNavigateToAddFuel(v.id) },
                         onFuelHistoryClick = { onNavigateToFuelHistory(v.id) },
+                        onNavigateToPaywall = onNavigateToPaywall,
                         onMarkComplete = { reminderId ->
                             viewModel.onEvent(VehicleDetailUiEvent.MarkReminderComplete(reminderId))
                             scope.launch {
@@ -361,6 +363,7 @@ private fun VehicleDetailContent(
     onMileageLogClick: () -> Unit,
     onAddFuelClick: () -> Unit,
     onFuelHistoryClick: () -> Unit,
+    onNavigateToPaywall: () -> Unit,
     onMarkComplete: (Long) -> Unit,
     onSnooze: (Long) -> Unit,
     onEditReminder: (Long) -> Unit,
@@ -371,20 +374,7 @@ private fun VehicleDetailContent(
     val mileageSheetState = rememberModalBottomSheetState()
     val distanceUnit = LocalDistanceUnit.current
     val haptic = LocalHapticFeedback.current
-    // ProFeatureGate has no direct route to the Settings paywall sheet from
-    // here (that would require wiring through NavGraph.kt) — nudge the user
-    // there rather than leaving the tap silently do nothing.
-    val upgradeScope = rememberCoroutineScope()
-    val upgradeSnackbarHostState = LocalSnackbarHostState.current
-    val upgradeHintMessage = stringResource(R.string.vehicle_detail_upgrade_hint)
-    val onUpgradeClick: () -> Unit = {
-        upgradeScope.launch {
-            upgradeSnackbarHostState.showSnackbar(
-                message = upgradeHintMessage,
-                duration = SnackbarDuration.Short
-            )
-        }
-    }
+    val onUpgradeClick: () -> Unit = onNavigateToPaywall
 
     // Consumer-grade issue detail (the FIXD pattern): tap a reminder to get
     // plain language, "can it wait?", and the personalized forecast.
