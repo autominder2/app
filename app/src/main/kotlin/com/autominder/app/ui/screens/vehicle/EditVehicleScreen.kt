@@ -52,7 +52,6 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.autominder.app.MainActivity
 import com.autominder.app.R
 import com.autominder.app.domain.util.DistanceUtil
 import androidx.compose.material3.SnackbarDuration
@@ -137,17 +136,8 @@ fun EditVehicleScreen(
                 message = context.getString(R.string.vehicle_saved),
                 duration = SnackbarDuration.Short
             )
-            val activity = context as? MainActivity
-            if (activity != null) {
-                val adManager = activity.adManager
-                if (adManager.shouldShowInterstitial()) {
-                    adManager.showInterstitial(activity) { onNavigateBack() }
-                } else {
-                    onNavigateBack()
-                }
-            } else {
-                onNavigateBack()
-            }
+            // No interstitial on save/decision surfaces (Gate A decision).
+            onNavigateBack()
         }
     }
 

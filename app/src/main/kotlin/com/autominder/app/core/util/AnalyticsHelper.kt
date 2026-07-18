@@ -53,6 +53,10 @@ object AnalyticsEvents {
     const val PURCHASE_FAILED = "purchase_failed"
     const val ADS_CONSENT_GIVEN = "ads_consent_given"
     const val ADS_CONSENT_DENIED = "ads_consent_denied"
+
+    // Notification -> action funnel (privacy-safe: no reminder content logged)
+    const val NOTIF_ACTION_DONE = "notif_action_done"
+    const val NOTIF_ACTION_SNOOZE = "notif_action_snooze"
 }
 
 object AnalyticsParams {

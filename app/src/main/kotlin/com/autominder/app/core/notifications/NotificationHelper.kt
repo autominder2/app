@@ -18,6 +18,11 @@ object NotificationHelper {
     private const val CHANNEL_ID = "autominder_reminders"
     private const val CHANNEL_NAME = "Maintenance Reminders"
 
+    // Notification action contract (handled by NotificationActionReceiver)
+    const val ACTION_MARK_DONE = "com.autominder.app.action.NOTIF_MARK_DONE"
+    const val ACTION_SNOOZE = "com.autominder.app.action.NOTIF_SNOOZE"
+    const val EXTRA_REMINDER_ID = "extra_reminder_id"
+
     // Weekly digest gets its own quieter channel: it's a planning summary, not
     // an alert, so users can tune each independently (Tesla's two-tier model).
     private const val DIGEST_CHANNEL_ID = "autominder_digest"
@@ -116,6 +121,42 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Inline actions: acting on a reminder must never require opening
+        // the app. Request codes are namespaced per reminder to avoid
+        // PendingIntent collisions (id*10 + action ordinal).
+        val doneIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = ACTION_MARK_DONE
+            putExtra(EXTRA_REMINDER_ID, reminderId)
+        }
+        val donePi = PendingIntent.getBroadcast(
+            context,
+            (reminderId * 10 + 1).toInt(),
+            doneIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val snoozeIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = ACTION_SNOOZE
+            putExtra(EXTRA_REMINDER_ID, reminderId)
+        }
+        val snoozePi = PendingIntent.getBroadcast(
+            context,
+            (reminderId * 10 + 2).toInt(),
+            snoozeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        // "Update mileage" rides the existing vehicleId deep link — lands on
+        // the vehicle's detail screen where the odometer instrument lives.
+        val mileageIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("vehicleId", vehicleId)
+        }
+        val mileagePi = PendingIntent.getActivity(
+            context,
+            (reminderId * 10 + 3).toInt(),
+            mileageIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -123,6 +164,9 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .addAction(0, context.getString(R.string.action_done), donePi)
+            .addAction(0, context.getString(R.string.notif_action_snooze_3d), snoozePi)
+            .addAction(0, context.getString(R.string.notif_action_update_mileage), mileagePi)
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

@@ -47,6 +47,11 @@ android {
         localeFilters += listOf("en", "es", "pt-rBR")
     }
 
+    // Room schema JSONs available to instrumented migration tests
+    sourceSets {
+        getByName("androidTest").assets.srcDirs("$projectDir/schemas")
+    }
+
     signingConfigs {
         create("release") {
             val keystorePath = localProps.getProperty("KEYSTORE_PATH") ?: ""
@@ -201,6 +206,9 @@ dependencies {
     // ─── Test ───────────────────────────────────────────────────────────────
     testImplementation(libs.junit)
     testImplementation(libs.turbine)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.room.testing)
 }
 
 // Production Safety Gate — fail release builds if no real AdMob app ID is available.

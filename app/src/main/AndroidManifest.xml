@@ -66,6 +66,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Handles Done/Snooze taps from reminder notifications -->
+        <receiver
+            android:name=".core.notifications.NotificationActionReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".worker.BootReceiver"
             android:exported="true"

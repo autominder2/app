@@ -565,4 +565,8 @@
     <string name="form_discard_message">You have unsaved changes. If you leave now, they will be lost.</string>
     <string name="form_discard_confirm">Discard</string>
     <string name="form_keep_editing">Keep editing</string>
+
+    <!-- Notification inline actions -->
+    <string name="notif_action_snooze_3d">Snooze 3 days</string>
+    <string name="notif_action_update_mileage">Update mileage</string>
 </resources>
