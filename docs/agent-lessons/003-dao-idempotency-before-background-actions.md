@@ -1,0 +1,2 @@
+Lesson: Before wiring any background action (notification button, widget, receiver) to a repository write, read the DAO SQL first — safety depends on absolute-value UPDATEs.
+Detail: NotificationActionReceiver double-tap is safe only because ReminderDao.markCompleted/snoozeReminder are absolute SET statements (ReminderDao.kt:38,41), not increment/advance operations. Re-verify this property if DAO changes.

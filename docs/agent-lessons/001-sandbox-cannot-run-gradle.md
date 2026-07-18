@@ -1,0 +1,2 @@
+Lesson: This agent sandbox has Java 11 and no Android SDK — every build/test claim must route through scripts/run_release_gate.bat on the owner's machine.
+Detail: Verified 2026-07-18 (java -version → 11.0.31; no ANDROID_HOME/SDK dirs). Any Kotlin/Compose change made here is IMPLEMENTED, UNVERIFIED until gate_summary.txt exists and shows PASS. Never mark migration or unit tests VERIFIED from code review alone.
