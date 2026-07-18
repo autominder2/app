@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -40,20 +41,28 @@ class NotificationActionReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                when (action) {
-                    NotificationHelper.ACTION_MARK_DONE -> {
-                        reminderRepository.markCompleted(reminderId)
-                        analytics.logEvent(AnalyticsEvents.NOTIF_ACTION_DONE)
+                // goAsync grants ~10s before the system may kill the process;
+                // finish inside 8s so we always exit cleanly, never via ANR.
+                withTimeout(8_000L) {
+                    when (action) {
+                        NotificationHelper.ACTION_MARK_DONE -> {
+                            // DAO is an absolute UPDATE (isCompleted=1) — a
+                            // double-tap is idempotent by construction.
+                            reminderRepository.markCompleted(reminderId)
+                            analytics.logEvent(AnalyticsEvents.NOTIF_ACTION_DONE)
+                        }
+                        NotificationHelper.ACTION_SNOOZE -> {
+                            // Fixed 72h epoch offset: immune to time zones and
+                            // DST; persisted in Room so it survives reboot.
+                            reminderRepository.snoozeReminder(
+                                reminderId,
+                                System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3)
+                            )
+                            analytics.logEvent(AnalyticsEvents.NOTIF_ACTION_SNOOZE)
+                        }
                     }
-                    NotificationHelper.ACTION_SNOOZE -> {
-                        reminderRepository.snoozeReminder(
-                            reminderId,
-                            System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3)
-                        )
-                        analytics.logEvent(AnalyticsEvents.NOTIF_ACTION_SNOOZE)
-                    }
+                    NotificationManagerCompat.from(context).cancel(reminderId.toInt())
                 }
-                NotificationManagerCompat.from(context).cancel(reminderId.toInt())
             } catch (t: Throwable) {
                 Timber.e(t, "Notification action failed: %s", action)
             } finally {
