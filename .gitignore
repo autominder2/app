@@ -46,6 +46,8 @@ build_*.log
 all_files*.txt
 test_out.txt
 findings.txt
+gate_full_log.txt
+gate_summary.txt
 
 # ─── Agent / social media / non-project files ──────────────────────────────
 .gradle-user-home/

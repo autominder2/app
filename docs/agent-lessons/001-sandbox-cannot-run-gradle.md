@@ -1,2 +1,2 @@
-Lesson: This agent sandbox has Java 11 and no Android SDK — every build/test claim must route through scripts/run_release_gate.bat on the owner's machine.
-Detail: Verified 2026-07-18 (java -version → 11.0.31; no ANDROID_HOME/SDK dirs). Any Kotlin/Compose change made here is IMPLEMENTED, UNVERIFIED until gate_summary.txt exists and shows PASS. Never mark migration or unit tests VERIFIED from code review alone.
+Lesson: Check build capability on the current execution host; one restricted sandbox does not prove the owner's Windows machine cannot run Gradle.
+Detail: On 2026-07-19 the owner host had Android Studio, Android SDK, Java 17/21, and Gradle. After correcting the gate batch file's Windows line endings and three unused resources, the gate passed. Build and unit-test status may become VERIFIED only from the current gate output. Device-only migration tests remain UNVERIFIED until they run on an attached phone or emulator.
