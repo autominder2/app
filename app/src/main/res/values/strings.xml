@@ -566,4 +566,24 @@
     <!-- Notification inline actions -->
     <string name="notif_action_snooze_3d">Snooze 3 days</string>
     <string name="notif_action_update_mileage">Update mileage</string>
+
+    <!-- Onboarding: driving amount + plan reveal (Phase 1) -->
+    <string name="onboarding_driving_label">How much do you drive?</string>
+    <string name="driving_low">A little</string>
+    <string name="driving_typical">Average</string>
+    <string name="driving_high">A lot</string>
+    <string name="driving_support_value">≈%1$s %2$s/yr</string>
+    <string name="onboarding_see_my_plan">See my plan</string>
+    <string name="onboarding_plan_title">Your starting plan is ready</string>
+    <string name="onboarding_plan_subtitle">Based on your mileage and how much you drive. Nothing is saved yet — adjust anything below.</string>
+    <string name="onboarding_plan_first_label">FIRST UP</string>
+    <string name="onboarding_plan_why">Every %1$s %2$s or %3$d months — whichever comes first</string>
+    <string name="onboarding_plan_review_by">Review around %1$s or %2$s %3$s</string>
+    <string name="onboarding_plan_more_title">ALSO ON YOUR PLAN</string>
+    <string name="onboarding_plan_honesty">This is a general starting plan based on typical service intervals — not %1$s\'s official schedule. You can change every interval later.</string>
+    <string name="onboarding_plan_missing">We don\'t know this car\'s service history yet. Log a past service any time to sharpen these dates.</string>
+    <string name="onboarding_plan_adjust">Adjust mileage or driving</string>
+    <string name="onboarding_plan_cta">Save plan &amp; continue</string>
+    <string name="onboarding_error_invalid_mileage">Enter mileage as a whole number, or leave it empty for now.</string>
+    <string name="onboarding_error_mileage_too_high">That mileage looks too high — double-check the number.</string>
 </resources>

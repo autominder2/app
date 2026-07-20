@@ -149,6 +149,7 @@ object NotificationHelper {
         val mileageIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("vehicleId", vehicleId)
+            putExtra("openMileageSheet", true)
         }
         val mileagePi = PendingIntent.getActivity(
             context,

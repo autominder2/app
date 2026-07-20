@@ -206,6 +206,8 @@ dependencies {
     // ─── Test ───────────────────────────────────────────────────────────────
     testImplementation(libs.junit)
     testImplementation(libs.turbine)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.mockk)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.room.testing)

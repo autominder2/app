@@ -60,7 +60,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var updateHelper: UpdateHelper
 
-    private val _deepLinkEvents = kotlinx.coroutines.flow.MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    /** vehicleId to openMileageSheet — notification deep-link payload. */
+    private val _deepLinkEvents =
+        kotlinx.coroutines.flow.MutableSharedFlow<Pair<Long, Boolean>>(extraBufferCapacity = 1)
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
@@ -70,7 +72,8 @@ class MainActivity : ComponentActivity() {
     private fun handleIntent(intent: android.content.Intent?) {
         val vehicleId = intent?.getLongExtra("vehicleId", -1L) ?: -1L
         if (vehicleId > 0L) {
-            _deepLinkEvents.tryEmit(vehicleId)
+            val openMileage = intent?.getBooleanExtra("openMileageSheet", false) ?: false
+            _deepLinkEvents.tryEmit(vehicleId to openMileage)
         }
     }
 
@@ -129,11 +132,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Notification deep link: open vehicle detail
+                // Notification deep link: open vehicle detail; the Update
+                // mileage action opens the QuickMileageSheet directly.
                 LaunchedEffect(hasSeenOnboarding) {
                     if (hasSeenOnboarding) {
-                        _deepLinkEvents.collect { vehicleId ->
-                            navController.navigate(NavRoutes.VehicleDetail(vehicleId)) {
+                        _deepLinkEvents.collect { (vehicleId, openMileage) ->
+                            navController.navigate(
+                                NavRoutes.VehicleDetail(vehicleId, openMileageSheet = openMileage)
+                            ) {
                                 launchSingleTop = true
                             }
                         }

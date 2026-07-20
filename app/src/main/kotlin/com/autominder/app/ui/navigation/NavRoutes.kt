@@ -23,7 +23,11 @@ sealed class NavRoutes {
 
     // ── Vehicle Flow ──────────────────────────────────────────────────────
     @Serializable
-    data class VehicleDetail(val vehicleId: Long) : NavRoutes()
+    data class VehicleDetail(
+        val vehicleId: Long,
+        /** Notification "Update mileage" lands directly in the QuickMileageSheet. */
+        val openMileageSheet: Boolean = false
+    ) : NavRoutes()
 
     @Serializable
     object AddVehicle : NavRoutes()

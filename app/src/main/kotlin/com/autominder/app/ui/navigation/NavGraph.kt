@@ -165,8 +165,10 @@ fun NavGraph(
             )
         }
 
-        composable<NavRoutes.VehicleDetail> {
+        composable<NavRoutes.VehicleDetail> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoutes.VehicleDetail>()
             VehicleDetailScreen(
+                openMileageSheet = route.openMileageSheet,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAddReminder = { vehicleId ->
                     navController.navigate(NavRoutes.AddReminder(vehicleId))

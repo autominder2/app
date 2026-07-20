@@ -50,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,17 +68,24 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
+import com.autominder.app.domain.model.DrivingAmount
+import com.autominder.app.domain.usecase.PlannedReminder
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.theme.Motion
+import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.DistanceFormat
+import com.autominder.app.ui.util.localizedLabel
 
-// Activation-first onboarding: Welcome → Add your car → Reminders.
-// The user leaves onboarding with a real vehicle and default reminders,
-// landing on a live dashboard instead of an empty state.
+// Activation-first onboarding: Welcome → Add your car → PLAN REVEAL → Reminders.
+// The plan is visible BEFORE the notification ask: the user sees value first,
+// then decides. Save happens on the reveal step's CTA, so denying the
+// permission can never erase the plan.
 private const val STEP_WELCOME = 0
 private const val STEP_ADD_CAR = 1
-private const val STEP_NOTIFY = 2
-private const val STEP_COUNT = 3
+private const val STEP_PLAN = 2
+private const val STEP_NOTIFY = 3
+private const val STEP_COUNT = 4
 
 private val POPULAR_MAKES = listOf(
     "Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "Hyundai", "Kia",
@@ -124,9 +132,9 @@ fun OnboardingScreen(
         onFinished()
     }
 
-    // Vehicle saved → advance to the reminders step with a confirm tick.
+    // Vehicle + plan saved from the reveal step → advance to notifications.
     LaunchedEffect(uiState.vehicleSaved) {
-        if (uiState.vehicleSaved && step == STEP_ADD_CAR) {
+        if (uiState.vehicleSaved && step == STEP_PLAN) {
             haptic.performHapticFeedback(HapticFeedbackType.Confirm)
             step = STEP_NOTIFY
         }
@@ -136,15 +144,16 @@ fun OnboardingScreen(
     LaunchedEffect(step) {
         haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
     }
-    // Back only from the form to welcome. Once the car is saved (step 2),
-    // returning to the form would offer a Save that can no longer save.
-    BackHandler(enabled = step == STEP_ADD_CAR) {
-        step = STEP_WELCOME
+    // Back walks the form/reveal steps; once saved (notify step), going back
+    // would offer a Save that can no longer save, so back is disabled there.
+    BackHandler(enabled = step == STEP_ADD_CAR || step == STEP_PLAN) {
+        step = if (step == STEP_PLAN) STEP_ADD_CAR else STEP_WELCOME
     }
 
     val accents = listOf(
         MaterialTheme.colorScheme.primaryContainer,
         MaterialTheme.colorScheme.secondaryContainer,
+        MaterialTheme.colorScheme.primaryContainer,
         MaterialTheme.colorScheme.tertiaryContainer
     )
     val topColor by animateColorAsState(targetValue = accents[step], label = "stepAccent")
@@ -220,6 +229,7 @@ fun OnboardingScreen(
                 },
                 label = "onboardingStep"
             ) { currentStep ->
+                val distanceUnit = LocalDistanceUnit.current
                 when (currentStep) {
                     STEP_WELCOME -> WelcomeStep(
                         onAddCar = { step = STEP_ADD_CAR }
@@ -229,8 +239,18 @@ fun OnboardingScreen(
                         onBrandChanged = viewModel::onBrandChanged,
                         onModelChanged = viewModel::onModelChanged,
                         onOdometerChanged = viewModel::onOdometerChanged,
-                        onSave = viewModel::saveVehicle,
+                        onDrivingAmountChanged = viewModel::onDrivingAmountChanged,
+                        onSeePlan = {
+                            if (viewModel.previewPlan(distanceUnit)) step = STEP_PLAN
+                        },
                         onLater = { finish() }
+                    )
+                    STEP_PLAN -> PlanStep(
+                        uiState = uiState,
+                        onOdometerChanged = viewModel::onOdometerChanged,
+                        onDrivingAmountChanged = viewModel::onDrivingAmountChanged,
+                        onRecompute = { viewModel.previewPlan(distanceUnit) },
+                        onSave = viewModel::saveVehicle
                     )
                     STEP_NOTIFY -> NotifyStep(
                         onEnable = { requestNotificationsThenFinish() },
@@ -282,7 +302,8 @@ private fun AddCarStep(
     onBrandChanged: (String) -> Unit,
     onModelChanged: (String) -> Unit,
     onOdometerChanged: (String) -> Unit,
-    onSave: () -> Unit,
+    onDrivingAmountChanged: (DrivingAmount) -> Unit,
+    onSeePlan: () -> Unit,
     onLater: () -> Unit
 ) {
     val distanceUnit = LocalDistanceUnit.current
@@ -361,6 +382,19 @@ private fun AddCarStep(
             singleLine = true
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.onboarding_driving_label),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        DrivingAmountChips(
+            selected = uiState.drivingAmount,
+            onSelected = onDrivingAmountChanged,
+            distanceUnit = distanceUnit
+        )
+
         if (uiState.errorRes != null) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
@@ -372,8 +406,201 @@ private fun AddCarStep(
 
         Spacer(modifier = Modifier.height(24.dp))
         Button(
-            onClick = onSave,
+            onClick = onSeePlan,
             enabled = canSave,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.onboarding_see_my_plan),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        TextButton(
+            onClick = onLater,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(stringResource(R.string.onboarding_do_this_later))
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+// ─── Step 2: Plan reveal — value BEFORE the permission ask ─────────────────
+@Composable
+private fun PlanStep(
+    uiState: OnboardingUiState,
+    onOdometerChanged: (String) -> Unit,
+    onDrivingAmountChanged: (DrivingAmount) -> Unit,
+    onRecompute: () -> Unit,
+    onSave: () -> Unit
+) {
+    val distanceUnit = LocalDistanceUnit.current
+    val unitLabel = DistanceUtil.unitLabel(distanceUnit)
+    var showAdjust by rememberSaveable { mutableStateOf(false) }
+    val first = uiState.plan.firstOrNull()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+    ) {
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = stringResource(R.string.onboarding_plan_title),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.onboarding_plan_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // What's first, why, and when — the verdict of this screen.
+        if (first != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.onboarding_plan_first_label),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = first.serviceType.localizedLabel(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(
+                        R.string.onboarding_plan_why,
+                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(first.intervalKm, distanceUnit)),
+                        unitLabel,
+                        (first.intervalDays / 30).coerceAtLeast(1)
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = stringResource(
+                        R.string.onboarding_plan_review_by,
+                        DateFormatUtil.formatDate(first.nextDueDate),
+                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(first.nextDueOdometer, distanceUnit)),
+                        unitLabel
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        if (uiState.plan.size > 1) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.onboarding_plan_more_title),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            uiState.plan.drop(1).forEach { item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = item.serviceType.localizedLabel(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = DateFormatUtil.formatDate(item.nextDueDate),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // Honesty: what this plan is, and what we don't know yet.
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.onboarding_plan_honesty, uiState.brand.trim()),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.onboarding_plan_missing),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Revise inputs without restarting onboarding.
+        Spacer(modifier = Modifier.height(12.dp))
+        TextButton(onClick = { showAdjust = !showAdjust }) {
+            Text(stringResource(R.string.onboarding_plan_adjust))
+        }
+        if (showAdjust) {
+            OutlinedTextField(
+                value = uiState.odometer,
+                onValueChange = {
+                    onOdometerChanged(it)
+                    onRecompute()
+                },
+                label = {
+                    Text(
+                        stringResource(
+                            R.string.label_current_odometer_dynamic,
+                            DistanceUtil.unitLabel(distanceUnit)
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                isError = uiState.errorRes != null
+            )
+            if (uiState.errorRes != null) {
+                Text(
+                    text = stringResource(uiState.errorRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            DrivingAmountChips(
+                selected = uiState.drivingAmount,
+                onSelected = {
+                    onDrivingAmountChanged(it)
+                    onRecompute()
+                },
+                distanceUnit = distanceUnit
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onSave,
+            enabled = uiState.planReady && !uiState.isSaving,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -387,19 +614,50 @@ private fun AddCarStep(
                 )
             } else {
                 Text(
-                    text = stringResource(R.string.onboarding_save_my_car),
+                    text = stringResource(R.string.onboarding_plan_cta),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
-        TextButton(
-            onClick = onLater,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text(stringResource(R.string.onboarding_do_this_later))
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+/** Low / Typical / High with honest per-year values in the user's unit. */
+@Composable
+private fun DrivingAmountChips(
+    selected: DrivingAmount,
+    onSelected: (DrivingAmount) -> Unit,
+    distanceUnit: String
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        DrivingAmount.entries.forEach { amount ->
+            val labelRes = when (amount) {
+                DrivingAmount.LOW -> R.string.driving_low
+                DrivingAmount.TYPICAL -> R.string.driving_typical
+                DrivingAmount.HIGH -> R.string.driving_high
+            }
+            FilterChip(
+                selected = selected == amount,
+                onClick = { onSelected(amount) },
+                label = {
+                    Column {
+                        Text(stringResource(labelRes))
+                        Text(
+                            text = stringResource(
+                                R.string.driving_support_value,
+                                DistanceFormat.grouped(
+                                    DistanceUtil.kmToDisplay(amount.annualKm, distanceUnit)
+                                ),
+                                DistanceUtil.unitLabel(distanceUnit)
+                            ),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            )
         }
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

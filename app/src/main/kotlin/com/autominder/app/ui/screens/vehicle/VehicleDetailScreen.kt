@@ -117,6 +117,8 @@ import com.autominder.app.ui.components.premium.VehicleHeroVariant
 @Composable
 fun VehicleDetailScreen(
     onNavigateBack: () -> Unit,
+    /** True when the notification "Update mileage" action opened this screen. */
+    openMileageSheet: Boolean = false,
     onNavigateToAddReminder: (Long) -> Unit,
     onNavigateToEditVehicle: (Long) -> Unit = {},
     onNavigateToAddService: (Long) -> Unit = {},
@@ -272,6 +274,7 @@ fun VehicleDetailScreen(
                 ScreenState.Success -> uiState.vehicle?.let { v ->
                     VehicleDetailContent(
                         vehicle = v,
+                        autoOpenMileageSheet = openMileageSheet,
                         listState = listState,
                         onAddReminder = { onNavigateToAddReminder(v.id) },
                         reminders = uiState.reminders,
@@ -346,6 +349,7 @@ private enum class ScreenState {
 @Composable
 private fun VehicleDetailContent(
     vehicle: Vehicle,
+    autoOpenMileageSheet: Boolean = false,
     listState: androidx.compose.foundation.lazy.LazyListState,
     onAddReminder: () -> Unit,
     reminders: List<Reminder>,
@@ -369,7 +373,11 @@ private fun VehicleDetailContent(
     onEditReminder: (Long) -> Unit,
     onUpdateOdometer: (Int) -> Unit
 ) {
-    var showMileageSheet by remember { mutableStateOf(false) }
+    // rememberSaveable: the deep-linked auto-open fires once, not on every
+    // recomposition/config change; user dismissal sticks.
+    var showMileageSheet by androidx.compose.runtime.saveable.rememberSaveable {
+        mutableStateOf(autoOpenMileageSheet)
+    }
     var showAllAttention by remember { mutableStateOf(false) }
     val mileageSheetState = rememberModalBottomSheetState()
     val distanceUnit = LocalDistanceUnit.current
