@@ -35,7 +35,7 @@ android {
         targetSdk              = 36
         versionCode            = timestampVersionCode
         versionName            = "1.0.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.autominder.app.AutoMinderTestRunner"
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
