@@ -26,7 +26,9 @@ sealed class NavRoutes {
     data class VehicleDetail(
         val vehicleId: Long,
         /** Notification "Update mileage" lands directly in the QuickMileageSheet. */
-        val openMileageSheet: Boolean = false
+        val openMileageSheet: Boolean = false,
+        /** Distinguishes repeated notification actions while this destination is on top. */
+        val mileageRequestId: Long = 0L
     ) : NavRoutes()
 
     @Serializable

@@ -13,8 +13,15 @@ import com.autominder.app.core.util.AppLifecycleObserver
 import com.autominder.app.core.util.CrashlyticsTree
 import com.autominder.app.worker.WorkScheduler
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
+import javax.inject.Provider
 
 @HiltAndroidApp
 class AutoMinderApp : Application(), Configuration.Provider {
@@ -23,10 +30,12 @@ class AutoMinderApp : Application(), Configuration.Provider {
     lateinit var workerFactory: HiltWorkerFactory
 
     @Inject
-    lateinit var subscriptionManager: SubscriptionManager
+    lateinit var subscriptionManager: Provider<SubscriptionManager>
 
     @Inject
-    lateinit var lifecycleObserver: AppLifecycleObserver
+    lateinit var lifecycleObserver: Provider<AppLifecycleObserver>
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -39,14 +48,18 @@ class AutoMinderApp : Application(), Configuration.Provider {
         setupLogging()
         setupStrictMode()
 
-        // Expertise: Observe global app lifecycle for session tracking and ad behavior
-        ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
-
-        // Initialize Core Services
         NotificationHelper.createChannel(this)
-        WorkScheduler.scheduleReminderChecks(this)
-        WorkScheduler.scheduleWeeklyDigest(this)
-        subscriptionManager.initialize()
+
+        // These services are not required to draw the first screen.
+        applicationScope.launch {
+            delay(1_000)
+            WorkScheduler.scheduleReminderChecks(this@AutoMinderApp)
+            WorkScheduler.scheduleWeeklyDigest(this@AutoMinderApp)
+            subscriptionManager.get().initialize()
+            withContext(Dispatchers.Main.immediate) {
+                ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver.get())
+            }
+        }
 
         setupGlobalExceptionHandler()
     }

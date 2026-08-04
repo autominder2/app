@@ -24,21 +24,27 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.autominder.app.ads.AdManager
 import com.autominder.app.ads.BannerAdView
 import com.autominder.app.billing.SubscriptionManager
 import com.autominder.app.core.util.UpdateHelper
+import com.autominder.app.core.notifications.NotificationHelper
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.ui.components.BottomNavBar
 import com.autominder.app.ui.navigation.NavGraph
 import com.autominder.app.ui.navigation.NavRoutes
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.withFrameNanos
 import com.autominder.app.ui.theme.AutoMinderTheme
 import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
+import javax.inject.Provider
 
 val LocalIsProUser = staticCompositionLocalOf { false }
 
@@ -46,34 +52,50 @@ val LocalIsProUser = staticCompositionLocalOf { false }
 class MainActivity : ComponentActivity() {
 
     @Inject
-    lateinit var adManager: AdManager
-
-    @Inject
-    lateinit var consentManager: com.autominder.app.ads.ConsentManager
+    lateinit var consentManager: Provider<com.autominder.app.ads.ConsentManager>
 
     @Inject
     lateinit var userPreferences: UserPreferences
 
     @Inject
-    lateinit var subscriptionManager: SubscriptionManager
+    lateinit var subscriptionManager: Provider<SubscriptionManager>
 
     @Inject
-    lateinit var updateHelper: UpdateHelper
+    lateinit var updateHelper: Provider<UpdateHelper>
 
     /** vehicleId to openMileageSheet — notification deep-link payload. */
-    private val _deepLinkEvents =
-        kotlinx.coroutines.flow.MutableSharedFlow<Pair<Long, Boolean>>(extraBufferCapacity = 1)
+    private val _deepLinkEvents = kotlinx.coroutines.channels.Channel<VehicleDeepLink>(
+        capacity = kotlinx.coroutines.channels.Channel.BUFFERED
+    )
+
+    private data class VehicleDeepLink(
+        val vehicleId: Long,
+        val openMileageSheet: Boolean,
+        val requestId: Long
+    )
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleIntent(intent)
     }
 
     private fun handleIntent(intent: android.content.Intent?) {
-        val vehicleId = intent?.getLongExtra("vehicleId", -1L) ?: -1L
+        val vehicleId = intent?.getLongExtra(NotificationHelper.EXTRA_VEHICLE_ID, -1L) ?: -1L
         if (vehicleId > 0L) {
-            val openMileage = intent?.getBooleanExtra("openMileageSheet", false) ?: false
-            _deepLinkEvents.tryEmit(vehicleId to openMileage)
+            val openMileage = intent?.getBooleanExtra(
+                NotificationHelper.EXTRA_OPEN_MILEAGE_SHEET,
+                false
+            ) ?: false
+            val requestId = intent?.getLongExtra(
+                NotificationHelper.EXTRA_MILEAGE_REQUEST_ID,
+                0L
+            ) ?: 0L
+            if (_deepLinkEvents.trySend(VehicleDeepLink(vehicleId, openMileage, requestId)).isSuccess) {
+                intent?.removeExtra(NotificationHelper.EXTRA_VEHICLE_ID)
+                intent?.removeExtra(NotificationHelper.EXTRA_OPEN_MILEAGE_SHEET)
+                intent?.removeExtra(NotificationHelper.EXTRA_MILEAGE_REQUEST_ID)
+            }
         }
     }
 
@@ -94,17 +116,23 @@ class MainActivity : ComponentActivity() {
             false
         }
 
-        // GDPR consent gate — initializes Mobile Ads only once consent allows
-        consentManager.gatherConsentAndInitAds(this)
-
-        // Check for updates on startup
-        updateHelper.checkForUpdates(this)
-
         setContent {
+            val hasSeenOnboarding by produceState<Boolean?>(initialValue = null) {
+                value = userPreferences.hasSeenOnboarding.first()
+            }
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = "system")
-            val hasSeenOnboarding by userPreferences.hasSeenOnboarding.collectAsStateWithLifecycle(initialValue = true)
             val distanceUnit by userPreferences.distanceUnit.collectAsStateWithLifecycle(initialValue = "km")
-            val isProUser by subscriptionManager.isProUser.collectAsStateWithLifecycle()
+            val isProUser by produceState(initialValue = false) {
+                withFrameNanos { }
+                subscriptionManager.get().isProUser.collect { value = it }
+            }
+
+            LaunchedEffect(Unit) {
+                withFrameNanos { }
+                delay(1_000)
+                consentManager.get().gatherConsentAndInitAds(this@MainActivity)
+                updateHelper.get().checkForUpdates(this@MainActivity)
+            }
             val darkTheme = when (themeMode) {
                 "light" -> false
                 "dark" -> true
@@ -123,24 +151,29 @@ class MainActivity : ComponentActivity() {
 
                 CompositionLocalProvider(LocalSnackbarHostState provides snackbarHostState) {
 
-                // Onboarding: navigate if user hasn't completed it yet
-                LaunchedEffect(hasSeenOnboarding) {
-                    if (!hasSeenOnboarding) {
-                        navController.navigate(NavRoutes.Onboarding) {
-                            launchSingleTop = true
-                        }
-                    }
-                }
-
                 // Notification deep link: open vehicle detail; the Update
                 // mileage action opens the QuickMileageSheet directly.
                 LaunchedEffect(hasSeenOnboarding) {
-                    if (hasSeenOnboarding) {
-                        _deepLinkEvents.collect { (vehicleId, openMileage) ->
+                    if (hasSeenOnboarding == true) {
+                        _deepLinkEvents.receiveAsFlow().collect { deepLink ->
+                            val currentDestinationId = navController.currentDestination?.id
+                            val isVehicleDetailOnTop = navController
+                                .currentBackStackEntry
+                                ?.destination
+                                ?.route
+                                ?.contains(
+                                    NavRoutes.VehicleDetail::class.qualifiedName.orEmpty()
+                                ) == true
                             navController.navigate(
-                                NavRoutes.VehicleDetail(vehicleId, openMileageSheet = openMileage)
+                                NavRoutes.VehicleDetail(
+                                    vehicleId = deepLink.vehicleId,
+                                    openMileageSheet = deepLink.openMileageSheet,
+                                    mileageRequestId = deepLink.requestId
+                                )
                             ) {
-                                launchSingleTop = true
+                                if (isVehicleDetailOnTop && currentDestinationId != null) {
+                                    popUpTo(currentDestinationId) { inclusive = true }
+                                }
                             }
                         }
                     }
@@ -178,10 +211,17 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    NavGraph(
-                        navController = navController,
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    hasSeenOnboarding?.let { onboardingComplete ->
+                        NavGraph(
+                            navController = navController,
+                            startDestination = if (onboardingComplete) {
+                                NavRoutes.Dashboard
+                            } else {
+                                NavRoutes.Onboarding
+                            },
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
                 }
                 } // End LocalSnackbarHostState Provider
             }

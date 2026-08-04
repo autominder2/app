@@ -80,11 +80,12 @@ private val tabExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> Exi
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: NavRoutes = NavRoutes.Dashboard
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavRoutes.Dashboard,
+        startDestination = startDestination,
         modifier = modifier,
         enterTransition = forwardEnter,
         exitTransition = forwardExit,
@@ -169,6 +170,7 @@ fun NavGraph(
             val route = backStackEntry.toRoute<NavRoutes.VehicleDetail>()
             VehicleDetailScreen(
                 openMileageSheet = route.openMileageSheet,
+                mileageRequestId = route.mileageRequestId,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAddReminder = { vehicleId ->
                     navController.navigate(NavRoutes.AddReminder(vehicleId))

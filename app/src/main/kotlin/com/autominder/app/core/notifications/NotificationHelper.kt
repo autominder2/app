@@ -14,6 +14,9 @@ import com.autominder.app.MainActivity
 import com.autominder.app.R
 
 object NotificationHelper {
+    const val EXTRA_VEHICLE_ID = "vehicleId"
+    const val EXTRA_OPEN_MILEAGE_SHEET = "openMileageSheet"
+    const val EXTRA_MILEAGE_REQUEST_ID = "mileageRequestId"
 
     private const val CHANNEL_ID = "autominder_reminders"
     private const val CHANNEL_NAME = "Maintenance Reminders"
@@ -148,8 +151,9 @@ object NotificationHelper {
         // the vehicle's detail screen where the odometer instrument lives.
         val mileageIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("vehicleId", vehicleId)
-            putExtra("openMileageSheet", true)
+            putExtra(EXTRA_VEHICLE_ID, vehicleId)
+            putExtra(EXTRA_OPEN_MILEAGE_SHEET, true)
+            putExtra(EXTRA_MILEAGE_REQUEST_ID, System.currentTimeMillis())
         }
         val mileagePi = PendingIntent.getActivity(
             context,

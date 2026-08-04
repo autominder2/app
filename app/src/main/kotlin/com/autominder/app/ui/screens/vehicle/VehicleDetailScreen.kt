@@ -119,6 +119,7 @@ fun VehicleDetailScreen(
     onNavigateBack: () -> Unit,
     /** True when the notification "Update mileage" action opened this screen. */
     openMileageSheet: Boolean = false,
+    mileageRequestId: Long = 0L,
     onNavigateToAddReminder: (Long) -> Unit,
     onNavigateToEditVehicle: (Long) -> Unit = {},
     onNavigateToAddService: (Long) -> Unit = {},
@@ -275,6 +276,7 @@ fun VehicleDetailScreen(
                     VehicleDetailContent(
                         vehicle = v,
                         autoOpenMileageSheet = openMileageSheet,
+                        mileageRequestId = mileageRequestId,
                         listState = listState,
                         onAddReminder = { onNavigateToAddReminder(v.id) },
                         reminders = uiState.reminders,
@@ -350,6 +352,7 @@ private enum class ScreenState {
 private fun VehicleDetailContent(
     vehicle: Vehicle,
     autoOpenMileageSheet: Boolean = false,
+    mileageRequestId: Long = 0L,
     listState: androidx.compose.foundation.lazy.LazyListState,
     onAddReminder: () -> Unit,
     reminders: List<Reminder>,
@@ -373,10 +376,17 @@ private fun VehicleDetailContent(
     onEditReminder: (Long) -> Unit,
     onUpdateOdometer: (Int) -> Unit
 ) {
-    // rememberSaveable: the deep-linked auto-open fires once, not on every
-    // recomposition/config change; user dismissal sticks.
     var showMileageSheet by androidx.compose.runtime.saveable.rememberSaveable {
-        mutableStateOf(autoOpenMileageSheet)
+        mutableStateOf(false)
+    }
+    var consumedMileageRequestId by androidx.compose.runtime.saveable.rememberSaveable {
+        androidx.compose.runtime.mutableLongStateOf(Long.MIN_VALUE)
+    }
+    androidx.compose.runtime.LaunchedEffect(autoOpenMileageSheet, mileageRequestId) {
+        if (autoOpenMileageSheet && consumedMileageRequestId != mileageRequestId) {
+            consumedMileageRequestId = mileageRequestId
+            showMileageSheet = true
+        }
     }
     var showAllAttention by remember { mutableStateOf(false) }
     val mileageSheetState = rememberModalBottomSheetState()
