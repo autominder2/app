@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.DrivingAmount
+import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.domain.repository.IVehicleRepository
@@ -60,14 +61,18 @@ class OnboardingViewModelTest {
             42L
         }
 
-        vm = OnboardingViewModel(
-            savedStateHandle = SavedStateHandle(),
+        vm = createViewModel()
+    }
+
+    private fun createViewModel(
+        savedStateHandle: SavedStateHandle = SavedStateHandle()
+    ) = OnboardingViewModel(
+            savedStateHandle = savedStateHandle,
             userPreferences = prefs,
             vehicleRepository = vehicleRepo,
             createDefaultReminders = CreateDefaultRemindersUseCase(reminderRepo),
             analyticsHelper = analytics
         )
-    }
 
     @After
     fun tearDown() {
@@ -96,15 +101,26 @@ class OnboardingViewModelTest {
     fun `preview then save persists vehicle and exactly the previewed plan`() = runTest {
         fillValidForm()
         assertTrue(vm.previewPlan("mi"))
-        val planSize = vm.uiState.value.plan.size
-        assertTrue(planSize > 0)
+        val previewedPlan = vm.uiState.value.plan
+        val insertedReminders = mutableListOf<Reminder>()
+        coEvery { reminderRepo.insertReminder(capture(insertedReminders)) } answers {
+            insertedReminders.size.toLong()
+        }
+        assertTrue(previewedPlan.isNotEmpty())
 
         vm.saveVehicle()
 
         assertTrue(vm.uiState.value.vehicleSaved)
         assertNull(vm.uiState.value.errorRes)
         coVerify(exactly = 1) { vehicleRepo.insertVehicleWithInitialState(any(), any()) }
-        coVerify(exactly = planSize) { reminderRepo.insertReminder(any()) }
+        assertEquals(previewedPlan.size, insertedReminders.size)
+        previewedPlan.zip(insertedReminders).forEach { (planned, persisted) ->
+            assertEquals(planned.serviceType, persisted.serviceType)
+            assertEquals(planned.intervalKm, persisted.intervalKm)
+            assertEquals(planned.intervalDays, persisted.intervalDays)
+            assertEquals(planned.nextDueOdometer, persisted.nextDueOdometer)
+            assertEquals(planned.nextDueDate, persisted.nextDueDate)
+        }
     }
 
     // ── Mileage validation boundaries ───────────────────────────────────────
@@ -143,6 +159,21 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun `invalid edit after preview clears stale plan and blocks save`() = runTest {
+        fillValidForm()
+        assertTrue(vm.previewPlan("mi"))
+        assertTrue(vm.uiState.value.planReady)
+
+        vm.onOdometerChanged("not a number")
+        assertFalse(vm.previewPlan("mi"))
+
+        assertFalse(vm.uiState.value.planReady)
+        assertTrue(vm.uiState.value.plan.isEmpty())
+        vm.saveVehicle()
+        coVerify(exactly = 0) { vehicleRepo.insertVehicleWithInitialState(any(), any()) }
+    }
+
+    @Test
     fun `missing brand blocks preview`() {
         vm.onModelChanged("Corolla")
         vm.onOdometerChanged("50000")
@@ -168,6 +199,19 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun `changing driving amount invalidates preview until recomputed`() {
+        fillValidForm()
+        assertTrue(vm.previewPlan("mi"))
+
+        vm.onDrivingAmountChanged(DrivingAmount.HIGH)
+
+        assertFalse(vm.uiState.value.planReady)
+        assertTrue(vm.uiState.value.plan.isEmpty())
+        assertTrue(vm.previewPlan("mi"))
+        assertTrue(vm.uiState.value.planReady)
+    }
+
+    @Test
     fun `changing mileage from the reveal recomputes the km axis`() {
         fillValidForm()
         assertTrue(vm.previewPlan("mi"))
@@ -190,5 +234,24 @@ class OnboardingViewModelTest {
         // The mock invokes the initialState lambda with id 42 — reminders must
         // land there, proving the atomic vehicle+plan path is preserved.
         coVerify(atLeast = 1) { reminderRepo.insertReminder(match { it.vehicleId == 42L }) }
+    }
+
+    @Test
+    fun `revealed plan is reconstructed from saved state after process recreation`() {
+        val restored = createViewModel(
+            SavedStateHandle(
+                mapOf(
+                    "onb_brand" to "Toyota",
+                    "onb_model" to "Corolla",
+                    "onb_odometer" to "50000",
+                    "onb_driving" to DrivingAmount.HIGH.name,
+                    "onb_plan_revealed" to true,
+                    "onb_display_unit" to "mi"
+                )
+            )
+        )
+
+        assertTrue(restored.uiState.value.planReady)
+        assertEquals(DrivingAmount.HIGH, restored.uiState.value.drivingAmount)
     }
 }

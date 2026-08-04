@@ -69,26 +69,47 @@ class OnboardingViewModel @Inject constructor(
 
     init {
         analyticsHelper.logEvent(AnalyticsEvents.ONBOARDING_STARTED)
+        if (savedStateHandle.get<Boolean>(KEY_PLAN_REVEALED) == true) {
+            previewPlan(savedStateHandle.get<String>(KEY_DISPLAY_UNIT) ?: "km")
+        }
     }
 
     fun onBrandChanged(value: String) {
         savedStateHandle[KEY_BRAND] = value
+        invalidatePlan()
         _uiState.value = _uiState.value.copy(brand = value, errorRes = null, plan = emptyList(), planOdometerKm = null)
     }
 
     fun onModelChanged(value: String) {
         savedStateHandle[KEY_MODEL] = value
+        invalidatePlan()
         _uiState.value = _uiState.value.copy(model = value, errorRes = null, plan = emptyList(), planOdometerKm = null)
     }
 
     fun onOdometerChanged(value: String) {
         savedStateHandle[KEY_ODOMETER] = value
-        _uiState.value = _uiState.value.copy(odometer = value, errorRes = null)
+        invalidatePlan()
+        _uiState.value = _uiState.value.copy(
+            odometer = value,
+            errorRes = null,
+            plan = emptyList(),
+            planOdometerKm = null
+        )
     }
 
     fun onDrivingAmountChanged(value: DrivingAmount) {
         savedStateHandle[KEY_DRIVING] = value.name
-        _uiState.value = _uiState.value.copy(drivingAmount = value, errorRes = null)
+        invalidatePlan()
+        _uiState.value = _uiState.value.copy(
+            drivingAmount = value,
+            errorRes = null,
+            plan = emptyList(),
+            planOdometerKm = null
+        )
+    }
+
+    private fun invalidatePlan() {
+        savedStateHandle[KEY_PLAN_REVEALED] = false
     }
 
     /**
@@ -122,6 +143,8 @@ class OnboardingViewModel @Inject constructor(
             drivingAmount = state.drivingAmount,
             nowMillis = System.currentTimeMillis()
         )
+        savedStateHandle[KEY_PLAN_REVEALED] = true
+        savedStateHandle[KEY_DISPLAY_UNIT] = displayUnit
         _uiState.value = state.copy(plan = plan, planOdometerKm = odometerKm, errorRes = null)
         return true
     }
@@ -135,7 +158,7 @@ class OnboardingViewModel @Inject constructor(
         if (state.isSaving || state.vehicleSaved) return
         val odometerKm = state.planOdometerKm
         if (!state.planReady || odometerKm == null) {
-            _uiState.value = state.copy(errorRes = R.string.onboarding_error_brand_model)
+            _uiState.value = state.copy(errorRes = R.string.onboarding_error_plan_required)
             return
         }
 
@@ -154,7 +177,11 @@ class OnboardingViewModel @Inject constructor(
                 )
 
                 vehicleRepository.insertVehicleWithInitialState(newVehicle) { vehicleId ->
-                    createDefaultReminders(vehicleId, odometerKm, state.drivingAmount, now)
+                    createDefaultReminders.persistPlan(
+                        vehicleId = vehicleId,
+                        plan = state.plan,
+                        createdAt = now
+                    )
                 }
 
                 analyticsHelper.logEvent(
@@ -188,6 +215,8 @@ class OnboardingViewModel @Inject constructor(
         private const val KEY_MODEL = "onb_model"
         private const val KEY_ODOMETER = "onb_odometer"
         private const val KEY_DRIVING = "onb_driving"
+        private const val KEY_PLAN_REVEALED = "onb_plan_revealed"
+        private const val KEY_DISPLAY_UNIT = "onb_display_unit"
 
         /** 1,000,000 display units — beyond any plausible odometer. */
         const val MAX_PLAUSIBLE_DISPLAY = 1_000_000

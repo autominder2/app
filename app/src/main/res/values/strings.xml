@@ -377,7 +377,6 @@
     <string name="onboarding_skip_for_now">Skip for now</string>
     <string name="onboarding_add_car_title">Which car should we look after?</string>
     <string name="onboarding_add_car_subtitle">Just the make and model — everything else can wait.</string>
-    <string name="onboarding_save_my_car">Save my car</string>
     <string name="onboarding_do_this_later">I\'ll do this later</string>
     <string name="onboarding_turn_on_reminders">Turn on reminders</string>
     <string name="onboarding_maybe_later">Maybe later</string>
@@ -574,16 +573,20 @@
     <string name="driving_high">A lot</string>
     <string name="driving_support_value">≈%1$s %2$s/yr</string>
     <string name="onboarding_see_my_plan">See my plan</string>
-    <string name="onboarding_plan_title">Your starting plan is ready</string>
-    <string name="onboarding_plan_subtitle">Based on your mileage and how much you drive. Nothing is saved yet — adjust anything below.</string>
-    <string name="onboarding_plan_first_label">FIRST UP</string>
-    <string name="onboarding_plan_why">Every %1$s %2$s or %3$d months — whichever comes first</string>
-    <string name="onboarding_plan_review_by">Review around %1$s or %2$s %3$s</string>
-    <string name="onboarding_plan_more_title">ALSO ON YOUR PLAN</string>
-    <string name="onboarding_plan_honesty">This is a general starting plan based on typical service intervals — not %1$s\'s official schedule. You can change every interval later.</string>
-    <string name="onboarding_plan_missing">We don\'t know this car\'s service history yet. Log a past service any time to sharpen these dates.</string>
+    <string name="onboarding_plan_title">Your starting reminders</string>
+    <string name="onboarding_plan_subtitle">A general reminder cadence based on mileage and driving amount. Nothing is saved yet.</string>
+    <string name="onboarding_plan_first_label">FIRST REMINDER</string>
+    <plurals name="onboarding_plan_why">
+        <item quantity="one">Every %1$s %2$s or %3$d month — whichever comes first</item>
+        <item quantity="other">Every %1$s %2$s or %3$d months — whichever comes first</item>
+    </plurals>
+    <string name="onboarding_plan_review_by">Starting reminder: %1$s or %2$s %3$s</string>
+    <string name="onboarding_plan_more_title">OTHER STARTING REMINDERS</string>
+    <string name="onboarding_plan_honesty">These are editable general reminders, not %1$s\'s official schedule or proof that service is due.</string>
+    <string name="onboarding_plan_missing">We don\'t know this car\'s service history. Confirm recent work and the owner\'s manual before relying on these dates.</string>
     <string name="onboarding_plan_adjust">Adjust mileage or driving</string>
     <string name="onboarding_plan_cta">Save plan &amp; continue</string>
     <string name="onboarding_error_invalid_mileage">Enter mileage as a whole number, or leave it empty for now.</string>
     <string name="onboarding_error_mileage_too_high">That mileage looks too high — double-check the number.</string>
+    <string name="onboarding_error_plan_required">Review a valid starting plan before saving.</string>
 </resources>

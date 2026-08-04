@@ -43,7 +43,20 @@ class CreateDefaultRemindersUseCase @Inject constructor(
         drivingAmount: DrivingAmount,
         nowMillis: Long
     ) {
-        buildPlan(currentOdometerKm, drivingAmount, nowMillis).forEach { planned ->
+        persistPlan(
+            vehicleId = vehicleId,
+            plan = buildPlan(currentOdometerKm, drivingAmount, nowMillis),
+            createdAt = nowMillis
+        )
+    }
+
+    /** Persists the exact plan previously shown to the user. */
+    suspend fun persistPlan(
+        vehicleId: Long,
+        plan: List<PlannedReminder>,
+        createdAt: Long
+    ) {
+        plan.forEach { planned ->
             reminderRepository.insertReminder(
                 Reminder(
                     id = 0,
@@ -53,8 +66,8 @@ class CreateDefaultRemindersUseCase @Inject constructor(
                     intervalDays = planned.intervalDays,
                     nextDueOdometer = planned.nextDueOdometer,
                     nextDueDate = planned.nextDueDate,
-                    createdAt = nowMillis,
-                    updatedAt = nowMillis
+                    createdAt = createdAt,
+                    updatedAt = createdAt
                 )
             )
         }

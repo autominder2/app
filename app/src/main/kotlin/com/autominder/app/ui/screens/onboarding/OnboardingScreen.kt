@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -56,11 +57,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -150,22 +151,10 @@ fun OnboardingScreen(
         step = if (step == STEP_PLAN) STEP_ADD_CAR else STEP_WELCOME
     }
 
-    val accents = listOf(
-        MaterialTheme.colorScheme.primaryContainer,
-        MaterialTheme.colorScheme.secondaryContainer,
-        MaterialTheme.colorScheme.primaryContainer,
-        MaterialTheme.colorScheme.tertiaryContainer
-    )
-    val topColor by animateColorAsState(targetValue = accents[step], label = "stepAccent")
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(topColor, MaterialTheme.colorScheme.background)
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -485,12 +474,14 @@ private fun PlanStep(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+                val intervalMonths = (first.intervalDays / 30).coerceAtLeast(1)
                 Text(
-                    text = stringResource(
-                        R.string.onboarding_plan_why,
+                    text = pluralStringResource(
+                        R.plurals.onboarding_plan_why,
+                        intervalMonths,
                         DistanceFormat.grouped(DistanceUtil.kmToDisplay(first.intervalKm, distanceUnit)),
                         unitLabel,
-                        (first.intervalDays / 30).coerceAtLeast(1)
+                        intervalMonths
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -631,7 +622,12 @@ private fun DrivingAmountChips(
     onSelected: (DrivingAmount) -> Unit,
     distanceUnit: String
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectableGroup(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         DrivingAmount.entries.forEach { amount ->
             val labelRes = when (amount) {
                 DrivingAmount.LOW -> R.string.driving_low
@@ -641,6 +637,7 @@ private fun DrivingAmountChips(
             FilterChip(
                 selected = selected == amount,
                 onClick = { onSelected(amount) },
+                modifier = Modifier.fillMaxWidth(),
                 label = {
                     Column {
                         Text(stringResource(labelRes))
