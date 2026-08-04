@@ -57,5 +57,7 @@ gate_summary.txt
 .claude/*
 !.claude/skills/
 !.claude/agents/
+!.claude/rules/
 competitor_*.md
 *_reels_*.md
+~$*
