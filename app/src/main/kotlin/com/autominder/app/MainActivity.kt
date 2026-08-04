@@ -117,9 +117,21 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val hasSeenOnboarding by produceState<Boolean?>(initialValue = null) {
+            // One-shot: read once to pick NavGraph's startDestination so the
+            // NavHost never composes at Dashboard and then jumps to
+            // Onboarding. Do NOT make this reactive — NavHost only honors
+            // startDestination at first composition, and a value that keeps
+            // changing here would just be misleading, not functional.
+            val onboardingResolved by produceState<Boolean?>(initialValue = null) {
                 value = userPreferences.hasSeenOnboarding.first()
             }
+            // Reactive: gates the deep-link collector below. Must track the
+            // live value — a user can finish onboarding mid-session (e.g. a
+            // notification deep link arrives right after onboarding
+            // completes) and a frozen one-shot read would buffer that event
+            // forever, until the next process launch.
+            val hasSeenOnboarding by userPreferences.hasSeenOnboarding
+                .collectAsStateWithLifecycle(initialValue = false)
             val themeMode by userPreferences.themeMode.collectAsStateWithLifecycle(initialValue = "system")
             val distanceUnit by userPreferences.distanceUnit.collectAsStateWithLifecycle(initialValue = "km")
             val isProUser by produceState(initialValue = false) {
@@ -153,8 +165,11 @@ class MainActivity : ComponentActivity() {
 
                 // Notification deep link: open vehicle detail; the Update
                 // mileage action opens the QuickMileageSheet directly.
+                // Gated on the reactive flow so a deep link that arrives the
+                // moment onboarding completes is still delivered this
+                // session, not buffered until next launch.
                 LaunchedEffect(hasSeenOnboarding) {
-                    if (hasSeenOnboarding == true) {
+                    if (hasSeenOnboarding) {
                         _deepLinkEvents.receiveAsFlow().collect { deepLink ->
                             val currentDestinationId = navController.currentDestination?.id
                             val isVehicleDetailOnTop = navController
@@ -211,7 +226,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    hasSeenOnboarding?.let { onboardingComplete ->
+                    onboardingResolved?.let { onboardingComplete ->
                         NavGraph(
                             navController = navController,
                             startDestination = if (onboardingComplete) {
