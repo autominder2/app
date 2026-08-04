@@ -74,6 +74,11 @@ class SubscriptionManager @Inject constructor(
             }
         }
 
+        // Billing 8+ offers enableAutoServiceReconnection() on the builder;
+        // intentionally not adopted here — it would race with the manual
+        // exponential-backoff reconnect in onBillingServiceDisconnected()
+        // below. Revisit as a deliberate reconnect-strategy change, not a
+        // version-bump side effect.
         billingClient = BillingClient.newBuilder(context)
             .setListener(this)
             .enablePendingPurchases(
@@ -137,7 +142,8 @@ class SubscriptionManager @Inject constructor(
             )
             .build()
 
-        billingClient?.queryProductDetailsAsync(subsParams) { subsResult, subsDetails ->
+        billingClient?.queryProductDetailsAsync(subsParams) { subsResult, subsQueryResult ->
+            val subsDetails = subsQueryResult.productDetailsList
             val subs = if (subsResult.responseCode == BillingClient.BillingResponseCode.OK) {
                 logMissingProducts(listOf(PRODUCT_MONTHLY, PRODUCT_YEARLY), subsDetails)
                 subsDetails
@@ -157,7 +163,8 @@ class SubscriptionManager @Inject constructor(
                 )
                 .build()
 
-            billingClient?.queryProductDetailsAsync(inAppParams) { inAppResult, inAppDetails ->
+            billingClient?.queryProductDetailsAsync(inAppParams) { inAppResult, inAppQueryResult ->
+                val inAppDetails = inAppQueryResult.productDetailsList
                 val inApp = if (inAppResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     logMissingProducts(listOf(PRODUCT_LIFETIME), inAppDetails)
                     inAppDetails
@@ -177,7 +184,7 @@ class SubscriptionManager @Inject constructor(
         }
     }
 
-    /** Billing 7 has no unfetched-product callback — diff requested vs returned. */
+    /** Diff requested vs returned to flag products missing/inactive in Play Console. */
     private fun logMissingProducts(requested: List<String>, returned: List<ProductDetails>) {
         val returnedIds = returned.map { it.productId }.toSet()
         val missing = requested.filterNot { it in returnedIds }
