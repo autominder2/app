@@ -1,25 +1,15 @@
 package com.autominder.app.ui.screens.vehicle
 
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -29,33 +19,30 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
+import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.util.DistanceUtil
-import com.autominder.app.ui.theme.LocalDistanceUnit
-import com.autominder.app.domain.model.Vehicle
-import androidx.compose.runtime.remember
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.ListSkeleton
-import com.autominder.app.ui.components.pressScale
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import com.autominder.app.ui.components.StatusChip
+import com.autominder.app.ui.components.premium.VehicleHeroCard
+import com.autominder.app.ui.components.premium.VehicleHeroVariant
+import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.util.DistanceFormat
+import com.autominder.app.ui.util.localizedLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,7 +103,8 @@ fun VehicleListScreen(
                     onRetry = { viewModel.retry() }
                 )
                 is VehicleListUiState.Success -> VehicleListContent(
-                    vehicles = state.vehicles,
+                    items = state.items,
+                    attentionCount = state.attentionCount,
                     onVehicleClick = onNavigateToVehicleDetail
                 )
             }
@@ -126,7 +114,8 @@ fun VehicleListScreen(
 
 @Composable
 private fun VehicleListContent(
-    vehicles: List<Vehicle>,
+    items: List<VehicleListItem>,
+    attentionCount: Int,
     onVehicleClick: (Long) -> Unit
 ) {
     LazyColumn(
@@ -134,99 +123,105 @@ private fun VehicleListContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(vehicles, key = { it.id }) { vehicle ->
-            VehicleListCard(
-                vehicle = vehicle,
-                onClick = { onVehicleClick(vehicle.id) },
+        item(key = "verdict") {
+            VerdictSentence(attentionCount = attentionCount)
+        }
+        itemsIndexed(items, key = { _, item -> item.vehicle.id }) { index, item ->
+            VehicleListRow(
+                item = item,
+                isHero = index == 0,
+                onClick = { onVehicleClick(item.vehicle.id) },
                 modifier = Modifier.animateItem()
             )
         }
     }
 }
 
+/** The single plain-language verdict for this screen — reuses the exact
+ *  same aggregate copy Dashboard uses for the identical underlying
+ *  overdue+due-soon count, so the two screens never disagree in tone. */
 @Composable
-private fun VehicleListCard(
-    vehicle: Vehicle,
+private fun VerdictSentence(attentionCount: Int, modifier: Modifier = Modifier) {
+    val text = if (attentionCount == 0) {
+        stringResource(R.string.dashboard_all_clear_supporting)
+    } else {
+        pluralStringResource(R.plurals.dashboard_attention_headline, attentionCount, attentionCount)
+    }
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        color = if (attentionCount == 0) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 4.dp)
+    )
+}
+
+@Composable
+private fun VehicleListRow(
+    item: VehicleListItem,
+    isHero: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val pressInteraction = remember { MutableInteractionSource() }
-    ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .pressScale(pressInteraction)
-            .clickable(
-                interactionSource = pressInteraction,
-                indication = LocalIndication.current,
-                onClick = onClick
-            ),
-        shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (vehicle.photoUri != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(vehicle.photoUri)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = stringResource(R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model),
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Card(
-                    modifier = Modifier.size(56.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DirectionsCar,
-                        contentDescription = stringResource(R.string.cd_vehicle_no_photo),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
+    val vehicle = item.vehicle
+    val distanceUnit = LocalDistanceUnit.current
+    val title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model)
+    val yearText = vehicle.year.takeIf { it > 0 }?.toString()
+    val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+        DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
+    }
+    val odometerText = "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
+    val photoDescription = stringResource(R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model)
+    val statusLabel = stringResource(item.status.labelRes())
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (vehicle.year > 0) {
-                    Text(
-                        text = "${vehicle.year}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                val distanceUnit = LocalDistanceUnit.current
-                val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
-                    DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
-                }
-                Text(
-                    text = "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+    val concernText = when {
+        // Truthful no-data state: absent reminders are not "all good".
+        item.status == ServiceStatus.UNKNOWN ->
+            stringResource(R.string.vehicle_list_no_reminders)
+        else -> item.topConcern?.let { reminder ->
+            val concernLabel = reminder.customLabel?.takeIf { it.isNotBlank() }
+                ?: reminder.serviceType.localizedLabel()
+            when (item.status) {
+                ServiceStatus.OVERDUE -> stringResource(R.string.vehicle_list_concern_overdue, concernLabel)
+                ServiceStatus.DUE_SOON -> stringResource(R.string.vehicle_list_concern_due_soon, concernLabel)
+                else -> null
             }
         }
     }
+
+    // Each row announces as one coherent unit for TalkBack (a list of many
+    // cards benefits from one swipe per vehicle, unlike the single Detail
+    // hero which stays unmerged for granular exploration).
+    val mergedDescription = listOfNotNull(title, yearText, odometerText, statusLabel, concernText)
+        .joinToString(". ")
+
+    VehicleHeroCard(
+        title = title,
+        modifier = modifier,
+        variant = if (isHero) VehicleHeroVariant.Expanded else VehicleHeroVariant.Compact,
+        yearText = yearText,
+        odometerText = odometerText,
+        photoUri = vehicle.photoUri,
+        photoContentDescription = photoDescription,
+        mergedContentDescription = mergedDescription,
+        statusChip = { StatusChip(status = item.status) },
+        railStatus = item.status,
+        concernText = concernText,
+        onClick = onClick
+    )
+}
+
+@Composable
+private fun ServiceStatus.labelRes(): Int = when (this) {
+    ServiceStatus.OVERDUE -> R.string.status_overdue
+    ServiceStatus.DUE_SOON -> R.string.status_due_soon
+    ServiceStatus.SNOOZED -> R.string.status_snoozed
+    ServiceStatus.OK -> R.string.status_ok
+    ServiceStatus.COMPLETED -> R.string.status_completed
+    ServiceStatus.UNKNOWN -> R.string.status_unknown
 }
