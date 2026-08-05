@@ -93,7 +93,8 @@ jobs:
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
           else
-            echo "WARNING: GOOGLE_SERVICES_JSON secret not set — skipping"
+            echo "WARNING: GOOGLE_SERVICES_JSON secret not set — using stub"
+            cp app/google-services.json.stub app/google-services.json 2>/dev/null || true
           fi
 
       - name: Run Lint
