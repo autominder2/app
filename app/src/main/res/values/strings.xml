@@ -132,7 +132,6 @@
     <string name="cd_add_photo">Add photo</string>
     <string name="cd_add_reminder">Add Reminder</string>
     <string name="cd_vehicle_photo_description">%1$s %2$s</string>
-    <string name="cd_vehicle_no_photo">No vehicle photo</string>
 
     <!-- Shared Formatted -->
     <string name="vehicle_make_model">%1$s %2$s</string>
@@ -165,6 +164,9 @@
     <string name="vehicle_list_empty_title">No vehicles yet</string>
     <string name="vehicle_list_empty_subtitle">Tap the + button to add your first vehicle.</string>
     <string name="vehicle_list_odometer_km">%1$d km</string>
+    <string name="vehicle_list_concern_overdue">%1$s is overdue</string>
+    <string name="vehicle_list_concern_due_soon">%1$s is due soon</string>
+    <string name="vehicle_list_no_reminders">No reminders yet</string>
 
     <!-- Add Vehicle Screen -->
     <string name="add_vehicle_title">Add Vehicle</string>
