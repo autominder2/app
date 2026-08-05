@@ -27,7 +27,6 @@ GoogleService-Info.plist
 
 # ─── Gradle ─────────────────────────────────────────────────────────────────
 .gradle/
-gradle/wrapper/gradle-wrapper.jar
 
 # ─── Kotlin / Java ──────────────────────────────────────────────────────────
 /out/
