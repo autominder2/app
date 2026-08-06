@@ -167,6 +167,7 @@
     <string name="vehicle_list_concern_overdue">%1$s is overdue</string>
     <string name="vehicle_list_concern_due_soon">%1$s is due soon</string>
     <string name="vehicle_list_no_reminders">No reminders yet</string>
+    <string name="vehicle_list_mileage_not_added">Mileage not added</string>
 
     <!-- Add Vehicle Screen -->
     <string name="add_vehicle_title">Add Vehicle</string>
