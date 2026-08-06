@@ -172,10 +172,22 @@ private fun VehicleListRow(
     val distanceUnit = LocalDistanceUnit.current
     val title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model)
     val yearText = vehicle.year.takeIf { it > 0 }?.toString()
+    // A blank odometer field is stored as 0 (AddVehicleViewModel:
+    // `toIntOrNull() ?: 0`), so 0 means "never entered" in practice — the
+    // column is non-null Int and cannot distinguish it from a typed 0.
+    // Showing "0 km" as if it were a real reading is the dishonest option;
+    // showing "Mileage not added" is right in the overwhelmingly common
+    // case and is trivially corrected by the user. A nullable column would
+    // make this exact, but that is a schema migration and its own branch.
+    val hasMileage = vehicle.currentOdometer > 0
     val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
         DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
     }
-    val odometerText = "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
+    val odometerText = if (hasMileage) {
+        "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
+    } else {
+        stringResource(R.string.vehicle_list_mileage_not_added)
+    }
     val photoDescription = stringResource(R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model)
     val statusLabel = stringResource(item.status.labelRes())
 
