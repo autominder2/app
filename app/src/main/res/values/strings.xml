@@ -38,7 +38,6 @@
     <string name="error_reminder_not_found">Reminder not found</string>
     <string name="label_unknown_vehicle">Unknown Vehicle</string>
     <string name="error_odometer_below_current">Odometer reading cannot be lower than current (%1$s)</string>
-    <string name="error_service_odometer_below_current">Odometer reading cannot be lower than the current vehicle odometer (%1$s)</string>
     <string name="error_load_vehicles_failed">Failed to load vehicles</string>
     <string name="error_load_mileage_failed">Failed to load mileage logs</string>
     <string name="error_restore_mileage_failed">Failed to restore log entry</string>

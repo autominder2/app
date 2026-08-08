@@ -10,16 +10,18 @@ import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
 import com.autominder.app.data.local.preferences.UserPreferences
-import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.Service
+import com.autominder.app.domain.model.ServiceCompletion
+import com.autominder.app.domain.model.ServiceCompletionResult
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.domain.model.suggestedInterval
-import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,13 +67,22 @@ sealed class AddServiceUiEvent {
 class AddServiceViewModel @Inject constructor(
     private val serviceRepository: IServiceRepository,
     private val vehicleRepository: IVehicleRepository,
-    private val reminderRepository: IReminderRepository,
     private val userPreferences: UserPreferences,
     private val analyticsHelper: AnalyticsHelper,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val vehicleId: Long = savedStateHandle.toRoute<NavRoutes.AddService>().vehicleId
+
+    /**
+     * Guards Save against double submission for the lifetime of this ViewModel.
+     *
+     * This is single-flight, not durable idempotency: a process death between the
+     * committed transaction and navigation would restore the form and allow a second
+     * save. Closing that gap needs an operation key in the schema, which v1.0 does
+     * not have.
+     */
+    private var saveJob: Job? = null
 
     // Expertise: State keys for persistence across System Process Death
     companion object {
@@ -164,6 +175,10 @@ class AddServiceViewModel @Inject constructor(
     }
 
     private fun saveService() {
+        // Single-flight Save: a second tap while the first transaction is still in
+        // flight — or after it has already succeeded — must not log the service twice.
+        if (saveJob?.isActive == true || _uiState.value.isSaved) return
+
         val state = _uiState.value
 
         val odometerInt = state.odometer.toIntOrNull()
@@ -193,22 +208,15 @@ class AddServiceViewModel @Inject constructor(
             (costDouble * 100).toInt()
         }
 
-        viewModelScope.launch {
+        saveJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null, errorArgs = emptyList())
             try {
                 val unit = userPreferences.distanceUnit.first()
                 val odometerKm = DistanceUtil.displayToKm(odometerInt, unit)
-                val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
 
-                if (vehicle != null && odometerKm < vehicle.currentOdometer) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorRes = R.string.error_service_odometer_below_current,
-                        errorArgs = listOf(DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit))
-                    )
-                    return@launch
-                }
-
+                // Historical maintenance is valid ownership history: a service logged
+                // below the vehicle's current reading is accepted and keeps its own
+                // odometer. The data layer refuses to roll the vehicle backwards.
                 val now = System.currentTimeMillis()
                 val service = Service(
                     id = 0,
@@ -223,17 +231,6 @@ class AddServiceViewModel @Inject constructor(
                     createdAt = now
                 )
 
-                // Expertise: Multi-operation logic is scoped to ensure consistency
-                serviceRepository.insertService(service)
-                vehicleRepository.updateOdometer(vehicleId, odometerKm)
-
-                userPreferences.incrementServiceLogCount()
-
-                analyticsHelper.logEvent(
-                    AnalyticsEvents.SERVICE_LOGGED,
-                    mapOf(AnalyticsParams.SERVICE_TYPE to state.serviceType.name)
-                )
-
                 // "Remind me for the next one" — the intervals the user chose,
                 // converted to km/days. Null when the toggle is off.
                 val reminderIntervalKm: Int? = if (state.remindNext) {
@@ -244,50 +241,48 @@ class AddServiceViewModel @Inject constructor(
                     state.remindIntervalMonths.toIntOrNull()?.takeIf { it > 0 }?.let { it * 30 }
                 } else null
 
-                val matchingReminder = reminderRepository.findActiveReminderByType(
-                    vehicleId = vehicleId,
-                    serviceType = state.serviceType
+                // One command, one transaction. Service record, odometer effect and
+                // reminder rebase commit together or not at all.
+                val result = serviceRepository.completeService(
+                    ServiceCompletion(
+                        service = service,
+                        remindNext = state.remindNext,
+                        reminderIntervalKm = reminderIntervalKm,
+                        reminderIntervalDays = reminderIntervalDays
+                    )
                 )
-                when {
-                    // A reminder already exists: reset its due window. If the user
-                    // kept the toggle on, adopt any interval edits they made.
-                    matchingReminder != null -> {
-                        val km = if (state.remindNext) reminderIntervalKm else matchingReminder.intervalKm
-                        val days = if (state.remindNext) reminderIntervalDays else matchingReminder.intervalDays
-                        reminderRepository.updateReminder(
-                            matchingReminder.copy(
-                                intervalKm = km,
-                                intervalDays = days,
-                                nextDueOdometer = km?.let { odometerKm + it },
-                                nextDueDate = days?.let { state.serviceDate + (it.toLong() * 86_400_000L) },
-                                isCompleted = false,
-                                completedAt = null,
-                                snoozeUntil = null,
-                                lastNotifiedAt = null,
-                                updatedAt = now
-                            )
+
+                when (result) {
+                    is ServiceCompletionResult.Success -> {
+                        userPreferences.incrementServiceLogCount()
+                        analyticsHelper.logEvent(
+                            AnalyticsEvents.SERVICE_LOGGED,
+                            mapOf(AnalyticsParams.SERVICE_TYPE to state.serviceType.name)
+                        )
+                        _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
+                    }
+
+                    ServiceCompletionResult.VehicleNotFound -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorRes = R.string.error_vehicle_not_found,
+                            errorArgs = emptyList()
                         )
                     }
-                    // No reminder yet: create one so the user never has to remember.
-                    state.remindNext && (reminderIntervalKm != null || reminderIntervalDays != null) -> {
-                        reminderRepository.insertReminder(
-                            Reminder(
-                                id = 0,
-                                vehicleId = vehicleId,
-                                serviceType = state.serviceType,
-                                customLabel = if (state.serviceType == ServiceType.CUSTOM) state.customLabel else null,
-                                intervalKm = reminderIntervalKm,
-                                intervalDays = reminderIntervalDays,
-                                nextDueOdometer = reminderIntervalKm?.let { odometerKm + it },
-                                nextDueDate = reminderIntervalDays?.let { state.serviceDate + (it.toLong() * 86_400_000L) },
-                                createdAt = now,
-                                updatedAt = now
-                            )
+
+                    is ServiceCompletionResult.Failed -> {
+                        Timber.e(result.cause, "Failed to save service")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorRes = R.string.error_save_service_failed,
+                            errorArgs = emptyList()
                         )
                     }
                 }
-
-                _uiState.value = _uiState.value.copy(isLoading = false, isSaved = true)
+            } catch (e: CancellationException) {
+                // The screen went away mid-save. Not an error to show anyone, and the
+                // cancellation must keep propagating.
+                throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to save service")
                 _uiState.value = _uiState.value.copy(
