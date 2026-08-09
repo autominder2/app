@@ -124,6 +124,18 @@ android {
         )
     }
 
+    testOptions {
+        unitTests {
+            // Route-scoped ViewModels resolve their arguments through
+            // SavedStateHandle.toRoute(), which is an inline reified function that
+            // reaches android.os.Bundle. Without this, every such ViewModel is
+            // untestable on the JVM and its save path can only be covered on a
+            // device. Stubbed Android methods return defaults, so tests must assert
+            // behaviour, never values that a real Bundle would have carried.
+            isReturnDefaultValues = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

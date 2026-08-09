@@ -5,29 +5,42 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 
+/**
+ * Night Garage — the AutoMinder identity.
+ *
+ * Wallpaper-driven dynamic colour is deliberately absent. A maintenance app
+ * signals safety state through colour, so the palette cannot be handed to the
+ * user's wallpaper: a pink system theme would leave amber and red competing
+ * with a pink "healthy". Dynamic colour may return later as an explicit
+ * appearance setting, never as a default.
+ *
+ * `outline` carries border/interactive (the boundary that makes a control
+ * identifiable, ≥3:1) and `outlineVariant` carries border/subtle (decorative
+ * dividers, deliberately quiet). OutlinedTextField and selectable surfaces read
+ * `outline`, which is what gives fields a visible edit affordance.
+ */
 private val DarkColorScheme = darkColorScheme(
-    primary              = Color(0xFF80D5C5),
-    onPrimary            = Color(0xFF003731),
-    primaryContainer     = PrimaryContainerDark,
-    onPrimaryContainer   = OnPrimaryContainerDark,
-    secondary            = Color(0xFFB1CCC5),
-    onSecondary          = Color(0xFF1C3530),
+    primary              = CobaltDark,
+    onPrimary            = OnCobaltDark,
+    primaryContainer     = CobaltContainerDark,
+    onPrimaryContainer   = OnCobaltContainerDark,
+    secondary            = SecondaryDark,
+    onSecondary          = OnSecondaryDark,
     secondaryContainer   = SecondaryContainerDark,
     onSecondaryContainer = OnSecondaryContainerDark,
-    tertiary             = Color(0xFFF5BE48),
-    onTertiary           = Color(0xFF422D00),
-    tertiaryContainer    = TertiaryContainerDark,
-    onTertiaryContainer  = OnTertiaryContainerDark,
-    error                = Color(0xFFFFB4AB),
-    onError              = Color(0xFF690005),
-    errorContainer       = ErrorContainerDark,
-    onErrorContainer     = OnErrorContainerDark,
-    background           = SurfaceDark,
-    onBackground         = OnSurfaceDark,
-    surface              = SurfaceDark,
-    onSurface            = OnSurfaceDark,
+    tertiary             = AmberDark,
+    onTertiary           = OnAmberDark,
+    tertiaryContainer    = AmberContainerDark,
+    onTertiaryContainer  = OnAmberContainerDark,
+    error                = CriticalDark,
+    onError              = OnCriticalDark,
+    errorContainer       = CriticalContainerDark,
+    onErrorContainer     = OnCriticalContainerDark,
+    background           = GroundDark,
+    onBackground         = OnGroundDark,
+    surface              = GroundDark,
+    onSurface            = OnGroundDark,
     surfaceVariant       = SurfaceVariantDark,
     onSurfaceVariant     = OnSurfaceVariantDark,
     surfaceDim           = SurfaceDimDark,
@@ -37,32 +50,32 @@ private val DarkColorScheme = darkColorScheme(
     surfaceContainer        = SurfaceContainerDark,
     surfaceContainerHigh    = SurfaceContainerHighDark,
     surfaceContainerHighest = SurfaceContainerHighestDark,
-    outline              = OutlineDark,
-    outlineVariant       = OutlineVariantDark,
+    outline              = BorderInteractiveDark,
+    outlineVariant       = BorderSubtleDark,
     scrim                = Scrim
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary              = PrimaryTeal,
-    onPrimary            = OnPrimaryTeal,
-    primaryContainer     = PrimaryContainerLight,
-    onPrimaryContainer   = OnPrimaryContainerLight,
-    secondary            = SecondaryColor,
-    onSecondary          = OnSecondaryColor,
+    primary              = CobaltLight,
+    onPrimary            = OnCobaltLight,
+    primaryContainer     = CobaltContainerLight,
+    onPrimaryContainer   = OnCobaltContainerLight,
+    secondary            = SecondaryLight,
+    onSecondary          = OnSecondaryLight,
     secondaryContainer   = SecondaryContainerLight,
     onSecondaryContainer = OnSecondaryContainerLight,
-    tertiary             = TertiaryColor,
-    onTertiary           = OnTertiaryColor,
-    tertiaryContainer    = TertiaryContainerLight,
-    onTertiaryContainer  = OnTertiaryContainerLight,
-    error                = ErrorColor,
-    onError              = OnErrorColor,
-    errorContainer       = ErrorContainerLight,
-    onErrorContainer     = OnErrorContainerLight,
-    background           = SurfaceLight,
-    onBackground         = OnSurfaceLight,
-    surface              = SurfaceLight,
-    onSurface            = OnSurfaceLight,
+    tertiary             = AmberLight,
+    onTertiary           = OnAmberLight,
+    tertiaryContainer    = AmberContainerLight,
+    onTertiaryContainer  = OnAmberContainerLight,
+    error                = CriticalLight,
+    onError              = OnCriticalLight,
+    errorContainer       = CriticalContainerLight,
+    onErrorContainer     = OnCriticalContainerLight,
+    background           = GroundLight,
+    onBackground         = OnGroundLight,
+    surface              = GroundLight,
+    onSurface            = OnGroundLight,
     surfaceVariant       = SurfaceVariantLight,
     onSurfaceVariant     = OnSurfaceVariantLight,
     surfaceDim           = SurfaceDimLight,
@@ -72,8 +85,8 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainer        = SurfaceContainerLight,
     surfaceContainerHigh    = SurfaceContainerHighLight,
     surfaceContainerHighest = SurfaceContainerHighestLight,
-    outline              = OutlineLight,
-    outlineVariant       = OutlineVariantLight,
+    outline              = BorderInteractiveLight,
+    outlineVariant       = BorderSubtleLight,
     scrim                = Scrim
 )
 
