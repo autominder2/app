@@ -43,6 +43,14 @@ data class AddServiceUiState(
     val remindNext: Boolean = true,
     val remindIntervalKm: String = "",
     val remindIntervalMonths: String = "",
+    /** Quiet context line — which vehicle this is being logged against. */
+    val vehicleName: String = "",
+    val vehicleOdometerDisplay: String = "",
+    /**
+     * Last few distinct service types performed on this vehicle, newest first.
+     * Derived from existing history — no schema, no ranking model.
+     */
+    val recentTypes: List<ServiceType> = emptyList(),
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     @StringRes val errorRes: Int? = null,
@@ -92,6 +100,9 @@ class AddServiceViewModel @Inject constructor(
         private const val KEY_COST = "cost"
         private const val KEY_SHOP = "shop_name"
         private const val KEY_NOTES = "notes"
+
+        /** Two or three recent choices is a shortcut; more is another wall. */
+        private const val MAX_RECENT_TYPES = 3
     }
 
     private val _uiState = MutableStateFlow(
@@ -111,12 +122,35 @@ class AddServiceViewModel @Inject constructor(
         seedSuggestedInterval(_uiState.value.serviceType)
         viewModelScope.launch {
             val vehicle = vehicleRepository.getVehicleById(vehicleId).firstOrNull()
-            // Only prefill if the field is currently empty (not restored from SavedStateHandle)
-            if (vehicle != null && _uiState.value.odometer.isEmpty()) {
+            if (vehicle != null) {
                 val unit = userPreferences.distanceUnit.first()
                 val displayOdometer = DistanceUtil.kmToDisplay(vehicle.currentOdometer, unit)
-                _uiState.value = _uiState.value.copy(odometer = displayOdometer.toString())
-                savedStateHandle[KEY_ODOMETER] = displayOdometer.toString()
+                _uiState.value = _uiState.value.copy(
+                    vehicleName = listOf(vehicle.make, vehicle.model)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" "),
+                    vehicleOdometerDisplay = displayOdometer.toString()
+                )
+                // Only prefill if the field is empty (not restored from SavedStateHandle)
+                if (_uiState.value.odometer.isEmpty()) {
+                    _uiState.value = _uiState.value.copy(odometer = displayOdometer.toString())
+                    savedStateHandle[KEY_ODOMETER] = displayOdometer.toString()
+                }
+            }
+        }
+
+        // The fast path: what this owner actually logs for this car. Reading the
+        // history they already have beats guessing, and costs no new schema.
+        viewModelScope.launch {
+            val history = serviceRepository.getServicesForVehicle(vehicleId).firstOrNull().orEmpty()
+            val recent = history
+                .sortedByDescending { it.serviceDate }
+                .map { it.serviceType }
+                .distinct()
+                .filterNot { it == ServiceType.CUSTOM }
+                .take(MAX_RECENT_TYPES)
+            if (recent.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(recentTypes = recent)
             }
         }
     }

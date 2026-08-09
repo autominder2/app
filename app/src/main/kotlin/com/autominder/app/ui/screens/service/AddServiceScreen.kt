@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -63,7 +66,8 @@ import com.autominder.app.ui.components.DiscardChangesDialog
 import com.autominder.app.ui.components.FormField
 import com.autominder.app.ui.components.SaveButton
 import com.autominder.app.ui.components.SaveButtonState
-import com.autominder.app.ui.components.ServiceTypeGrid
+import com.autominder.app.ui.components.ServiceChoicePicker
+import com.autominder.app.ui.util.DistanceFormat
 import kotlinx.coroutines.delay
 import com.autominder.app.ui.util.DateFormatUtil
 
@@ -78,6 +82,7 @@ fun AddServiceScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
+    var odometerFocused by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     // Pre-filled defaults (date, odometer) don't count as edits
@@ -148,37 +153,78 @@ fun AddServiceScreen(
     }
 
     Scaffold(
+        // One owner for IME insets: lifting the whole Scaffold keeps the sticky
+        // Save above the keyboard without double-padding the scrolling content.
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.add_service_title)) },
+                title = {
+                    Column {
+                        Text(stringResource(R.string.add_service_title))
+                        // Quiet context — which car this is being logged against.
+                        // No hero, no photograph; the vehicle is a fact, not a banner.
+                        if (uiState.vehicleName.isNotBlank()) {
+                            Text(
+                                text = stringResource(
+                                    R.string.add_service_vehicle_context,
+                                    uiState.vehicleName,
+                                    "${DistanceFormat.grouped(uiState.vehicleOdometerDisplay.toIntOrNull() ?: 0)} ${DistanceUtil.unitLabel(LocalDistanceUnit.current)}"
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackRequest) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
             )
+        },
+        bottomBar = {
+            // The screen's job is Save. It must never scroll out of reach behind
+            // optional details or a long service list.
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                SaveButton(
+                    state = when {
+                        uiState.isSaved -> SaveButtonState.Success
+                        uiState.isLoading -> SaveButtonState.Saving
+                        else -> SaveButtonState.Idle
+                    },
+                    text = stringResource(R.string.add_service_save),
+                    onClick = { viewModel.onEvent(AddServiceUiEvent.SaveClicked) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                )
+            }
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
                 .verticalScroll(rememberScrollState())
-                .imePadding()
+                .padding(horizontal = 20.dp)
         ) {
+            Spacer(modifier = Modifier.height(4.dp))
+
             FormField(index = 0) {
                 Column {
                     Text(
-                        text = stringResource(R.string.add_service_type_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        text = stringResource(R.string.add_service_what_was_done),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    ServiceTypeGrid(
+                    ServiceChoicePicker(
                         selected = uiState.serviceType,
+                        recentTypes = uiState.recentTypes,
                         onSelected = { viewModel.onEvent(AddServiceUiEvent.ServiceTypeChanged(it)) }
                     )
                 }
@@ -199,11 +245,20 @@ fun AddServiceScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             FormField(index = 1) {
+                // Grouped while resting so the number reads like an odometer;
+                // raw while editing so typing and the cursor behave normally.
                 OutlinedTextField(
-                    value = uiState.odometer,
+                    value = if (odometerFocused) {
+                        uiState.odometer
+                    } else {
+                        uiState.odometer.toIntOrNull()?.let { DistanceFormat.grouped(it) }
+                            ?: uiState.odometer
+                    },
                     onValueChange = { viewModel.onEvent(AddServiceUiEvent.OdometerChanged(it)) },
                     label = { Text(stringResource(R.string.add_service_odometer_label, DistanceUtil.unitLabel(LocalDistanceUnit.current))) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { odometerFocused = it.isFocused },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
@@ -310,17 +365,6 @@ fun AddServiceScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            SaveButton(
-                state = when {
-                    uiState.isSaved -> SaveButtonState.Success
-                    uiState.isLoading -> SaveButtonState.Saving
-                    else -> SaveButtonState.Idle
-                },
-                text = stringResource(R.string.add_service_save),
-                onClick = { viewModel.onEvent(AddServiceUiEvent.SaveClicked) },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
@@ -348,14 +392,22 @@ private fun ReminderPromptCard(
             .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f))
             .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // Top-aligned: at large text sizes the subtitle wraps to several lines and
+        // centre alignment would drag the icon and switch into the middle of it.
+        Row(verticalAlignment = Alignment.Top) {
             Icon(
                 Icons.Default.NotificationsActive,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    // Explicit gutter so wrapped lines can never run under the
+                    // trailing switch, at any text scale.
+                    .padding(end = 12.dp)
+            ) {
                 Text(
                     text = stringResource(R.string.add_service_remind_title),
                     style = MaterialTheme.typography.titleSmall,

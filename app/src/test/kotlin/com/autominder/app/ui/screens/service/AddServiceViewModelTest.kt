@@ -4,8 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.data.local.preferences.UserPreferences
+import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.model.ServiceCompletion
 import com.autominder.app.domain.model.ServiceCompletionResult
+import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
@@ -73,8 +75,46 @@ class AddServiceViewModelTest {
                 currentOdometer = 201_430
             )
         )
+        // The fast path reads this vehicle's history to build "Recently used".
+        every { serviceRepo.getServicesForVehicle(any()) } returns flowOf(emptyList())
         coEvery { serviceRepo.completeService(any()) } returns ServiceCompletionResult.Success(1L)
     }
+
+    @Test
+    fun `recently used is built from this vehicle's history, newest first, distinct`() = runTest(dispatcher) {
+        every { serviceRepo.getServicesForVehicle(any()) } returns flowOf(
+            listOf(
+                service(ServiceType.OIL_CHANGE, dayOffset = 0),
+                service(ServiceType.TIRE_ROTATION, dayOffset = -10),
+                service(ServiceType.OIL_CHANGE, dayOffset = -40),   // duplicate, older
+                service(ServiceType.BRAKE_SERVICE, dayOffset = -90),
+                service(ServiceType.COOLANT, dayOffset = -200)      // beyond the cap
+            )
+        )
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(ServiceType.OIL_CHANGE, ServiceType.TIRE_ROTATION, ServiceType.BRAKE_SERVICE),
+            vm.uiState.value.recentTypes
+        )
+    }
+
+    @Test
+    fun `a vehicle with no history offers no recent shortcuts`() = runTest(dispatcher) {
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.recentTypes.isEmpty())
+    }
+
+    private fun service(type: ServiceType, dayOffset: Int) = Service(
+        vehicleId = vehicleId,
+        serviceType = type,
+        odometerAtService = 200_000,
+        serviceDate = 1_700_000_000_000L + dayOffset * 86_400_000L
+    )
 
     @After
     fun tearDown() {
