@@ -5,11 +5,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.CardDefaults
@@ -23,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -33,6 +37,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.ui.theme.JetBrainsMono
 
 /** Layout variants: [Compact] for list rows, [Expanded] for detail heroes. */
@@ -56,6 +61,15 @@ fun VehicleHeroCard(
     photoContentDescription: String? = null,
     mergedContentDescription: String? = null,
     statusChip: (@Composable () -> Unit)? = null,
+    /** Precision Rail — status accent on the leading edge, resolved through
+     *  [PremiumStatusStyle.railColor] so calm states render no rail at all.
+     *  Purely decorative (status is still carried by [statusChip] + text);
+     *  null (the default) renders no rail, preserving prior call sites. */
+    railStatus: ServiceStatus? = null,
+    /** One-line "next maintenance concern" (e.g. "Oil change is overdue"),
+     *  already fully formatted and localized by the caller. Null renders
+     *  nothing, preserving prior call sites. */
+    concernText: String? = null,
     onClick: (() -> Unit)? = null
 ) {
     val semanticsModifier = if (mergedContentDescription != null) {
@@ -66,14 +80,41 @@ fun VehicleHeroCard(
         Modifier.semantics(mergeDescendants = true) {}
     }
 
+    // Single source of truth for the rail: PremiumStatusStyle. Null for calm
+    // states — the rail only appears when a status genuinely needs attention.
+    val rail = railStatus?.let { PremiumStatusStyle.railColor(it) }
+    val concernColor = rail ?: MaterialTheme.colorScheme.onSurfaceVariant
+
     val cardContent: @Composable () -> Unit = {
-        when (variant) {
-            VehicleHeroVariant.Compact -> CompactContent(
-                title, yearText, odometerText, photoUri, photoContentDescription, statusChip
-            )
-            VehicleHeroVariant.Expanded -> ExpandedContent(
-                title, yearText, odometerText, photoUri, photoContentDescription, statusChip
-            )
+        val content: @Composable () -> Unit = {
+            when (variant) {
+                VehicleHeroVariant.Compact -> CompactContent(
+                    title, yearText, odometerText, photoUri, photoContentDescription,
+                    statusChip, concernText, concernColor
+                )
+                VehicleHeroVariant.Expanded -> ExpandedContent(
+                    title, yearText, odometerText, photoUri, photoContentDescription,
+                    statusChip, concernText, concernColor
+                )
+            }
+        }
+        if (rail != null) {
+            // Same structure as StatusReminderCard: IntrinsicSize.Min bounds
+            // the Row's height so the rail's fillMaxHeight() resolves (inside
+            // a LazyColumn item the incoming max height is infinite, which
+            // collapses a bare fillMaxHeight() to zero). The Card's own
+            // Surface clips the rail's square corners to the card shape.
+            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                Box(
+                    modifier = Modifier
+                        .width(PremiumStatusStyle.RailWidth)
+                        .fillMaxHeight()
+                        .background(rail)
+                )
+                Box(modifier = Modifier.weight(1f)) { content() }
+            }
+        } else {
+            content()
         }
     }
 
@@ -106,7 +147,9 @@ private fun CompactContent(
     odometerText: String?,
     photoUri: String?,
     photoContentDescription: String?,
-    statusChip: (@Composable () -> Unit)?
+    statusChip: (@Composable () -> Unit)?,
+    concernText: String? = null,
+    concernColor: Color = Color.Unspecified
 ) {
     Row(
         modifier = Modifier
@@ -135,6 +178,15 @@ private fun CompactContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            if (concernText != null) {
+                Text(
+                    text = concernText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = concernColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
         statusChip?.invoke()
     }
@@ -147,7 +199,9 @@ private fun ExpandedContent(
     odometerText: String?,
     photoUri: String?,
     photoContentDescription: String?,
-    statusChip: (@Composable () -> Unit)?
+    statusChip: (@Composable () -> Unit)?,
+    concernText: String? = null,
+    concernColor: Color = Color.Unspecified
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (photoUri != null) {
@@ -207,6 +261,15 @@ private fun ExpandedContent(
                         text = metaLine,
                         style = MaterialTheme.typography.titleMedium.copy(fontFamily = JetBrainsMono),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (concernText != null) {
+                    Text(
+                        text = concernText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = concernColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
