@@ -8,4 +8,11 @@
     <include domain="database" path="." />
     <include domain="file" path="datastore/" />
     <include domain="sharedpref" path="." />
+    <!-- AutoMinderBackupAgent runs PRAGMA wal_checkpoint(FULL) immediately
+         before these files are copied, so every committed record already lives
+         in autominder.db. The WAL is empty by then, and -shm is transient
+         shared memory SQLite recreates on open — copying either one risks
+         restoring a pair of files that disagree with each other. -->
+    <exclude domain="database" path="autominder.db-wal" />
+    <exclude domain="database" path="autominder.db-shm" />
 </full-backup-content>

@@ -11,6 +11,7 @@ import com.autominder.app.billing.SubscriptionManager
 import com.autominder.app.core.notifications.NotificationHelper
 import com.autominder.app.core.util.AppLifecycleObserver
 import com.autominder.app.core.util.CrashlyticsTree
+import com.autominder.app.worker.ReminderAlarmScheduler
 import com.autominder.app.worker.WorkScheduler
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -55,6 +56,7 @@ class AutoMinderApp : Application(), Configuration.Provider {
             delay(1_000)
             WorkScheduler.scheduleReminderChecks(this@AutoMinderApp)
             WorkScheduler.scheduleWeeklyDigest(this@AutoMinderApp)
+            ReminderAlarmScheduler.schedule(this@AutoMinderApp)
             subscriptionManager.get().initialize()
             withContext(Dispatchers.Main.immediate) {
                 ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver.get())
