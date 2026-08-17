@@ -69,14 +69,17 @@ class AutoMinderWidget : GlanceAppWidget() {
         val dueSoonCount = try { reminderDao.getDueSoonCount() } catch (_: Exception) { 0 }
         val vehicleCount = try { vehicleDao.getActiveVehicleCount() } catch (_: Exception) { 0 }
 
-        val healthScore = (100 - (25 * overdueCount) - (10 * dueSoonCount)).coerceIn(0, 100)
+        // A real count of things the owner has to act on — not an invented
+        // 0-100 score. AutoMinder reads no telemetry, so it can only report
+        // what it was told.
+        val attentionCount = overdueCount + dueSoonCount
         val serviceLabel = urgentReminder?.let { it.customLabel ?: it.serviceType.label }
         val dueDateLabel = urgentReminder?.nextDueDate?.let { DateFormatUtil.formatDate(it) }
 
         provideContent {
             GlanceTheme {
                 WidgetContent(
-                    healthScore = healthScore,
+                    attentionCount = attentionCount,
                     serviceLabel = serviceLabel,
                     dueDateLabel = dueDateLabel,
                     vehicleCount = vehicleCount,
@@ -90,7 +93,7 @@ class AutoMinderWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(
-    healthScore: Int,
+    attentionCount: Int,
     serviceLabel: String?,
     dueDateLabel: String?,
     vehicleCount: Int,
@@ -107,22 +110,22 @@ private fun WidgetContent(
         contentAlignment = Alignment.CenterStart
     ) {
         when {
-            size.width < 200.dp -> SmallWidget(healthScore, context)
-            size.height < 150.dp -> MediumWidget(healthScore, serviceLabel, dueDateLabel, context)
-            else -> LargeWidget(healthScore, serviceLabel, dueDateLabel, vehicleCount, overdueCount, context)
+            size.width < 200.dp -> SmallWidget(attentionCount, context)
+            size.height < 150.dp -> MediumWidget(attentionCount, serviceLabel, dueDateLabel, context)
+            else -> LargeWidget(attentionCount, serviceLabel, dueDateLabel, vehicleCount, overdueCount, context)
         }
     }
 }
 
 @Composable
-private fun SmallWidget(healthScore: Int, context: Context) {
+private fun SmallWidget(attentionCount: Int, context: Context) {
     Column(
         modifier = GlanceModifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = healthScore.toString(),
+            text = attentionCount.toString(),
             style = TextStyle(
                 color = GlanceTheme.colors.onSurface,
                 fontSize = 28.sp,
@@ -130,7 +133,9 @@ private fun SmallWidget(healthScore: Int, context: Context) {
             )
         )
         Text(
-            text = context.getString(R.string.widget_health_score),
+            text = context.resources.getQuantityString(
+                R.plurals.widget_attention_label, attentionCount
+            ),
             style = TextStyle(
                 color = GlanceTheme.colors.onSurfaceVariant,
                 fontSize = 11.sp
@@ -141,7 +146,7 @@ private fun SmallWidget(healthScore: Int, context: Context) {
 
 @Composable
 private fun MediumWidget(
-    healthScore: Int,
+    attentionCount: Int,
     serviceLabel: String?,
     dueDateLabel: String?,
     context: Context
@@ -155,7 +160,7 @@ private fun MediumWidget(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = healthScore.toString(),
+                text = attentionCount.toString(),
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
                     fontSize = 32.sp,
@@ -163,7 +168,9 @@ private fun MediumWidget(
                 )
             )
             Text(
-                text = context.getString(R.string.widget_health_score),
+                text = context.resources.getQuantityString(
+                    R.plurals.widget_attention_label, attentionCount
+                ),
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurfaceVariant,
                     fontSize = 11.sp
@@ -204,7 +211,7 @@ private fun MediumWidget(
 
 @Composable
 private fun LargeWidget(
-    healthScore: Int,
+    attentionCount: Int,
     serviceLabel: String?,
     dueDateLabel: String?,
     vehicleCount: Int,
@@ -220,7 +227,7 @@ private fun LargeWidget(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = healthScore.toString(),
+                    text = attentionCount.toString(),
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurface,
                         fontSize = 36.sp,
@@ -228,7 +235,9 @@ private fun LargeWidget(
                     )
                 )
                 Text(
-                    text = context.getString(R.string.widget_health_score),
+                    text = context.resources.getQuantityString(
+                        R.plurals.widget_attention_label, attentionCount
+                    ),
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurfaceVariant,
                         fontSize = 11.sp

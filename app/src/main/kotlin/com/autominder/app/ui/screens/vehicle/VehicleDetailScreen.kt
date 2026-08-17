@@ -106,7 +106,7 @@ import com.autominder.app.ui.util.localizedLabel
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.ui.res.pluralStringResource
-import com.autominder.app.ui.components.premium.HealthCockpitCard
+import com.autominder.app.ui.components.premium.MaintenanceVerdictCard
 import com.autominder.app.ui.components.premium.PremiumAction
 import com.autominder.app.ui.components.premium.PremiumActionGrid
 import com.autominder.app.ui.components.premium.PremiumSectionHeader
@@ -528,14 +528,11 @@ private fun VehicleDetailContent(
             }
         }
 
-        // 3 — Calm diagnosis before any list of problems.
+        // 3 — A calm verdict before any list of problems.
         item(key = "diagnosis") {
-            val score = remember(reminders, reminderStatuses) {
-                computeHealthScore(reminders, reminderStatuses)
-            }
-            if (score == -1) {
-                // No reminders yet — actionable setup card with a truthful CTA.
-                HealthSetupCard(
+            if (reminders.isEmpty()) {
+                // Nothing tracked yet — actionable setup card with a truthful CTA.
+                ReminderSetupCard(
                     onAddReminderClick = onAddReminder,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -551,7 +548,7 @@ private fun VehicleDetailContent(
                     .maxByOrNull { r ->
                         r.nextDueOdometer?.let { vehicle.currentOdometer - it } ?: Int.MIN_VALUE
                     }
-                HealthCockpitCard(
+                MaintenanceVerdictCard(
                     headlineText = if (attentionCount > 0) {
                         pluralStringResource(
                             R.plurals.dashboard_attention_headline, attentionCount, attentionCount
@@ -570,8 +567,6 @@ private fun VehicleDetailContent(
                         stringResource(R.string.dashboard_cockpit_supporting)
                     },
                     status = worstStatus,
-                    score = score,
-                    scoreDescription = stringResource(R.string.cd_health_score, score),
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
@@ -970,28 +965,12 @@ private fun AllClearBanner(
     }
 }
 
-private fun computeHealthScore(
-    reminders: List<Reminder>,
-    statuses: Map<Long, ServiceStatus>
-): Int {
-    if (reminders.isEmpty()) return -1 // Sentinel: no reminders → actionable empty state
-    val weights = mapOf(
-        ServiceStatus.OVERDUE   to 0,
-        ServiceStatus.DUE_SOON  to 50,
-        ServiceStatus.SNOOZED   to 70,
-        ServiceStatus.OK        to 100,
-        ServiceStatus.UNKNOWN   to 100
-    )
-    val total = reminders.sumOf { weights[statuses[it.id] ?: ServiceStatus.UNKNOWN] ?: 100 }
-    return (total / reminders.size).coerceIn(0, 100)
-}
-
 /**
- * Shown instead of the diagnosis card when the vehicle has zero reminders:
+ * Shown instead of the verdict card when the vehicle has zero reminders:
  * an honest setup nudge whose CTA actually opens Add Reminder.
  */
 @Composable
-private fun HealthSetupCard(
+private fun ReminderSetupCard(
     onAddReminderClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1007,26 +986,27 @@ private fun HealthSetupCard(
         ) {
             Icon(
                 imageVector = Icons.Default.Build,
-                contentDescription = stringResource(R.string.cd_vehicle_health),
+                // Decorative: the title below already carries the meaning.
+                contentDescription = null,
                 modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.vehicle_health_setup_title),
+                text = stringResource(R.string.vehicle_reminders_setup_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = stringResource(R.string.vehicle_health_setup_subtitle),
+                text = stringResource(R.string.vehicle_reminders_setup_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Spacer(modifier = Modifier.height(12.dp))
             Button(onClick = onAddReminderClick) {
-                Text(stringResource(R.string.vehicle_health_add_reminder))
+                Text(stringResource(R.string.vehicle_reminders_add_reminder))
             }
         }
     }
