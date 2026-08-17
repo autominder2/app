@@ -101,6 +101,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.autominder.app.ui.util.DistanceFormat
 import com.autominder.app.ui.util.DateFormatUtil
 import com.autominder.app.ui.util.localizedLabel
+import com.autominder.app.ui.util.overdueByText
 import com.autominder.app.domain.usecase.ReminderWithStatus
 import com.autominder.app.ui.components.premium.MaintenanceVerdictCard
 import com.autominder.app.ui.components.premium.InsightMetricCard
@@ -401,7 +402,11 @@ private fun DashboardContent(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        // Bottom inset clears the Quick Add FAB. With a uniform 16dp the
+        // extended FAB sat on top of the last attention card, hiding its
+        // status chip and its "View vehicle" action — the two things an
+        // overdue row exists to show.
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // The maintenance verdict: a sentence, not an invented number.
@@ -552,16 +557,11 @@ private fun attentionReason(
     val overdueByMileage = entry.status == ServiceStatus.OVERDUE &&
         dueOdometer != null && currentOdometer != null && currentOdometer >= dueOdometer
     return when {
-        overdueByMileage -> {
-            val overBy = remember(currentOdometer, dueOdometer, distanceUnit) {
-                DistanceFormat.grouped(
-                    DistanceUtil.kmToDisplay(currentOdometer!! - dueOdometer!!, distanceUnit)
-                )
-            }
-            stringResource(
-                R.string.vehicle_detail_overdue_by_km, overBy, DistanceUtil.unitLabel(distanceUnit)
-            )
-        }
+        overdueByMileage -> overdueByText(
+            overdueKm = currentOdometer!! - dueOdometer!!,
+            intervalKm = reminder.intervalKm,
+            distanceUnit = distanceUnit
+        )
         reminder.nextDueDate != null -> stringResource(
             R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)
         )

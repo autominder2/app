@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="splash_background">#004D40</color>
-    <color name="splash_background_dark">#004D40</color>
+    <!-- Night Garage ground (docs/DESIGN_SYSTEM_2026.md §2).
+
+         These were #004D40 — Material Teal 900, from the brand that Night
+         Garage replaced. A window theme cannot read MaterialTheme.colorScheme,
+         so the splash background has to be a literal here; it was simply never
+         updated with the rest of the rebrand. The visible symptom was a teal
+         flash on every cold start that cut to near-black once Compose drew.
+
+         Both variants are the same value on purpose: the splash precedes any
+         theme resolution, and Night Garage has no light-mode ground that would
+         read correctly behind a white launcher icon. -->
+    <color name="splash_background">#0F1316</color>
+    <color name="splash_background_dark">#0F1316</color>
 </resources>

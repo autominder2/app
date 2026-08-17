@@ -103,6 +103,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.autominder.app.ui.util.DistanceFormat
 import com.autominder.app.ui.util.localizedLabel
+import com.autominder.app.ui.util.overdueByText
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.ui.res.pluralStringResource
@@ -893,13 +894,10 @@ private fun reminderTiming(
         currentOdometerKm >= reminder.nextDueOdometer
     return when {
         overdueByMileage -> {
-            val overBy = remember(currentOdometerKm, reminder.nextDueOdometer, distanceUnit) {
-                DistanceFormat.grouped(
-                    DistanceUtil.kmToDisplay(currentOdometerKm - reminder.nextDueOdometer!!, distanceUnit)
-                )
-            }
-            stringResource(
-                R.string.vehicle_detail_overdue_by_km, overBy, DistanceUtil.unitLabel(distanceUnit)
+            overdueByText(
+                overdueKm = currentOdometerKm - reminder.nextDueOdometer!!,
+                intervalKm = reminder.intervalKm,
+                distanceUnit = distanceUnit
             ) to reminder.nextDueDate?.let {
                 stringResource(R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(it))
             }

@@ -38,6 +38,7 @@ import com.autominder.app.ui.theme.LocalDistanceUnit
 import com.autominder.app.ui.util.DateFormatUtil
 import com.autominder.app.ui.util.DistanceFormat
 import com.autominder.app.ui.util.localizedLabel
+import com.autominder.app.ui.util.overdueByText
 
 /**
  * Static consumer-language knowledge for each service type: what the service
@@ -141,15 +142,11 @@ fun ReminderDetailSheet(
                     reminder.nextDueOdometer != null &&
                     currentOdometerKm >= reminder.nextDueOdometer
                 if (overdueByMileage) {
-                    val overBy = currentOdometerKm - reminder.nextDueOdometer!!
-                    val formattedOverBy = remember(overBy, unit) {
-                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(overBy, unit))
-                    }
                     Text(
-                        text = stringResource(
-                            R.string.vehicle_detail_overdue_by_km,
-                            formattedOverBy,
-                            DistanceUtil.unitLabel(unit)
+                        text = overdueByText(
+                            overdueKm = currentOdometerKm - reminder.nextDueOdometer!!,
+                            intervalKm = reminder.intervalKm,
+                            distanceUnit = unit
                         ),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
