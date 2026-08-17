@@ -502,11 +502,19 @@ private fun DashboardContent(
             }
             val statusLabel = statusLabelFor(vehicleWithStatus.status)
             val overdueSuffix = if (vehicleWithStatus.overdueCount > 0) {
-                ", " + stringResource(R.string.dashboard_overdue_count, vehicleWithStatus.overdueCount)
+                ", " + pluralStringResource(
+                    R.plurals.dashboard_overdue_count,
+                    vehicleWithStatus.overdueCount,
+                    vehicleWithStatus.overdueCount
+                )
             } else {
                 ""
             } + if (vehicleWithStatus.dueSoonCount > 0) {
-                ", " + stringResource(R.string.dashboard_due_soon_count, vehicleWithStatus.dueSoonCount)
+                ", " + pluralStringResource(
+                    R.plurals.dashboard_due_soon_count,
+                    vehicleWithStatus.dueSoonCount,
+                    vehicleWithStatus.dueSoonCount
+                )
             } else {
                 ""
             }

@@ -5,7 +5,7 @@
 
     <!-- Splash screen dark mode variant -->
     <style name="Theme.AutoMinder.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background_dark</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="postSplashScreenTheme">@style/Theme.AutoMinder</item>
     </style>
 </resources>

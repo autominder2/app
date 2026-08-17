@@ -103,7 +103,7 @@ class AddVehicleViewModel @Inject constructor(
     private fun saveVehicle() {
         val state = _uiState.value
         if (state.brand.isBlank() || state.model.isBlank()) {
-            _uiState.value = state.copy(errorRes = R.string.error_brand_model_required, errorArgs = emptyList())
+            _uiState.value = state.copy(errorRes = R.string.error_make_model_required, errorArgs = emptyList())
             return
         }
 

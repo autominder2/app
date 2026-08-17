@@ -340,7 +340,7 @@ private fun AddCarStep(
         OutlinedTextField(
             value = uiState.brand,
             onValueChange = onBrandChanged,
-            label = { Text(stringResource(R.string.label_brand)) },
+            label = { Text(stringResource(R.string.label_make)) },
             leadingIcon = { Icon(Icons.Default.DirectionsCar, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,

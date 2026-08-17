@@ -232,7 +232,7 @@ private fun AddVehicleForm(
         VehicleField(
             value = uiState.brand,
             onValueChange = { onEvent(AddVehicleUiEvent.BrandChanged(it)) },
-            label = stringResource(R.string.label_brand),
+            label = stringResource(R.string.label_make),
             icon = Icons.Default.DirectionsCar
         )
         VehicleField(
