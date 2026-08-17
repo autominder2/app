@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Night Garage ground (docs/DESIGN_SYSTEM_2026.md §2).
+    <!-- Launcher icon plate. Kept SEPARATE from the splash ground on purpose:
+         both adaptive icons previously pointed their background layer at
+         @color/splash_background, so changing the splash silently repainted
+         the home-screen icon too. A white car needs a plate that holds up
+         against any wallpaper in either theme, which the theme grounds — near
+         black, or near white — cannot do. Cobalt primary is the brand mark. -->
+    <color name="ic_launcher_background">#0B4FC4</color>
 
-         These were #004D40 — Material Teal 900, from the brand that Night
-         Garage replaced. A window theme cannot read MaterialTheme.colorScheme,
-         so the splash background has to be a literal here; it was simply never
-         updated with the rest of the rebrand. The visible symptom was a teal
-         flash on every cold start that cut to near-black once Compose drew.
-
-         Both variants are the same value on purpose: the splash precedes any
-         theme resolution, and Night Garage has no light-mode ground that would
-         read correctly behind a white launcher icon. -->
-    <color name="splash_background">#0F1316</color>
-    <color name="splash_background_dark">#0F1316</color>
+    <!-- Splash ground, light theme. Night Garage light ground
+         (docs/DESIGN_SYSTEM_2026.md §2); values-night carries the dark one.
+         This was #004D40 — Material Teal 900, from the brand Night Garage
+         replaced — so every cold start flashed teal before Compose drew. A
+         window theme cannot read MaterialTheme.colorScheme, so this has to be
+         a literal; it was simply missed in the rebrand. -->
+    <color name="splash_background">#F7F9FC</color>
 </resources>

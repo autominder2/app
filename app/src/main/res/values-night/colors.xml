@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="splash_background_dark">#001F1A</color>
+    <!-- Splash ground, dark theme — Night Garage ground.
+
+         This was #001F1A, a second retired teal that survived the rebrand
+         because the day and night splash colours are separate resources and
+         only the day one had been looked at. Dark-mode devices were still
+         flashing the old brand on every cold start. -->
+    <color name="splash_background_dark">#0F1316</color>
 </resources>
