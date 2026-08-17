@@ -84,12 +84,13 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.autominder.app.R
+import com.autominder.app.core.util.PowerSettings
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.usecase.VehicleWithStatus
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
-import com.autominder.app.ui.components.FleetHealthScore
 import com.autominder.app.ui.components.LoadingState
+import com.autominder.app.ui.components.RemindersDelayedBanner
 import com.autominder.app.ui.components.DashboardSkeleton
 import com.autominder.app.ui.components.pressScale
 import com.autominder.app.ui.components.StatusChip
@@ -101,7 +102,7 @@ import com.autominder.app.ui.util.DistanceFormat
 import com.autominder.app.ui.util.DateFormatUtil
 import com.autominder.app.ui.util.localizedLabel
 import com.autominder.app.domain.usecase.ReminderWithStatus
-import com.autominder.app.ui.components.premium.HealthCockpitCard
+import com.autominder.app.ui.components.premium.MaintenanceVerdictCard
 import com.autominder.app.ui.components.premium.InsightMetricCard
 import com.autominder.app.ui.components.premium.InsightMetricRow
 import com.autominder.app.ui.components.premium.PremiumSectionHeader
@@ -121,6 +122,7 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val remindersDelayed by viewModel.remindersDelayed.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val fabExtended by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
@@ -285,6 +287,8 @@ fun DashboardScreen(
                     is DashboardUiState.Success -> DashboardContent(
                         vehicles = state.vehicles,
                         attentionReminders = state.attentionReminders,
+                        remindersDelayed = remindersDelayed,
+                        onFixDelayedClick = { PowerSettings.openBatteryOptimizationSettings(context) },
                         onVehicleClick = onNavigateToVehicleDetail,
                         listState = listState
                     )
@@ -379,6 +383,8 @@ private fun DashboardTopBar(scrollBehavior: TopAppBarScrollBehavior) {
 private fun DashboardContent(
     vehicles: List<VehicleWithStatus>,
     attentionReminders: List<ReminderWithStatus>,
+    remindersDelayed: RemindersDelayedState?,
+    onFixDelayedClick: () -> Unit,
     onVehicleClick: (Long) -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState
 ) {
@@ -386,10 +392,6 @@ private fun DashboardContent(
     val totalOverdue = remember(vehicles) { vehicles.sumOf { it.overdueCount } }
     val totalDueSoon = remember(vehicles) { vehicles.sumOf { it.dueSoonCount } }
     val attentionTotal = totalOverdue + totalDueSoon
-    // Same math the old fleet ring used — kept as the secondary instrument.
-    val fleetScore = remember(vehicles) {
-        (100 - totalOverdue * 25 - totalDueSoon * 10).coerceIn(0, 100)
-    }
     val worstStatus = when {
         totalOverdue > 0 -> ServiceStatus.OVERDUE
         totalDueSoon > 0 -> ServiceStatus.DUE_SOON
@@ -402,9 +404,9 @@ private fun DashboardContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // The cockpit verdict: a sentence, not a naked number.
+        // The maintenance verdict: a sentence, not an invented number.
         item(key = "cockpit") {
-            HealthCockpitCard(
+            MaintenanceVerdictCard(
                 headlineText = if (attentionTotal > 0) {
                     pluralStringResource(
                         R.plurals.dashboard_attention_headline, attentionTotal, attentionTotal
@@ -418,10 +420,21 @@ private fun DashboardContent(
                     stringResource(R.string.dashboard_all_clear_supporting)
                 },
                 status = worstStatus,
-                score = fleetScore,
-                scoreDescription = stringResource(R.string.cd_health_score, fleetScore),
                 modifier = Modifier.animateItem()
             )
+        }
+
+        // Directly under the verdict, never above it. The verdict is this
+        // screen's single anchor, and this notice exists to qualify it — "the
+        // sentence above may be out of date" — not to compete with it.
+        if (remindersDelayed != null) {
+            item(key = "reminders_delayed") {
+                RemindersDelayedBanner(
+                    lastCheckedAt = remindersDelayed.lastCheckedAt,
+                    onFixClick = onFixDelayedClick,
+                    modifier = Modifier.animateItem()
+                )
+            }
         }
 
         if (attentionTotal > 0) {

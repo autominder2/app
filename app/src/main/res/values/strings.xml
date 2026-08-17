@@ -90,6 +90,33 @@
     <string name="notification_overdue">%1$s — overdue service reminder</string>
     <string name="notification_due_soon">%1$s — service coming up soon</string>
 
+    <!-- Reminder notification content. These were hardcoded English literals in
+         ReminderCheckWorker until 2026-08-16; notifications are the app's
+         primary surface and were its least localized part. -->
+    <string name="notification_title_overdue">Overdue: %1$s</string>
+    <string name="notification_title_due_soon">Due soon: %1$s</string>
+    <string name="notification_body_separator"> · </string>
+    <plurals name="notification_days_overdue">
+        <item quantity="one">%1$d day overdue</item>
+        <item quantity="other">%1$d days overdue</item>
+    </plurals>
+    <plurals name="notification_days_until">
+        <item quantity="one">due in %1$d day</item>
+        <item quantity="other">due in %1$d days</item>
+    </plurals>
+    <string name="notification_due_today">due today</string>
+    <string name="notification_distance_overdue">%1$s overdue</string>
+    <string name="notification_distance_remaining">%1$s remaining</string>
+    <string name="notification_due_by_odometer">due now by odometer</string>
+
+    <!-- Staleness heartbeat: shown when the background check has not completed
+         recently, which on aggressive-OEM devices means the reminder engine has
+         been killed. Telling the user beats silently failing. -->
+    <string name="reminders_delayed_title">Reminders may be delayed</string>
+    <string name="reminders_delayed_body">AutoMinder hasn\'t been able to check your vehicles since %1$s.</string>
+    <string name="reminders_delayed_body_never">AutoMinder hasn\'t been able to check your vehicles in the background yet.</string>
+    <string name="reminders_delayed_action">How to fix this</string>
+
     <!-- Shared Actions -->
     <string name="action_back">Back</string>
     <string name="action_save">Save</string>
@@ -137,7 +164,6 @@
 
     <!-- Dashboard Screen -->
     <string name="dashboard_top_bar_title">AutoMinder</string>
-    <string name="dashboard_subtitle">Your car maintenance summary</string>
     <plurals name="dashboard_attention_headline">
         <item quantity="one">%1$d service needs attention</item>
         <item quantity="other">%1$d services need attention</item>
@@ -150,7 +176,6 @@
     <string name="dashboard_section_attention">Needs attention</string>
     <string name="dashboard_section_vehicles">Your vehicles</string>
     <string name="dashboard_attention_cta">View vehicle</string>
-    <string name="cd_health_score">Health score out of 100: %1$d</string>
     <string name="dashboard_no_vehicles_title">No vehicles yet</string>
     <string name="dashboard_no_vehicles_subtitle">Add your first vehicle to start tracking maintenance.</string>
     <string name="dashboard_error">Could not load dashboard</string>
@@ -292,11 +317,11 @@
     <string name="add_service_all_services">All services</string>
     <string name="add_service_vehicle_context">%1$s · %2$s</string>
     <string name="service_type_custom">Custom</string>
-    <string name="add_service_name_label">Service Name</string>
-    <string name="add_service_name_placeholder">e.g. Brake Fluid Flush</string>
+    <string name="add_service_name_label">Service name</string>
+    <string name="add_service_name_placeholder">e.g. Brake fluid flush</string>
     <string name="add_service_odometer_label">Odometer at service (%1$s)</string>
-    <string name="add_service_date_label">Service Date</string>
-    <string name="add_service_select_date">Select Date</string>
+    <string name="add_service_date_label">Service date</string>
+    <string name="add_service_select_date">Select date</string>
     <string name="add_service_cost_label">Cost (Optional)</string>
     <string name="add_service_cost_placeholder">0.00</string>
     <string name="add_service_cost_prefix">$</string>
@@ -409,7 +434,10 @@
     <string name="widget_all_caught_up">All caught up!</string>
     <string name="widget_due">Due: %1$s</string>
     <string name="widget_tap_to_open">Tap to open AutoMinder</string>
-    <string name="widget_health_score">Health</string>
+    <plurals name="widget_attention_label">
+        <item quantity="one">Needs attention</item>
+        <item quantity="other">Need attention</item>
+    </plurals>
     <string name="widget_vehicles">%1$d vehicles</string>
     <string name="widget_overdue_count">%1$d overdue</string>
     <string name="widget_fleet_status">Fleet Status</string>
@@ -418,14 +446,9 @@
     <string name="vehicle_detail_export">Export History</string>
     <string name="vehicle_detail_export_share_title">Service History</string>
 
-    <!-- Vehicle Health -->
-    <string name="vehicle_health_title">Vehicle Health</string>
-    <string name="vehicle_health_great">Great</string>
-    <string name="vehicle_health_good">Good</string>
-    <string name="vehicle_health_fair">Fair</string>
-    <string name="vehicle_health_needs_attention">Needs Attention</string>
-    <string name="vehicle_health_setup_title">Set Up Health Tracking</string>
-    <string name="vehicle_health_setup_subtitle">Add maintenance reminders to monitor your vehicle\'s condition.</string>
+    <!-- Vehicle Detail — reminder setup (shown when nothing is tracked yet) -->
+    <string name="vehicle_reminders_setup_title">Start tracking maintenance</string>
+    <string name="vehicle_reminders_setup_subtitle">Add a reminder and AutoMinder will tell you when this vehicle is due.</string>
 
     <!-- Fuel Intelligence -->
     <string name="fuel_history_title">Fuel History</string>
@@ -447,7 +470,7 @@
     <string name="fuel_unit_gallons_us">Gallons (US)</string>
     <string name="fuel_unit_gallons_uk">Gallons (UK)</string>
     <string name="fuel_cost_per_unit">%1$s per %2$s</string>
-    <string name="vehicle_health_add_reminder">Add Reminder</string>
+    <string name="vehicle_reminders_add_reminder">Add Reminder</string>
 
     <!-- Dynamic Labels (unit-aware) -->
     <string name="label_current_odometer_dynamic">Current Odometer (%1$s)</string>
@@ -463,7 +486,6 @@
 
     <!-- Accessibility -->
     <string name="cd_select_date">Select date</string>
-    <string name="cd_vehicle_health">Vehicle health indicator</string>
 
     <!-- Pro Paywall -->
     <string name="paywall_title">Upgrade to AutoMinder Pro</string>

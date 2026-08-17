@@ -18,7 +18,10 @@ object WorkScheduler {
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             REMINDER_CHECK_WORK,
-            ExistingPeriodicWorkPolicy.KEEP,
+            // UPDATE, not KEEP: with KEEP, an install that already has this work
+            // enqueued ignores every future change to cadence, constraints or
+            // worker logic — the old schedule survives app updates forever.
+            ExistingPeriodicWorkPolicy.UPDATE,
             request
         )
     }
@@ -36,7 +39,10 @@ object WorkScheduler {
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             WEEKLY_DIGEST_WORK,
-            ExistingPeriodicWorkPolicy.KEEP,
+            // UPDATE, not KEEP: with KEEP, an install that already has this work
+            // enqueued ignores every future change to cadence, constraints or
+            // worker logic — the old schedule survives app updates forever.
+            ExistingPeriodicWorkPolicy.UPDATE,
             request
         )
     }

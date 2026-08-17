@@ -4,12 +4,16 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.autominder.app.R
 import com.autominder.app.core.notifications.NotificationHelper
+import com.autominder.app.core.util.localizedLabel
 import com.autominder.app.data.local.dao.ReminderDao
 import com.autominder.app.data.local.dao.VehicleDao
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.usecase.StatusCalculator
+import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.ui.util.DistanceFormat
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -20,8 +24,14 @@ import timber.log.Timber
  * Periodic worker that checks all pending reminders and fires notifications
  * for any that are OVERDUE or DUE_SOON.
  *
- * Runs every 6 hours (scheduled via [WorkScheduler]) and after device boot
- * (via [BootReceiver]).
+ * Runs every 6 hours (scheduled via [WorkScheduler]) and is re-armed by
+ * [SystemEventReceiver] after boot, clock/timezone changes and app updates.
+ *
+ * On every clean pass it records a heartbeat
+ * ([UserPreferences.setLastSuccessfulCheckAt]). WorkManager is best-effort —
+ * Doze, App Standby and OEM process killers can stop it with no signal to the
+ * app — so a stale heartbeat is the only evidence available that this engine
+ * has been silenced.
  */
 @HiltWorker
 class ReminderCheckWorker @AssistedInject constructor(
@@ -46,18 +56,28 @@ class ReminderCheckWorker @AssistedInject constructor(
         // Respect the user's notification preference — never send if disabled
         if (!userPreferences.notificationsEnabled.first()) {
             Timber.d("ReminderCheckWorker: notifications disabled by user, skipping")
+            // The engine still ran. The heartbeat tracks whether background work
+            // is being executed at all, which is a different question from
+            // whether the user wants notifications — recording it here keeps a
+            // deliberate opt-out from masquerading as a killed worker.
+            userPreferences.setLastSuccessfulCheckAt(System.currentTimeMillis())
             return Result.success()
         }
 
         return try {
             val now = System.currentTimeMillis()
+            val distanceUnit = userPreferences.distanceUnit.first()
             val pendingReminders = reminderDao.getAllPendingRemindersOnce()
 
             Timber.d("ReminderCheckWorker: found ${pendingReminders.size} pending reminders")
 
             for (reminder in pendingReminders) {
                 // Fetch the vehicle for this reminder to get currentOdometer
-                val vehicle = vehicleDao.getVehicleById(reminder.vehicleId).firstOrNull()
+                // One-shot read, not a Flow collection: data.md requires the
+                // getXOnce() form in workers so the reactive and one-shot paths
+                // never blur. Collecting a Flow here also opens and abandons a
+                // collector for every reminder in the loop.
+                val vehicle = vehicleDao.getVehicleByIdOnce(reminder.vehicleId)
                 if (vehicle == null) {
                     Timber.w("ReminderCheckWorker: vehicle ${reminder.vehicleId} not found for reminder ${reminder.id}")
                     continue
@@ -86,20 +106,29 @@ class ReminderCheckWorker @AssistedInject constructor(
                     continue
                 }
 
-                // Build notification content
+                // Build notification content. Everything user-visible comes from
+                // strings.xml — this block previously emitted hardcoded English
+                // and a raw enum name, so every locale received English text.
                 val vehicleName = "${vehicle.year} ${vehicle.make} ${vehicle.model}"
                 val serviceLabel = reminder.customLabel
-                    ?: reminder.serviceType.name.replace('_', ' ')
-                        .lowercase()
-                        .replaceFirstChar { it.uppercase() }
+                    ?: reminder.serviceType.localizedLabel(applicationContext)
 
-                val title = if (status == ServiceStatus.OVERDUE) {
-                    "Overdue: $serviceLabel"
-                } else {
-                    "Due Soon: $serviceLabel"
-                }
+                val title = applicationContext.getString(
+                    if (status == ServiceStatus.OVERDUE) {
+                        R.string.notification_title_overdue
+                    } else {
+                        R.string.notification_title_due_soon
+                    },
+                    serviceLabel
+                )
 
-                val body = buildNotificationBody(status, vehicleName, reminder.nextDueDate, reminder.nextDueOdometer, vehicle.currentOdometer)
+                val body = buildNotificationBody(
+                    vehicleName = vehicleName,
+                    dueDateMillis = reminder.nextDueDate,
+                    dueOdometer = reminder.nextDueOdometer,
+                    currentOdometer = vehicle.currentOdometer,
+                    distanceUnit = distanceUnit
+                )
 
                 Timber.d("ReminderCheckWorker: notifying reminder ${reminder.id} ($status) for $vehicleName")
 
@@ -115,6 +144,11 @@ class ReminderCheckWorker @AssistedInject constructor(
                 reminderDao.updateLastNotifiedAt(reminder.id, now)
             }
 
+            // Heartbeat: only on a clean pass. Recording it in the catch block
+            // would let a worker that runs but always fails look healthy, which
+            // is precisely the silent failure this signal exists to expose.
+            userPreferences.setLastSuccessfulCheckAt(now)
+
             Timber.d("ReminderCheckWorker: completed successfully")
             Result.success()
         } catch (e: Exception) {
@@ -125,33 +159,57 @@ class ReminderCheckWorker @AssistedInject constructor(
         }
     }
 
+    /**
+     * Builds the notification body from localized resources.
+     *
+     * Two rules are load-bearing here. Quantities use plurals, because "1 days
+     * overdue" is wrong in English and unrepresentable in languages with more
+     * than two plural forms. Distances go through [DistanceFormat] so the
+     * number is grouped for the locale and carries the user's chosen unit
+     * rather than a hardcoded "km".
+     */
     private fun buildNotificationBody(
-        status: ServiceStatus,
         vehicleName: String,
         dueDateMillis: Long?,
         dueOdometer: Int?,
-        currentOdometer: Int
+        currentOdometer: Int,
+        distanceUnit: String
     ): String {
+        val res = applicationContext.resources
         val parts = mutableListOf(vehicleName)
 
         if (dueDateMillis != null) {
             val daysUntil = ((dueDateMillis - System.currentTimeMillis()) / (24 * 60 * 60 * 1000)).toInt()
-            when {
-                daysUntil < 0 -> parts.add("${-daysUntil} days overdue")
-                daysUntil == 0 -> parts.add("due today")
-                else -> parts.add("due in $daysUntil days")
+            parts += when {
+                daysUntil < 0 ->
+                    res.getQuantityString(R.plurals.notification_days_overdue, -daysUntil, -daysUntil)
+                daysUntil == 0 ->
+                    applicationContext.getString(R.string.notification_due_today)
+                else ->
+                    res.getQuantityString(R.plurals.notification_days_until, daysUntil, daysUntil)
             }
         }
 
         if (dueOdometer != null) {
-            val kmRemaining = dueOdometer - currentOdometer
-            when {
-                kmRemaining < 0 -> parts.add("${-kmRemaining} km overdue")
-                kmRemaining == 0 -> parts.add("due now by odometer")
-                else -> parts.add("$kmRemaining km remaining")
+            val remainingKm = dueOdometer - currentOdometer
+            // Storage is always km; the user may read in miles. Convert first,
+            // then group for the locale, then append their unit label — the
+            // previous code hardcoded "km" for everyone.
+            fun format(km: Int): String {
+                val display = DistanceUtil.kmToDisplay(km, distanceUnit)
+                return "${DistanceFormat.grouped(display)} ${DistanceUtil.unitLabel(distanceUnit)}"
+            }
+            parts += when {
+                remainingKm < 0 -> applicationContext.getString(
+                    R.string.notification_distance_overdue, format(-remainingKm)
+                )
+                remainingKm == 0 -> applicationContext.getString(R.string.notification_due_by_odometer)
+                else -> applicationContext.getString(
+                    R.string.notification_distance_remaining, format(remainingKm)
+                )
             }
         }
 
-        return parts.joinToString(" - ")
+        return parts.joinToString(applicationContext.getString(R.string.notification_body_separator))
     }
 }

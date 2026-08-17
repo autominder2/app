@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,6 +32,30 @@ class UserPreferences @Inject constructor(
         val IS_PRO_CACHED = booleanPreferencesKey("is_pro_cached")
         val SERVICE_LOG_COUNT = intPreferencesKey("service_log_count")
         val HAS_REQUESTED_REVIEW = booleanPreferencesKey("has_requested_review")
+
+        /**
+         * Wall-clock time of the last reminder check that ran to completion.
+         *
+         * This is the app's own liveness signal. WorkManager is best-effort:
+         * Doze, App Standby and the aggressive process killers shipped by
+         * several OEMs can stop background work entirely, and the platform
+         * gives the app no notification when that happens. Comparing this
+         * timestamp against now is the only way to discover we have been
+         * silenced — and telling the user beats letting them believe they are
+         * covered when they are not.
+         */
+        val LAST_SUCCESSFUL_CHECK_AT = longPreferencesKey("last_successful_check_at")
+    }
+
+    /** Epoch millis of the last completed reminder check, or null if never. */
+    val lastSuccessfulCheckAt: Flow<Long?> = context.dataStore.data.map { preferences ->
+        preferences[LAST_SUCCESSFUL_CHECK_AT]
+    }
+
+    suspend fun setLastSuccessfulCheckAt(epochMillis: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_SUCCESSFUL_CHECK_AT] = epochMillis
+        }
     }
 
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->

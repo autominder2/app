@@ -25,6 +25,7 @@
     <application
         android:name=".AutoMinderApp"
         android:allowBackup="true"
+        android:backupAgent=".data.backup.AutoMinderBackupAgent"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
@@ -71,14 +72,28 @@
             android:name=".core.notifications.NotificationActionReceiver"
             android:exported="false" />
 
+        <!-- Re-arms background scheduling after events that clear it. BOOT and
+             MY_PACKAGE_REPLACED are delivered only by the system; TIME_SET and
+             TIMEZONE_CHANGED are protected broadcasts, so no app can forge them.
+             android:permission still gates the boot action specifically. -->
         <receiver
-            android:name=".worker.BootReceiver"
+            android:name=".worker.SystemEventReceiver"
             android:exported="true"
             android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <!-- Daily inexact backstop under the 6-hour WorkManager schedule.
+             Not exported: the only sender is this app's own PendingIntent,
+             delivered by AlarmManager to an explicit component. -->
+        <receiver
+            android:name=".worker.ReminderAlarmReceiver"
+            android:exported="false" />
 
         <!-- FileProvider for sharing exported CSV files -->
         <provider
