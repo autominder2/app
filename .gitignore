@@ -60,3 +60,11 @@ gate_summary.txt
 competitor_*.md
 *_reels_*.md
 ~$*
+
+# repomix packed output — regenerate, never commit
+repomix-output.*
+
+# session scratch — never commit
+emulator_out.txt
+HANDOFF_SESSION_*.md
+repomix.config.json

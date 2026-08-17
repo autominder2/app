@@ -12,6 +12,11 @@ effort: high
 - Bottom nav: `Home | Vehicles | Records | Settings`
 - Current phase: v1.0 release hardening. v1.0 is FEATURE-FROZEN.
 - Design contract: the 12 AutoMinder 2026 Premium UI Rules (below).
+- Design authority, in order: `CLAUDE.md` → `PLAN.md` →
+  `docs/DESIGN_SYSTEM_2026.md` (Midnight Cobalt) →
+  `docs/exec-plans/mobbin-design-blueprint-2026.md`. Root `DESIGN_SYSTEM.md` and
+  `PRD.md` are **archived and stale** — do not consult them.
+  Never use a generic marketplace design skill for layout on this project.
 - Governance: CLAUDE.md at repo root always wins on conflicts.
 
 ## Absolute rules
@@ -27,7 +32,10 @@ effort: high
 - Do not hardcode user-visible English in Kotlin — strings.xml only.
 - Never render `ServiceType.label` directly — use `ServiceType.localizedLabel()` from `ui/util/ServiceTypeLabel.kt`.
 - Format all distance/odometer values with `DistanceFormat.grouped()` from `ui/util/DistanceFormat.kt`.
-- Fonts: Exo 2 (hero/display), Nunito Sans (body), JetBrains Mono (data precision) only.
+- Fonts: JetBrains Mono for numeric vehicle data — always. Header/body is
+  Exo 2 + Nunito Sans as shipped today, migrating to Manrope
+  (`DESIGN_SYSTEM_2026 §4`); never reference Manrope in code until the files
+  exist in `res/font/`.
 - Use existing `ui/theme/Motion.kt` for all animation; respect `Motion.reduceMotion`.
 - Status must be text + icon/chip + color + shape/accent rail — never color-only.
 
@@ -37,7 +45,13 @@ effort: high
 2. **One screen = one story** — Dashboard = what needs attention now; Vehicle Detail = this car's condition + next action; Records = proof of care; Forms = guided task completion; Settings/Paywall = trust and membership clarity.
 3. **No equal-weight layouts** — primary story, secondary actions, metadata, tertiary/admin actions, visually distinct.
 4. **Tonal layering** — page = `surface`, section = `surfaceContainerLow`, card = `surfaceContainer`, sheet/paywall = `surfaceContainerHigh`, warnings = semantic containers only.
-5. Status corner morphing is brand: OVERDUE = 8dp, DUE_SOON = 16dp, GOOD = 28dp.
+5. **Shape by component family; zero layout-jump; typography isolation.** Corner
+   radius is set by what a thing *is* (card 16 · sheet 28 · field 14 · pill 999),
+   never by its status — status carries icon + label + colour + rail + copy.
+   Skeletons match the exact geometry of the content they replace so nothing
+   shifts on load (opacity pulse, never a translating shimmer — see
+   `.claude/rules/ui.md`). JetBrains Mono is reserved for numeric vehicle data
+   and nothing else; the header/body face never appears in a data readout.
 6. Vehicle identity is emotional — car object, not database row.
 7. Numbers must feel premium — formatted, aligned, JetBrains Mono where precision matters.
 8. Forms are guided workflows — sectioned, never raw field stacks.
