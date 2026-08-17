@@ -257,7 +257,11 @@ private fun WelcomeStep(onAddCar: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
+            // The two centred steps were the only ones without scroll: at 2.0x
+            // font scale the 180dp hero plus title, body and CTA exceed a
+            // phone viewport, and a centred Column clips rather than scrolls.
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 32.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -486,13 +490,25 @@ private fun PlanStep(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+                // Without a starting odometer this plan has no distance axis
+                // to promise against, so it promises only the date.
+                val dueOdometer = first.nextDueOdometer
                 Text(
-                    text = stringResource(
-                        R.string.onboarding_plan_review_by,
-                        DateFormatUtil.formatDate(first.nextDueDate),
-                        DistanceFormat.grouped(DistanceUtil.kmToDisplay(first.nextDueOdometer, distanceUnit)),
-                        unitLabel
-                    ),
+                    text = if (dueOdometer != null) {
+                        stringResource(
+                            R.string.onboarding_plan_review_by,
+                            DateFormatUtil.formatDate(first.nextDueDate),
+                            DistanceFormat.grouped(
+                                DistanceUtil.kmToDisplay(dueOdometer, distanceUnit)
+                            ),
+                            unitLabel
+                        )
+                    } else {
+                        stringResource(
+                            R.string.onboarding_plan_review_by_date,
+                            DateFormatUtil.formatDate(first.nextDueDate)
+                        )
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -667,7 +683,9 @@ private fun NotifyStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
+            // Same large-font clipping risk as WelcomeStep.
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 32.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

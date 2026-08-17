@@ -615,6 +615,9 @@
         <item quantity="other">Every %1$s %2$s or %3$d months — whichever comes first</item>
     </plurals>
     <string name="onboarding_plan_review_by">Starting reminder: %1$s or %2$s %3$s</string>
+    <!-- Date-only variant, used when no starting odometer was entered. Without
+         a baseline reading there is no distance to promise against. -->
+    <string name="onboarding_plan_review_by_date">Starting reminder: %1$s. Add your mileage to track by distance too.</string>
     <string name="onboarding_plan_more_title">OTHER STARTING REMINDERS</string>
     <string name="onboarding_plan_honesty">These are editable general reminders, not %1$s\'s official schedule or proof that service is due.</string>
     <string name="onboarding_plan_missing">We don\'t know this car\'s service history. Confirm recent work and the owner\'s manual before relying on these dates.</string>

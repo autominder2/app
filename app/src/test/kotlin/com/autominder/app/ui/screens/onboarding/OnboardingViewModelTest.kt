@@ -215,11 +215,13 @@ class OnboardingViewModelTest {
     fun `changing mileage from the reveal recomputes the km axis`() {
         fillValidForm()
         assertTrue(vm.previewPlan("mi"))
-        val before = vm.uiState.value.plan.first().nextDueOdometer
+        // Both forms carry a real reading, so both anchor the distance axis —
+        // a null here would mean the sentinel path was taken by mistake.
+        val before = requireNotNull(vm.uiState.value.plan.first().nextDueOdometer)
 
         vm.onOdometerChanged("80000")
         assertTrue(vm.previewPlan("mi"))
-        val after = vm.uiState.value.plan.first().nextDueOdometer
+        val after = requireNotNull(vm.uiState.value.plan.first().nextDueOdometer)
 
         assertTrue(after > before)
     }

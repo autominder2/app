@@ -16,7 +16,11 @@ data class PlannedReminder(
     val serviceType: ServiceType,
     val intervalKm: Int,
     val intervalDays: Int,
-    val nextDueOdometer: Int,
+    /**
+     * Null when the vehicle has no odometer reading yet — such a plan is
+     * date-driven only. See [CreateDefaultRemindersUseCase.buildPlan].
+     */
+    val nextDueOdometer: Int?,
     val nextDueDate: Long
 )
 
@@ -105,12 +109,22 @@ class CreateDefaultRemindersUseCase @Inject constructor(
          * and the time this driver needs to cover the km interval — so a
          * HIGH driver sees sooner dates than a LOW driver for the same
          * service. Sorted soonest-first so index 0 is "what's first".
+         *
+         * A [currentOdometerKm] of 0 is the app's sentinel for "mileage not
+         * added" (`VehicleListScreen`), not a reading of zero. Seeding the km
+         * axis from it produced reminders due at 8,000km on a car that had
+         * already covered 200,000 — so the moment the driver entered their
+         * real mileage, every service was overdue by six figures at once.
+         * Without a baseline there is nothing honest to anchor distance to,
+         * so the plan is date-driven until a reading exists. The calendar
+         * axis still carries it, and logging mileage later fills the rest in.
          */
         fun buildPlan(
             currentOdometerKm: Int,
             drivingAmount: DrivingAmount,
             nowMillis: Long
         ): List<PlannedReminder> {
+            val hasOdometerReading = currentOdometerKm > 0
             val templates = buildList {
                 addAll(STANDARD_TEMPLATES)
                 if (currentOdometerKm >= COOLANT_FROM_KM) add(COOLANT_TEMPLATE)
@@ -124,10 +138,14 @@ class CreateDefaultRemindersUseCase @Inject constructor(
                     serviceType = t.serviceType,
                     intervalKm = t.intervalKm,
                     intervalDays = t.intervalDays,
-                    nextDueOdometer = currentOdometerKm + t.intervalKm,
+                    nextDueOdometer = if (hasOdometerReading) {
+                        currentOdometerKm + t.intervalKm
+                    } else {
+                        null
+                    },
                     nextDueDate = nowMillis + effectiveDays * DAY_MS
                 )
-            }.sortedWith(compareBy({ it.nextDueDate }, { it.nextDueOdometer }))
+            }.sortedWith(compareBy({ it.nextDueDate }, { it.nextDueOdometer ?: Int.MAX_VALUE }))
         }
     }
 }
