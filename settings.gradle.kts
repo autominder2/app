@@ -20,3 +20,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "AutoMinder"
 include(":app")
+// Producer module for the Baseline Profile. It is a com.android.test module:
+// it never ships in the APK, it only runs on a device to generate the profile
+// that :app then bundles. See baselineprofile/build.gradle.kts.
+include(":baselineprofile")
