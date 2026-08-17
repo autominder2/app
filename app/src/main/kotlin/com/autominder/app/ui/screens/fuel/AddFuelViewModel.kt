@@ -119,8 +119,14 @@ class AddFuelViewModel @Inject constructor(
         val costDbl = state.cost.toDoubleOrNull() ?: 0.0
         val odoInt = state.odometer.toIntOrNull() ?: 0
 
-        if (volumeDbl <= 0 || odoInt <= 0) {
+        if (volumeDbl <= 0) {
             _uiState.update { it.copy(errorRes = R.string.error_invalid_fuel_amount, errorArgs = emptyList()) }
+            return
+        }
+        // Reported separately from volume: a blank odometer on an otherwise valid
+        // entry should name the field that actually needs attention.
+        if (odoInt <= 0) {
+            _uiState.update { it.copy(errorRes = R.string.error_invalid_odometer, errorArgs = emptyList()) }
             return
         }
         if (costDbl < 0) {
@@ -144,11 +150,13 @@ class AddFuelViewModel @Inject constructor(
                     notes = state.notes
                 )
 
-                // Expertise: Atomic operation chain
+                // insertFuelEntry is a Room transaction that inserts the entry and
+                // advances the vehicle odometer via updateOdometerIfHigher. A second
+                // write here used to follow it, calling the UNGUARDED updateOdometer
+                // outside that transaction — which overwrote the guarded result and
+                // let a back-dated receipt roll the odometer backwards. The repository
+                // already owns this write; the screen must not repeat it.
                 fuelRepository.insertFuelEntry(entry)
-
-                // Safe odometer update — uses SQL-level conditional guard
-                vehicleRepository.updateOdometer(vehicleId, odometerKm)
 
                 analyticsHelper.logEvent(
                     "fuel_entry_added",
