@@ -16,6 +16,13 @@ interface VehicleDao {
     @Query("SELECT * FROM vehicles WHERE id = :id")
     fun getVehicleById(id: Long): Flow<VehicleEntity?>
 
+    /**
+     * One-shot existence/state read for transactional writes. A Flow cannot be
+     * collected inside a Room transaction, so multi-table operations use this.
+     */
+    @Query("SELECT * FROM vehicles WHERE id = :id")
+    suspend fun getVehicleByIdOnce(id: Long): VehicleEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVehicle(vehicle: VehicleEntity): Long
 
