@@ -101,14 +101,18 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.autominder.app.ui.util.DistanceFormat
 import com.autominder.app.ui.util.DateFormatUtil
 import com.autominder.app.ui.util.localizedLabel
+import com.autominder.app.ui.util.OverdueCopy
 import com.autominder.app.ui.util.overdueByText
 import com.autominder.app.domain.usecase.ReminderWithStatus
 import com.autominder.app.ui.components.premium.MaintenanceVerdictCard
-import com.autominder.app.ui.components.premium.InsightMetricCard
-import com.autominder.app.ui.components.premium.InsightMetricRow
 import com.autominder.app.ui.components.premium.PremiumSectionHeader
-import com.autominder.app.ui.components.premium.ProactiveAttentionCard
 import com.autominder.app.ui.components.premium.VehicleHeroCard
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 
 private enum class QuickAction { LOG_SERVICE, ADD_FUEL }
@@ -442,44 +446,27 @@ private fun DashboardContent(
             }
         }
 
-        if (attentionTotal > 0) {
-            item(key = "metrics") {
-                InsightMetricRow(modifier = Modifier.animateItem()) {
-                    InsightMetricCard(
-                        label = stringResource(R.string.dashboard_metric_overdue),
-                        value = totalOverdue.toString(),
-                        modifier = Modifier.weight(1f)
-                    )
-                    InsightMetricCard(
-                        label = stringResource(R.string.dashboard_metric_due_soon),
-                        value = totalDueSoon.toString(),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
+        // The "Overdue N / Due soon N" tiles are gone. The verdict sentence above
+        // already states the count, the section header below repeats the grouping,
+        // and each row carries its own status — the tiles made that four statements
+        // of one fact, and spent half a row saying "Due soon 0" when nothing was.
 
         if (attentionReminders.isNotEmpty()) {
             item(key = "attention_header") {
+                // No count badge: the verdict sentence is this screen's single
+                // statement of how many items need attention.
                 PremiumSectionHeader(
                     title = stringResource(R.string.dashboard_section_attention),
-                    countText = attentionTotal.toString(),
                     modifier = Modifier.animateItem()
                 )
             }
             items(attentionReminders, key = { "attention_${it.reminder.id}" }) { entry ->
                 val vehicle = entry.vehicle
-                ProactiveAttentionCard(
+                AttentionStatusRow(
                     title = entry.reminder.customLabel
                         ?: entry.reminder.serviceType.localizedLabel(),
-                    reasonText = attentionReason(entry, distanceUnit),
+                    detail = attentionReason(entry, distanceUnit),
                     status = entry.status,
-                    ctaLabel = if (vehicle != null) {
-                        stringResource(R.string.dashboard_attention_cta)
-                    } else {
-                        null
-                    },
-                    onCta = vehicle?.let { v -> { onVehicleClick(v.id) } },
                     onClick = vehicle?.let { v -> { onVehicleClick(v.id) } },
                     modifier = Modifier.animateItem()
                 )
@@ -535,6 +522,74 @@ private fun DashboardContent(
     }
 }
 
+/**
+ * One attention item, as a compact row rather than a filled card.
+ *
+ * Tesla, My BMW and Mercedes-Benz all signal an overdue service with a small
+ * coloured beacon or a line of coloured text, never by tinting the whole
+ * container. Seven filled red cards read as a broken app; seven rows with a
+ * red dot read as a list of seven things to do, which is what this is. The
+ * status still travels four ways — dot, label, colour and copy — so it is
+ * never colour alone.
+ */
+@Composable
+private fun AttentionStatusRow(
+    title: String,
+    detail: String,
+    status: ServiceStatus,
+    onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    val beacon = when (status) {
+        ServiceStatus.OVERDUE -> MaterialTheme.colorScheme.error
+        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.tertiary
+        ServiceStatus.SNOOZED, ServiceStatus.UNKNOWN -> MaterialTheme.colorScheme.outline
+        else -> MaterialTheme.colorScheme.primary
+    }
+    val statusLabel = statusLabelFor(status)
+    val rowModifier = modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(16.dp))
+        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        // 64dp exceeds the 48dp minimum target and holds two lines at 2.0x font
+        // scale without clipping, because the row grows rather than fixing height.
+        .heightIn(min = 64.dp)
+        .padding(horizontal = 16.dp, vertical = 12.dp)
+        .semantics(mergeDescendants = true) {
+            contentDescription = "$title, $statusLabel, $detail"
+        }
+
+    Row(modifier = rowModifier, verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(beacon)
+        )
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (onClick != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
+}
+
 /** Localized display label for a status — used in merged TalkBack summaries. */
 @Composable
 private fun statusLabelFor(status: ServiceStatus): String = stringResource(
@@ -564,12 +619,37 @@ private fun attentionReason(
 
     val overdueByMileage = entry.status == ServiceStatus.OVERDUE &&
         dueOdometer != null && currentOdometer != null && currentOdometer >= dueOdometer
+
+    // Past one full interval, OverdueCopy suppresses the exact distance — six-figure
+    // readouts describe a missed history rather than this service. Its own fallback is
+    // an instruction, identical on every row and carrying no information.
+    //
+    // The odometer the service was DUE at replaces it. That number is real, is fixed by
+    // the service plan rather than by how far the car has since travelled (so it can
+    // never reach the absurd magnitudes the overshoot does), and differs per row.
+    //
+    // The due DATE is deliberately not used here. An item can be overdue on mileage
+    // while its calendar date is still a year out, so pairing "OVERDUE" with
+    // "Due: Jun 30, 2027" tells the reader the screen is broken.
+    val exactDistanceIsUseful = overdueByMileage && OverdueCopy.showsExactDistance(
+        overdueKm = currentOdometer!! - dueOdometer!!,
+        intervalKm = reminder.intervalKm
+    )
+
     return when {
-        overdueByMileage -> overdueByText(
-            overdueKm = currentOdometer!! - dueOdometer!!,
+        exactDistanceIsUseful -> overdueByText(
+            overdueKm = currentOdometer - dueOdometer,
             intervalKm = reminder.intervalKm,
             distanceUnit = distanceUnit
         )
+        overdueByMileage -> {
+            val wasDueAt = remember(dueOdometer, distanceUnit) {
+                DistanceFormat.grouped(DistanceUtil.kmToDisplay(dueOdometer, distanceUnit))
+            }
+            stringResource(
+                R.string.reminder_was_due_at, wasDueAt, DistanceUtil.unitLabel(distanceUnit)
+            )
+        }
         reminder.nextDueDate != null -> stringResource(
             R.string.vehicle_detail_due_date, DateFormatUtil.formatDate(reminder.nextDueDate)
         )
