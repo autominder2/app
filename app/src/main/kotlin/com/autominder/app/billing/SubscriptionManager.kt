@@ -404,6 +404,7 @@ class SubscriptionManager @Inject constructor(
  * BillingResult.debugMessage is a developer diagnostic string, never shown
  * to users — only logged.
  */
+@Suppress("DEPRECATION")
 @StringRes
 private fun BillingResult.toErrorRes(): Int = when (responseCode) {
     BillingClient.BillingResponseCode.SERVICE_DISCONNECTED,

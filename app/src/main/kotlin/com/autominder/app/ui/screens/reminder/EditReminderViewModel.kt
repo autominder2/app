@@ -6,19 +6,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.autominder.app.R
+import com.autominder.app.data.local.preferences.UserPreferences
+import com.autominder.app.domain.model.Reminder
+import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.ServiceType
+import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.repository.IReminderRepository
+import com.autominder.app.domain.repository.IVehicleRepository
+import com.autominder.app.domain.usecase.StatusCalculator
+import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Calendar
 import javax.inject.Inject
 
 data class EditReminderUiState(
+    val vehicle: Vehicle? = null,
+    val distanceUnit: String = "km",
     val serviceType: ServiceType = ServiceType.OIL_CHANGE,
     val customLabel: String = "",
     val dueKm: String = "",
@@ -26,6 +37,7 @@ data class EditReminderUiState(
     val intervalKm: String = "",
     val intervalDays: String = "",
     val notes: String = "",
+    val currentStatus: ServiceStatus = ServiceStatus.OK,
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val isDeleted: Boolean = false,
@@ -41,13 +53,17 @@ sealed class EditReminderUiEvent {
     data class IntervalKmChanged(val intervalKm: String) : EditReminderUiEvent()
     data class IntervalDaysChanged(val intervalDays: String) : EditReminderUiEvent()
     data class NotesChanged(val notes: String) : EditReminderUiEvent()
-    object SaveClicked : EditReminderUiEvent()
-    object DeleteClicked : EditReminderUiEvent()
+    data class StepMonths(val months: Int) : EditReminderUiEvent()
+    data class StepDueKm(val delta: Int) : EditReminderUiEvent()
+    data object SaveClicked : EditReminderUiEvent()
+    data object DeleteClicked : EditReminderUiEvent()
 }
 
 @HiltViewModel
 class EditReminderViewModel @Inject constructor(
     private val reminderRepository: IReminderRepository,
+    private val vehicleRepository: IVehicleRepository,
+    private val userPreferences: UserPreferences,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -56,7 +72,7 @@ class EditReminderViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(EditReminderUiState())
     val uiState: StateFlow<EditReminderUiState> = _uiState.asStateFlow()
 
-    private var originalReminder: com.autominder.app.domain.model.Reminder? = null
+    private var originalReminder: Reminder? = null
 
     init {
         loadReminder()
@@ -69,14 +85,32 @@ class EditReminderViewModel @Inject constructor(
                 val reminder = reminderRepository.getReminderById(reminderId).firstOrNull()
                 if (reminder != null) {
                     originalReminder = reminder
+                    val vehicle = vehicleRepository.getVehicleById(reminder.vehicleId).firstOrNull()
+                    val unit = userPreferences.distanceUnit.first()
+
+                    val status = StatusCalculator.calculate(
+                        nowMillis = System.currentTimeMillis(),
+                        currentOdometer = vehicle?.currentOdometer ?: 0,
+                        dueDateMillis = reminder.nextDueDate,
+                        dueOdometer = reminder.nextDueOdometer,
+                        snoozeUntilMillis = reminder.snoozeUntil,
+                        isCompleted = reminder.isCompleted
+                    )
+
+                    val dueKmDisplay = reminder.nextDueOdometer?.let { DistanceUtil.kmToDisplay(it, unit) }
+                    val intervalKmDisplay = reminder.intervalKm?.let { DistanceUtil.kmToDisplay(it, unit) }
+
                     _uiState.value = _uiState.value.copy(
+                        vehicle = vehicle,
+                        distanceUnit = unit,
                         serviceType = reminder.serviceType,
                         customLabel = reminder.customLabel ?: "",
-                        dueKm = reminder.nextDueOdometer?.toString() ?: "",
+                        dueKm = dueKmDisplay?.toString() ?: "",
                         dueDateLong = reminder.nextDueDate,
-                        intervalKm = reminder.intervalKm?.toString() ?: "",
+                        intervalKm = intervalKmDisplay?.toString() ?: "",
                         intervalDays = reminder.intervalDays?.toString() ?: "",
                         notes = reminder.notes,
+                        currentStatus = status,
                         isLoading = false
                     )
                 } else {
@@ -99,14 +133,61 @@ class EditReminderViewModel @Inject constructor(
         when (event) {
             is EditReminderUiEvent.ServiceTypeChanged -> _uiState.value = _uiState.value.copy(serviceType = event.type)
             is EditReminderUiEvent.CustomLabelChanged -> _uiState.value = _uiState.value.copy(customLabel = event.label)
-            is EditReminderUiEvent.DueKmChanged -> _uiState.value = _uiState.value.copy(dueKm = event.dueKm)
-            is EditReminderUiEvent.DueDateChanged -> _uiState.value = _uiState.value.copy(dueDateLong = event.date)
+            is EditReminderUiEvent.DueKmChanged -> updateDueKm(event.dueKm)
+            is EditReminderUiEvent.DueDateChanged -> updateDueDate(event.date)
             is EditReminderUiEvent.IntervalKmChanged -> _uiState.value = _uiState.value.copy(intervalKm = event.intervalKm)
             is EditReminderUiEvent.IntervalDaysChanged -> _uiState.value = _uiState.value.copy(intervalDays = event.intervalDays)
             is EditReminderUiEvent.NotesChanged -> _uiState.value = _uiState.value.copy(notes = event.notes)
+            is EditReminderUiEvent.StepMonths -> stepMonths(event.months)
+            is EditReminderUiEvent.StepDueKm -> stepDueKm(event.delta)
             is EditReminderUiEvent.SaveClicked -> saveReminder()
             is EditReminderUiEvent.DeleteClicked -> deleteReminder()
         }
+    }
+
+    private fun updateDueKm(dueKm: String) {
+        _uiState.value = _uiState.value.copy(dueKm = dueKm, errorRes = null)
+        recalculateLiveStatus()
+    }
+
+    private fun updateDueDate(date: Long?) {
+        _uiState.value = _uiState.value.copy(dueDateLong = date, errorRes = null)
+        recalculateLiveStatus()
+    }
+
+    private fun stepMonths(months: Int) {
+        val cal = Calendar.getInstance()
+        _uiState.value.dueDateLong?.let { cal.timeInMillis = it }
+        cal.add(Calendar.MONTH, months)
+        updateDueDate(cal.timeInMillis)
+    }
+
+    private fun stepDueKm(delta: Int) {
+        val currentDisplay = _uiState.value.dueKm.toIntOrNull()
+            ?: _uiState.value.vehicle?.let { DistanceUtil.kmToDisplay(it.currentOdometer, _uiState.value.distanceUnit) }
+            ?: 0
+        val newTarget = currentDisplay + delta
+        updateDueKm(newTarget.toString())
+    }
+
+    private fun recalculateLiveStatus() {
+        val state = _uiState.value
+        val vehicle = state.vehicle ?: return
+        val currentOdo = vehicle.currentOdometer
+        val unit = state.distanceUnit
+
+        val dueKmDisplay = state.dueKm.toIntOrNull()
+        val dueKmKm = dueKmDisplay?.let { DistanceUtil.displayToKm(it, unit) }
+
+        val newStatus = StatusCalculator.calculate(
+            nowMillis = System.currentTimeMillis(),
+            currentOdometer = currentOdo,
+            dueDateMillis = state.dueDateLong,
+            dueOdometer = dueKmKm,
+            snoozeUntilMillis = originalReminder?.snoozeUntil,
+            isCompleted = originalReminder?.isCompleted ?: false
+        )
+        _uiState.value = _uiState.value.copy(currentStatus = newStatus)
     }
 
     private fun saveReminder() {
@@ -127,12 +208,18 @@ class EditReminderViewModel @Inject constructor(
             try {
                 val existing = originalReminder
                 if (existing != null) {
+                    val dueKmDisplay = state.dueKm.toIntOrNull()
+                    val dueKmInternal = dueKmDisplay?.let { DistanceUtil.displayToKm(it, state.distanceUnit) }
+
+                    val intervalKmDisplay = state.intervalKm.toIntOrNull()
+                    val intervalKmInternal = intervalKmDisplay?.let { DistanceUtil.displayToKm(it, state.distanceUnit) }
+
                     val updated = existing.copy(
                         serviceType = state.serviceType,
                         customLabel = if (state.serviceType == ServiceType.CUSTOM) state.customLabel else null,
-                        intervalKm = state.intervalKm.toIntOrNull(),
+                        intervalKm = intervalKmInternal,
                         intervalDays = state.intervalDays.toIntOrNull(),
-                        nextDueOdometer = state.dueKm.toIntOrNull(),
+                        nextDueOdometer = dueKmInternal,
                         nextDueDate = state.dueDateLong,
                         notes = state.notes,
                         updatedAt = System.currentTimeMillis()

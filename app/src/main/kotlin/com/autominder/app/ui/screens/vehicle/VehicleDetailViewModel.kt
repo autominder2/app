@@ -134,11 +134,15 @@ class VehicleDetailViewModel @Inject constructor(
             _actionState
         ) { args ->
             val vehicle = args[0] as? com.autominder.app.domain.model.Vehicle
+            @Suppress("UNCHECKED_CAST")
             val reminders = args[1] as List<com.autominder.app.domain.model.Reminder>
             val totalCost = args[2] as Int
             val yearCost = args[3] as Int
+            @Suppress("UNCHECKED_CAST")
             val fuelEntries = args[4] as List<com.autominder.app.domain.model.FuelEntry>
+            @Suppress("UNCHECKED_CAST")
             val services = args[5] as List<com.autominder.app.domain.model.Service>
+            @Suppress("UNCHECKED_CAST")
             val mileageLogs = args[6] as List<MileageLogEntry>
             val action = args[7] as ActionState
 

@@ -50,12 +50,12 @@ fun StatusChip(
     Surface(
         color = containerColor,
         contentColor = contentColor,
-        shape = MaterialTheme.shapes.small,
+        shape = MaterialTheme.shapes.medium,
         modifier = modifier
     ) {
         Text(
-            text = stringResource(labelRes).uppercase(),
-            style = MaterialTheme.typography.labelSmall,
+            text = stringResource(labelRes),
+            style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }

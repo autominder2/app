@@ -2,17 +2,17 @@ package com.autominder.app.ui.screens.dashboard
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import com.autominder.app.ui.theme.Motion
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.LocalIndication
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,30 +20,28 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Commute
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -63,59 +61,53 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.stateDescription
-import java.util.Calendar
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.core.util.PowerSettings
 import com.autominder.app.domain.model.ServiceStatus
+import com.autominder.app.domain.usecase.ReminderWithStatus
 import com.autominder.app.domain.usecase.VehicleWithStatus
+import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.ui.components.DashboardSkeleton
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
-import com.autominder.app.ui.components.LoadingState
 import com.autominder.app.ui.components.RemindersDelayedBanner
-import com.autominder.app.ui.components.DashboardSkeleton
-import com.autominder.app.ui.components.pressScale
 import com.autominder.app.ui.components.StatusChip
-import com.autominder.app.domain.util.DistanceUtil
-import com.autominder.app.ui.theme.LocalDistanceUnit
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import com.autominder.app.ui.util.DistanceFormat
-import com.autominder.app.ui.util.DateFormatUtil
-import com.autominder.app.ui.util.localizedLabel
-import com.autominder.app.ui.util.OverdueCopy
-import com.autominder.app.ui.util.overdueByText
-import com.autominder.app.domain.usecase.ReminderWithStatus
 import com.autominder.app.ui.components.premium.MaintenanceVerdictCard
 import com.autominder.app.ui.components.premium.PremiumSectionHeader
 import com.autominder.app.ui.components.premium.VehicleHeroCard
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.res.pluralStringResource
+import com.autominder.app.ui.components.premium.VehicleHeroVariant
+import com.autominder.app.ui.components.pressScale
+import com.autominder.app.ui.theme.Exo2
+import com.autominder.app.ui.theme.JetBrainsMono
+import com.autominder.app.ui.theme.LocalDistanceUnit
+import com.autominder.app.ui.theme.Motion
+import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.DistanceFormat
+import com.autominder.app.ui.util.OverdueCopy
+import com.autominder.app.ui.util.localizedLabel
+import com.autominder.app.ui.util.overdueByText
+import java.text.NumberFormat
+import java.util.Calendar
+import java.util.Locale
 
-private enum class QuickAction { LOG_SERVICE, ADD_FUEL }
+private enum class QuickAction { LOG_SERVICE, ADD_FUEL, AUDIT_QUOTE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,6 +116,7 @@ fun DashboardScreen(
     onNavigateToAddVehicle: () -> Unit,
     onNavigateToAddService: (Long) -> Unit,
     onNavigateToAddFuel: (Long) -> Unit,
+    onNavigateToQuoteAuditor: (Long?) -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -152,6 +145,10 @@ fun DashboardScreen(
     fun launchQuickAction(action: QuickAction) {
         fabMenuExpanded = false
         when {
+            action == QuickAction.AUDIT_QUOTE -> {
+                val id = vehicles.firstOrNull()?.vehicle?.id
+                onNavigateToQuoteAuditor(id)
+            }
             vehicles.isEmpty() -> onNavigateToAddVehicle()
             vehicles.size == 1 -> {
                 val id = vehicles.first().vehicle.id
@@ -190,10 +187,11 @@ fun DashboardScreen(
                         val action = pendingAction
                         pendingAction = null
                         haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                        if (action == QuickAction.LOG_SERVICE) {
-                            onNavigateToAddService(item.vehicle.id)
-                        } else {
-                            onNavigateToAddFuel(item.vehicle.id)
+                        when (action) {
+                            QuickAction.LOG_SERVICE -> onNavigateToAddService(item.vehicle.id)
+                            QuickAction.ADD_FUEL -> onNavigateToAddFuel(item.vehicle.id)
+                            QuickAction.AUDIT_QUOTE -> onNavigateToQuoteAuditor(item.vehicle.id)
+                            null -> Unit
                         }
                     }
                 )
@@ -219,6 +217,11 @@ fun DashboardScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.padding(bottom = 12.dp)
                     ) {
+                        QuickActionRow(
+                            label = stringResource(R.string.quick_action_audit_quote),
+                            icon = Icons.Default.Build,
+                            onClick = { launchQuickAction(QuickAction.AUDIT_QUOTE) }
+                        )
                         QuickActionRow(
                             label = stringResource(R.string.dashboard_quick_log_service),
                             icon = Icons.Default.Build,
@@ -289,12 +292,17 @@ fun DashboardScreen(
                         message = stringResource(state.messageRes ?: R.string.dashboard_error),
                         onRetry = { viewModel.retry() }
                     )
-                    is DashboardUiState.Success -> DashboardContent(
+                    is DashboardUiState.Success -> DashboardBentoContent(
                         vehicles = state.vehicles,
                         attentionReminders = state.attentionReminders,
+                        primaryCostPerDistanceCents = state.primaryCostPerDistanceCents,
+                        primaryAvgEfficiency = state.primaryAvgEfficiency,
                         remindersDelayed = remindersDelayed,
                         onFixDelayedClick = { PowerSettings.openBatteryOptimizationSettings(context) },
                         onVehicleClick = onNavigateToVehicleDetail,
+                        onLogServiceClick = { launchQuickAction(QuickAction.LOG_SERVICE) },
+                        onAddFuelClick = { launchQuickAction(QuickAction.ADD_FUEL) },
+                        onAddVehicleClick = onNavigateToAddVehicle,
                         listState = listState
                     )
                 }
@@ -323,15 +331,23 @@ fun DashboardScreen(
 @Composable
 private fun QuickActionRow(
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    val handleAction = {
+        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+        onClick()
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable(onClick = handleAction)
+    ) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceVariant,
             shape = MaterialTheme.shapes.small,
-            shadowElevation = 2.dp
+            shadowElevation = 2.dp,
+            onClick = handleAction
         ) {
             Text(
                 text = label,
@@ -341,10 +357,7 @@ private fun QuickActionRow(
         }
         Spacer(modifier = Modifier.width(12.dp))
         SmallFloatingActionButton(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                onClick()
-            },
+            onClick = handleAction,
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         ) {
@@ -367,6 +380,7 @@ private fun DashboardTopBar(scrollBehavior: TopAppBarScrollBehavior) {
             Column {
                 Text(
                     text = stringResource(R.string.dashboard_top_bar_title),
+                    fontFamily = Exo2,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
@@ -384,13 +398,21 @@ private fun DashboardTopBar(scrollBehavior: TopAppBarScrollBehavior) {
     )
 }
 
+/**
+ * 2026 Flagship Bento Grid Cockpit Content
+ */
 @Composable
-private fun DashboardContent(
+private fun DashboardBentoContent(
     vehicles: List<VehicleWithStatus>,
     attentionReminders: List<ReminderWithStatus>,
+    primaryCostPerDistanceCents: Double?,
+    primaryAvgEfficiency: Double?,
     remindersDelayed: RemindersDelayedState?,
     onFixDelayedClick: () -> Unit,
     onVehicleClick: (Long) -> Unit,
+    onLogServiceClick: () -> Unit,
+    onAddFuelClick: () -> Unit,
+    onAddVehicleClick: () -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState
 ) {
     val distanceUnit = LocalDistanceUnit.current
@@ -403,18 +425,16 @@ private fun DashboardContent(
         else -> ServiceStatus.OK
     }
 
+    val primaryVehicle = vehicles.firstOrNull()
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        // Bottom inset clears the Quick Add FAB. With a uniform 16dp the
-        // extended FAB sat on top of the last attention card, hiding its
-        // status chip and its "View vehicle" action — the two things an
-        // overdue row exists to show.
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // The maintenance verdict: a sentence, not an invented number.
-        item(key = "cockpit") {
+        // 1. Maintenance Verdict Banner
+        item(key = "cockpit_verdict") {
             MaintenanceVerdictCard(
                 headlineText = if (attentionTotal > 0) {
                     pluralStringResource(
@@ -433,9 +453,7 @@ private fun DashboardContent(
             )
         }
 
-        // Directly under the verdict, never above it. The verdict is this
-        // screen's single anchor, and this notice exists to qualify it — "the
-        // sentence above may be out of date" — not to compete with it.
+        // 2. Delayed Reminder Alert if engine is silent
         if (remindersDelayed != null) {
             item(key = "reminders_delayed") {
                 RemindersDelayedBanner(
@@ -446,15 +464,136 @@ private fun DashboardContent(
             }
         }
 
-        // The "Overdue N / Due soon N" tiles are gone. The verdict sentence above
-        // already states the count, the section header below repeats the grouping,
-        // and each row carries its own status — the tiles made that four statements
-        // of one fact, and spent half a row saying "Due soon 0" when nothing was.
+        // 3. Flagship Hero Digital Twin (Primary Vehicle)
+        if (primaryVehicle != null) {
+            item(key = "hero_vehicle") {
+                val vehicle = primaryVehicle.vehicle
+                val title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model)
+                val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+                    DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit)) +
+                        " " + DistanceUtil.unitLabel(distanceUnit)
+                }
+                val statusLabel = statusLabelFor(primaryVehicle.status)
 
+                VehicleHeroCard(
+                    title = title,
+                    variant = VehicleHeroVariant.Expanded,
+                    yearText = vehicle.year.takeIf { it > 0 }?.toString(),
+                    odometerText = formattedOdometer,
+                    photoUri = vehicle.photoUri,
+                    mergedContentDescription = "$title, $formattedOdometer, $statusLabel",
+                    statusChip = { StatusChip(status = primaryVehicle.status) },
+                    railStatus = primaryVehicle.status,
+                    onClick = { onVehicleClick(vehicle.id) },
+                    modifier = Modifier.animateItem()
+                )
+            }
+
+            // 4. Precision Telemetry Bento Grid
+            item(key = "telemetry_bento_grid") {
+                val vehicle = primaryVehicle.vehicle
+                val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+                    DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
+                }
+                val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale.getDefault()) }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Row 1: Odometer & Attention Alerts
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Odometer Bento Pill
+                        TelemetryBentoPill(
+                            title = stringResource(R.string.vehicle_detail_odometer).uppercase(),
+                            value = "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}",
+                            subtitle = stringResource(R.string.vehicle_detail_odometer),
+                            icon = Icons.Default.Speed,
+                            onClick = { onVehicleClick(vehicle.id) },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Status / Alerts Bento Pill
+                        TelemetryBentoPill(
+                            title = stringResource(R.string.dashboard_section_attention).uppercase(),
+                            value = if (attentionTotal > 0) "$attentionTotal Due" else stringResource(R.string.dashboard_all_clear_headline),
+                            subtitle = if (attentionTotal > 0) stringResource(R.string.vehicle_detail_needs_attention) else stringResource(R.string.dashboard_all_clear_supporting),
+                            icon = Icons.Default.Build,
+                            isAlert = attentionTotal > 0,
+                            onClick = { onVehicleClick(vehicle.id) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // Row 2: Live Fuel & Cost Telemetry (when fuel records exist)
+                    if (primaryCostPerDistanceCents != null || primaryAvgEfficiency != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (primaryCostPerDistanceCents != null) {
+                                TelemetryBentoPill(
+                                    title = stringResource(R.string.fuel_cost_per_distance_label).uppercase(),
+                                    value = currencyFormat.format(primaryCostPerDistanceCents / 100.0) + " / " + DistanceUtil.unitLabel(distanceUnit),
+                                    subtitle = stringResource(R.string.dashboard_daily_telemetry_title),
+                                    icon = Icons.Default.Route,
+                                    onClick = onAddFuelClick,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (primaryAvgEfficiency != null) {
+                                TelemetryBentoPill(
+                                    title = stringResource(R.string.fuel_avg_economy_label).uppercase(),
+                                    value = String.format(Locale.getDefault(), "%.1f %s", primaryAvgEfficiency, if (distanceUnit == "mi") "MPG" else "km/L"),
+                                    subtitle = stringResource(R.string.fuel_intelligence_title),
+                                    icon = Icons.Default.LocalGasStation,
+                                    onClick = onAddFuelClick,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Quick Action Capsule Dock
+            item(key = "quick_action_dock") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QuickActionDockCapsule(
+                        label = stringResource(R.string.dashboard_quick_log_service),
+                        icon = Icons.Default.Build,
+                        onClick = onLogServiceClick,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickActionDockCapsule(
+                        label = stringResource(R.string.dashboard_quick_add_fuel),
+                        icon = Icons.Default.LocalGasStation,
+                        onClick = onAddFuelClick,
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuickActionDockCapsule(
+                        label = stringResource(R.string.action_add_vehicle),
+                        icon = Icons.Default.DirectionsCar,
+                        onClick = onAddVehicleClick,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // 6. Priority Triage Stream
         if (attentionReminders.isNotEmpty()) {
             item(key = "attention_header") {
-                // No count badge: the verdict sentence is this screen's single
-                // statement of how many items need attention.
                 PremiumSectionHeader(
                     title = stringResource(R.string.dashboard_section_attention),
                     modifier = Modifier.animateItem()
@@ -473,64 +612,173 @@ private fun DashboardContent(
             }
         }
 
-        item(key = "vehicles_header") {
-            PremiumSectionHeader(
-                title = stringResource(R.string.dashboard_section_vehicles),
-                countText = vehicles.size.toString(),
-                modifier = Modifier.animateItem()
-            )
-        }
-        items(vehicles, key = { it.vehicle.id }) { vehicleWithStatus ->
-            val vehicle = vehicleWithStatus.vehicle
-            val title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model)
-            val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
-                DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit)) +
-                    " " + DistanceUtil.unitLabel(distanceUnit)
-            }
-            val statusLabel = statusLabelFor(vehicleWithStatus.status)
-            val overdueSuffix = if (vehicleWithStatus.overdueCount > 0) {
-                ", " + pluralStringResource(
-                    R.plurals.dashboard_overdue_count,
-                    vehicleWithStatus.overdueCount,
-                    vehicleWithStatus.overdueCount
+        // 7. Additional Garage Vehicles (if more than 1)
+        if (vehicles.size > 1) {
+            item(key = "other_vehicles_header") {
+                PremiumSectionHeader(
+                    title = stringResource(R.string.dashboard_section_vehicles),
+                    countText = vehicles.size.toString(),
+                    modifier = Modifier.animateItem()
                 )
-            } else {
-                ""
-            } + if (vehicleWithStatus.dueSoonCount > 0) {
-                ", " + pluralStringResource(
-                    R.plurals.dashboard_due_soon_count,
-                    vehicleWithStatus.dueSoonCount,
-                    vehicleWithStatus.dueSoonCount
-                )
-            } else {
-                ""
             }
-            VehicleHeroCard(
-                title = title,
-                yearText = vehicle.year.takeIf { it > 0 }?.toString(),
-                odometerText = formattedOdometer,
-                photoUri = vehicle.photoUri,
-                mergedContentDescription = "$title, $formattedOdometer, $statusLabel$overdueSuffix",
-                statusChip = { StatusChip(status = vehicleWithStatus.status) },
-                onClick = { onVehicleClick(vehicle.id) },
-                modifier = Modifier.animateItem()
-            )
+            items(vehicles.drop(1), key = { it.vehicle.id }) { vehicleWithStatus ->
+                val vehicle = vehicleWithStatus.vehicle
+                val title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model)
+                val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
+                    DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit)) +
+                        " " + DistanceUtil.unitLabel(distanceUnit)
+                }
+                val statusLabel = statusLabelFor(vehicleWithStatus.status)
+
+                VehicleHeroCard(
+                    title = title,
+                    variant = VehicleHeroVariant.Compact,
+                    yearText = vehicle.year.takeIf { it > 0 }?.toString(),
+                    odometerText = formattedOdometer,
+                    photoUri = vehicle.photoUri,
+                    mergedContentDescription = "$title, $formattedOdometer, $statusLabel",
+                    statusChip = { StatusChip(status = vehicleWithStatus.status) },
+                    railStatus = vehicleWithStatus.status,
+                    onClick = { onVehicleClick(vehicle.id) },
+                    modifier = Modifier.animateItem()
+                )
+            }
         }
 
-        // Clearance so the FAB never covers the last card's actions.
+        // Bottom clearance for floating controls
         item(key = "fab_spacer") { Spacer(modifier = Modifier.height(80.dp)) }
     }
 }
 
 /**
- * One attention item, as a compact row rather than a filled card.
- *
- * Tesla, My BMW and Mercedes-Benz all signal an overdue service with a small
- * coloured beacon or a line of coloured text, never by tinting the whole
- * container. Seven filled red cards read as a broken app; seven rows with a
- * red dot read as a list of seven things to do, which is what this is. The
- * status still travels four ways — dot, label, colour and copy — so it is
- * never colour alone.
+ * 2026 Telemetry Bento Pill (Precision Metric Box)
+ */
+@Composable
+private fun TelemetryBentoPill(
+    title: String,
+    value: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isAlert: Boolean = false
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
+
+    ElevatedCard(
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            onClick()
+        },
+        interactionSource = interactionSource,
+        modifier = modifier
+            .pressScale(interactionSource),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isAlert) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    shape = CircleShape,
+                    color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (isAlert) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.copy(fontFamily = JetBrainsMono),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * 2026 Quick Action Capsule Dock Pill
+ */
+@Composable
+private fun QuickActionDockCapsule(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
+
+    Surface(
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            onClick()
+        },
+        interactionSource = interactionSource,
+        modifier = modifier
+            .pressScale(interactionSource)
+            .height(48.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+/**
+ * One attention item, as a compact row with leading vertical accent rail.
  */
 @Composable
 private fun AttentionStatusRow(
@@ -547,13 +795,22 @@ private fun AttentionStatusRow(
         else -> MaterialTheme.colorScheme.primary
     }
     val statusLabel = statusLabelFor(status)
+    val interactionSource = remember { MutableInteractionSource() }
     val rowModifier = modifier
         .fillMaxWidth()
-        .clip(RoundedCornerShape(16.dp))
+        .clip(MaterialTheme.shapes.medium)
         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-        // 64dp exceeds the 48dp minimum target and holds two lines at 2.0x font
-        // scale without clipping, because the row grows rather than fixing height.
+        .then(
+            if (onClick != null) {
+                Modifier
+                    .pressScale(interactionSource)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = androidx.compose.foundation.LocalIndication.current,
+                        onClick = onClick
+                    )
+            } else Modifier
+        )
         .heightIn(min = 64.dp)
         .padding(horizontal = 16.dp, vertical = 12.dp)
         .semantics(mergeDescendants = true) {
@@ -590,7 +847,6 @@ private fun AttentionStatusRow(
     }
 }
 
-/** Localized display label for a status — used in merged TalkBack summaries. */
 @Composable
 private fun statusLabelFor(status: ServiceStatus): String = stringResource(
     when (status) {
@@ -603,11 +859,6 @@ private fun statusLabelFor(status: ServiceStatus): String = stringResource(
     }
 )
 
-/**
- * One-line human reason for an attention card — same truth contract as the
- * reminder cards: a mileage-fired overdue leads with the mileage story,
- * never a future-looking date.
- */
 @Composable
 private fun attentionReason(
     entry: ReminderWithStatus,
@@ -620,17 +871,6 @@ private fun attentionReason(
     val overdueByMileage = entry.status == ServiceStatus.OVERDUE &&
         dueOdometer != null && currentOdometer != null && currentOdometer >= dueOdometer
 
-    // Past one full interval, OverdueCopy suppresses the exact distance — six-figure
-    // readouts describe a missed history rather than this service. Its own fallback is
-    // an instruction, identical on every row and carrying no information.
-    //
-    // The odometer the service was DUE at replaces it. That number is real, is fixed by
-    // the service plan rather than by how far the car has since travelled (so it can
-    // never reach the absurd magnitudes the overshoot does), and differs per row.
-    //
-    // The due DATE is deliberately not used here. An item can be overdue on mileage
-    // while its calendar date is still a year out, so pairing "OVERDUE" with
-    // "Due: Jun 30, 2027" tells the reader the screen is broken.
     val exactDistanceIsUseful = overdueByMileage && OverdueCopy.showsExactDistance(
         overdueKm = currentOdometer!! - dueOdometer!!,
         intervalKm = reminder.intervalKm

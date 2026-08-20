@@ -111,6 +111,9 @@ fun NavGraph(
                 },
                 onNavigateToAddFuel = { vehicleId ->
                     navController.navigate(NavRoutes.AddFuel(vehicleId))
+                },
+                onNavigateToQuoteAuditor = { vehicleId ->
+                    navController.navigate(NavRoutes.QuoteAuditor(vehicleId))
                 }
             )
         }
@@ -247,6 +250,14 @@ fun NavGraph(
 
         composable<NavRoutes.FuelHistory> {
             FuelHistoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddFuel = { vehicleId -> navController.navigate(NavRoutes.AddFuel(vehicleId)) }
+            )
+        }
+
+        // ── Quote Auditor ──────────────────────────────────────────────────
+        composable<NavRoutes.QuoteAuditor> {
+            com.autominder.app.ui.screens.quote.QuoteAuditorScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

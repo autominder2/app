@@ -16,8 +16,17 @@ interface FuelDao {
     @Query("SELECT * FROM fuel_entries WHERE vehicleId = :vehicleId ORDER BY odometer DESC LIMIT 1")
     fun getLatestFuelEntryForVehicle(vehicleId: Long): Flow<FuelEntryEntity?>
 
+    @Query("SELECT * FROM fuel_entries WHERE vehicleId = :vehicleId ORDER BY odometer DESC")
+    suspend fun getFuelEntriesForVehicleOnce(vehicleId: Long): List<FuelEntryEntity>
+
+    @Query("SELECT * FROM fuel_entries ORDER BY odometer DESC")
+    suspend fun getAllFuelEntriesOnce(): List<FuelEntryEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFuelEntry(fuelEntry: FuelEntryEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFuelEntries(entries: List<FuelEntryEntity>): List<Long>
 
     @Update
     suspend fun updateFuelEntry(fuelEntry: FuelEntryEntity)

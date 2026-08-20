@@ -14,6 +14,12 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders WHERE vehicleId = :vehicleId ORDER BY createdAt DESC")
     fun getAllRemindersForVehicle(vehicleId: Long): Flow<List<ReminderEntity>>
 
+    @Query("SELECT * FROM reminders WHERE vehicleId = :vehicleId ORDER BY createdAt DESC")
+    suspend fun getAllRemindersForVehicleOnce(vehicleId: Long): List<ReminderEntity>
+
+    @Query("SELECT * FROM reminders ORDER BY createdAt DESC")
+    suspend fun getAllRemindersOnce(): List<ReminderEntity>
+
     /**
      * All overdue/due-soon reminders across ALL vehicles — used by ReminderCheckWorker
      * and Dashboard summary card.
@@ -31,6 +37,9 @@ interface ReminderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReminder(reminder: ReminderEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertReminders(reminders: List<ReminderEntity>): List<Long>
 
     @Update
     suspend fun updateReminder(reminder: ReminderEntity)

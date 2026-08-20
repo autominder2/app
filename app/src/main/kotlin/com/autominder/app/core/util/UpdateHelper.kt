@@ -15,6 +15,7 @@ class UpdateHelper @Inject constructor() {
      * Checks for a flexible update and starts it if available.
      * Flexible updates are less intrusive than immediate ones.
      */
+    @Suppress("DEPRECATION")
     fun checkForUpdates(activity: Activity) {
         val appUpdateManager = AppUpdateManagerFactory.create(activity)
         val appUpdateInfoTask = appUpdateManager.appUpdateInfo

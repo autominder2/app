@@ -3,6 +3,8 @@ package com.autominder.app.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.autominder.app.ui.components.pressScale
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -266,10 +268,13 @@ private fun ServiceChoice(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    val interactionSource = remember { MutableInteractionSource() }
     Surface(
         onClick = onClick,
+        interactionSource = interactionSource,
         modifier = modifier
             .defaultMinSize(minHeight = 56.dp)
+            .pressScale(interactionSource)
             .semantics {
                 this.selected = isSelected
                 role = Role.RadioButton

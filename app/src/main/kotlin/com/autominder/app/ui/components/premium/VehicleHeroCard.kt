@@ -1,5 +1,6 @@
 package com.autominder.app.ui.components.premium
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +39,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.autominder.app.ui.components.pressScale
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.ui.theme.JetBrainsMono
 
@@ -119,9 +122,14 @@ fun VehicleHeroCard(
     }
 
     if (onClick != null) {
+        val interactionSource = remember { MutableInteractionSource() }
         ElevatedCard(
             onClick = onClick,
-            modifier = modifier.fillMaxWidth().then(semanticsModifier),
+            interactionSource = interactionSource,
+            modifier = modifier
+                .fillMaxWidth()
+                .pressScale(interactionSource)
+                .then(semanticsModifier),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.elevatedCardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -161,21 +169,40 @@ private fun CompactContent(
         VehicleAvatar(photoUri, photoContentDescription, size = 56.dp)
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            val metaLine = listOfNotNull(yearText, odometerText).joinToString(" · ")
-            if (metaLine.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text(
-                    text = metaLine,
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (yearText != null) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        Text(
+                            text = yearText,
+                            style = MaterialTheme.typography.labelSmall.copy(fontFamily = JetBrainsMono),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+            if (odometerText != null) {
+                Text(
+                    text = odometerText,
                     style = MaterialTheme.typography.bodyMedium.copy(fontFamily = JetBrainsMono),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             if (concernText != null) {
@@ -210,10 +237,16 @@ private fun ExpandedContent(
                     .fillMaxWidth()
                     .height(200.dp)
             ) {
+                // Shimmer placeholder shown while the image is loading.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
                 AsyncImage(
                     model = ImageRequest.Builder(LocalPlatformContext.current)
                         .data(photoUri)
-                        .crossfade(300)
+                        .crossfade(400)
                         .build(),
                     contentDescription = photoContentDescription,
                     modifier = Modifier.fillMaxSize(),
@@ -297,10 +330,19 @@ private fun VehicleAvatar(
             contentScale = ContentScale.Crop
         )
     } else {
-        Surface(
-            modifier = Modifier.size(size),
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.primaryContainer
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(MaterialTheme.shapes.medium)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.DirectionsCar,
@@ -308,7 +350,7 @@ private fun VehicleAvatar(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(size / 4),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }

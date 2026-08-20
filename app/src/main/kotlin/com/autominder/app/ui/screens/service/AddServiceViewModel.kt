@@ -19,6 +19,8 @@ import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.navigation.NavRoutes
+import com.autominder.app.ui.util.DateFormatUtil
+import com.autominder.app.ui.util.DistanceFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -46,6 +48,9 @@ data class AddServiceUiState(
     /** Quiet context line — which vehicle this is being logged against. */
     val vehicleName: String = "",
     val vehicleOdometerDisplay: String = "",
+    /** Live predicted next service forecast strings */
+    val predictedNextDueOdometerDisplay: String = "",
+    val predictedNextDueDateFormatted: String = "",
     /**
      * Last few distinct service types performed on this vehicle, newest first.
      * Derived from existing history — no schema, no ranking model.
@@ -61,13 +66,17 @@ sealed class AddServiceUiEvent {
     data class ServiceTypeChanged(val type: ServiceType) : AddServiceUiEvent()
     data class CustomLabelChanged(val label: String) : AddServiceUiEvent()
     data class OdometerChanged(val odometer: String) : AddServiceUiEvent()
+    data class OdometerAdjusted(val delta: Int) : AddServiceUiEvent()
     data class ServiceDateChanged(val date: Long?) : AddServiceUiEvent()
+    data class QuickDateSelected(val daysAgo: Int) : AddServiceUiEvent()
     data class CostChanged(val cost: String) : AddServiceUiEvent()
+    data class QuickCostSelected(val amount: String) : AddServiceUiEvent()
     data class ShopNameChanged(val shopName: String) : AddServiceUiEvent()
     data class NotesChanged(val notes: String) : AddServiceUiEvent()
     data class RemindNextToggled(val enabled: Boolean) : AddServiceUiEvent()
     data class RemindKmChanged(val km: String) : AddServiceUiEvent()
     data class RemindMonthsChanged(val months: String) : AddServiceUiEvent()
+    data class QuickIntervalPresetSelected(val months: Int, val kmDisplay: Int) : AddServiceUiEvent()
     object SaveClicked : AddServiceUiEvent()
 }
 
@@ -84,15 +93,9 @@ class AddServiceViewModel @Inject constructor(
 
     /**
      * Guards Save against double submission for the lifetime of this ViewModel.
-     *
-     * This is single-flight, not durable idempotency: a process death between the
-     * committed transaction and navigation would restore the form and allow a second
-     * save. Closing that gap needs an operation key in the schema, which v1.0 does
-     * not have.
      */
     private var saveJob: Job? = null
 
-    // Expertise: State keys for persistence across System Process Death
     companion object {
         private const val KEY_TYPE = "service_type"
         private const val KEY_LABEL = "custom_label"
@@ -103,6 +106,7 @@ class AddServiceViewModel @Inject constructor(
 
         /** Two or three recent choices is a shortcut; more is another wall. */
         private const val MAX_RECENT_TYPES = 3
+        private const val MILLIS_PER_DAY = 86_400_000L
     }
 
     private val _uiState = MutableStateFlow(
@@ -136,11 +140,10 @@ class AddServiceViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(odometer = displayOdometer.toString())
                     savedStateHandle[KEY_ODOMETER] = displayOdometer.toString()
                 }
+                recomputeForecast()
             }
         }
 
-        // The fast path: what this owner actually logs for this car. Reading the
-        // history they already have beats guessing, and costs no new schema.
         viewModelScope.launch {
             val history = serviceRepository.getServicesForVehicle(vehicleId).firstOrNull().orEmpty()
             val recent = history
@@ -155,11 +158,6 @@ class AddServiceViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Pre-fills the "remind me" interval fields with sensible defaults for the
-     * given type, converting the km suggestion into the user's distance unit so
-     * the number they see matches how they read the odometer.
-     */
     private fun seedSuggestedInterval(type: ServiceType) {
         viewModelScope.launch {
             val unit = userPreferences.distanceUnit.first()
@@ -169,7 +167,24 @@ class AddServiceViewModel @Inject constructor(
                 remindIntervalKm = kmDisplay,
                 remindIntervalMonths = suggestion.months?.toString() ?: ""
             )
+            recomputeForecast()
         }
+    }
+
+    private fun recomputeForecast() {
+        val state = _uiState.value
+        val baseOdo = state.odometer.toIntOrNull() ?: 0
+        val intervalDistance = state.remindIntervalKm.toIntOrNull()
+        val nextOdo = intervalDistance?.let { baseOdo + it }
+
+        val baseDate = state.serviceDate ?: System.currentTimeMillis()
+        val intervalMonths = state.remindIntervalMonths.toIntOrNull()
+        val nextDate = intervalMonths?.let { baseDate + (it.toLong() * 30L * MILLIS_PER_DAY) }
+
+        _uiState.value = state.copy(
+            predictedNextDueOdometerDisplay = nextOdo?.let { DistanceFormat.grouped(it) } ?: "",
+            predictedNextDueDateFormatted = nextDate?.let { DateFormatUtil.formatDate(it) } ?: ""
+        )
     }
 
     fun onEvent(event: AddServiceUiEvent) {
@@ -177,7 +192,6 @@ class AddServiceViewModel @Inject constructor(
             is AddServiceUiEvent.ServiceTypeChanged -> {
                 _uiState.value = _uiState.value.copy(serviceType = event.type)
                 savedStateHandle[KEY_TYPE] = event.type
-                // Refresh the reminder-interval suggestion to match the new type.
                 seedSuggestedInterval(event.type)
             }
             is AddServiceUiEvent.CustomLabelChanged -> {
@@ -187,11 +201,31 @@ class AddServiceViewModel @Inject constructor(
             is AddServiceUiEvent.OdometerChanged -> {
                 _uiState.value = _uiState.value.copy(odometer = event.odometer)
                 savedStateHandle[KEY_ODOMETER] = event.odometer
+                recomputeForecast()
             }
-            is AddServiceUiEvent.ServiceDateChanged -> _uiState.value = _uiState.value.copy(serviceDate = event.date)
+            is AddServiceUiEvent.OdometerAdjusted -> {
+                val current = _uiState.value.odometer.toIntOrNull() ?: 0
+                val adjusted = (current + event.delta).coerceAtLeast(0).toString()
+                _uiState.value = _uiState.value.copy(odometer = adjusted)
+                savedStateHandle[KEY_ODOMETER] = adjusted
+                recomputeForecast()
+            }
+            is AddServiceUiEvent.ServiceDateChanged -> {
+                _uiState.value = _uiState.value.copy(serviceDate = event.date)
+                recomputeForecast()
+            }
+            is AddServiceUiEvent.QuickDateSelected -> {
+                val targetDate = System.currentTimeMillis() - (event.daysAgo.toLong() * MILLIS_PER_DAY)
+                _uiState.value = _uiState.value.copy(serviceDate = targetDate)
+                recomputeForecast()
+            }
             is AddServiceUiEvent.CostChanged -> {
                 _uiState.value = _uiState.value.copy(cost = event.cost)
                 savedStateHandle[KEY_COST] = event.cost
+            }
+            is AddServiceUiEvent.QuickCostSelected -> {
+                _uiState.value = _uiState.value.copy(cost = event.amount)
+                savedStateHandle[KEY_COST] = event.amount
             }
             is AddServiceUiEvent.ShopNameChanged -> {
                 _uiState.value = _uiState.value.copy(shopName = event.shopName)
@@ -201,16 +235,30 @@ class AddServiceViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(notes = event.notes)
                 savedStateHandle[KEY_NOTES] = event.notes
             }
-            is AddServiceUiEvent.RemindNextToggled -> _uiState.value = _uiState.value.copy(remindNext = event.enabled)
-            is AddServiceUiEvent.RemindKmChanged -> _uiState.value = _uiState.value.copy(remindIntervalKm = event.km)
-            is AddServiceUiEvent.RemindMonthsChanged -> _uiState.value = _uiState.value.copy(remindIntervalMonths = event.months)
+            is AddServiceUiEvent.RemindNextToggled -> {
+                _uiState.value = _uiState.value.copy(remindNext = event.enabled)
+                recomputeForecast()
+            }
+            is AddServiceUiEvent.RemindKmChanged -> {
+                _uiState.value = _uiState.value.copy(remindIntervalKm = event.km)
+                recomputeForecast()
+            }
+            is AddServiceUiEvent.RemindMonthsChanged -> {
+                _uiState.value = _uiState.value.copy(remindIntervalMonths = event.months)
+                recomputeForecast()
+            }
+            is AddServiceUiEvent.QuickIntervalPresetSelected -> {
+                _uiState.value = _uiState.value.copy(
+                    remindIntervalMonths = event.months.toString(),
+                    remindIntervalKm = event.kmDisplay.toString()
+                )
+                recomputeForecast()
+            }
             is AddServiceUiEvent.SaveClicked -> saveService()
         }
     }
 
     private fun saveService() {
-        // Single-flight Save: a second tap while the first transaction is still in
-        // flight — or after it has already succeeded — must not log the service twice.
         if (saveJob?.isActive == true || _uiState.value.isSaved) return
 
         val state = _uiState.value
@@ -248,9 +296,6 @@ class AddServiceViewModel @Inject constructor(
                 val unit = userPreferences.distanceUnit.first()
                 val odometerKm = DistanceUtil.displayToKm(odometerInt, unit)
 
-                // Historical maintenance is valid ownership history: a service logged
-                // below the vehicle's current reading is accepted and keeps its own
-                // odometer. The data layer refuses to roll the vehicle backwards.
                 val now = System.currentTimeMillis()
                 val service = Service(
                     id = 0,
@@ -265,8 +310,6 @@ class AddServiceViewModel @Inject constructor(
                     createdAt = now
                 )
 
-                // "Remind me for the next one" — the intervals the user chose,
-                // converted to km/days. Null when the toggle is off.
                 val reminderIntervalKm: Int? = if (state.remindNext) {
                     state.remindIntervalKm.toIntOrNull()?.takeIf { it > 0 }
                         ?.let { DistanceUtil.displayToKm(it, unit) }
@@ -275,8 +318,6 @@ class AddServiceViewModel @Inject constructor(
                     state.remindIntervalMonths.toIntOrNull()?.takeIf { it > 0 }?.let { it * 30 }
                 } else null
 
-                // One command, one transaction. Service record, odometer effect and
-                // reminder rebase commit together or not at all.
                 val result = serviceRepository.completeService(
                     ServiceCompletion(
                         service = service,
@@ -314,8 +355,6 @@ class AddServiceViewModel @Inject constructor(
                     }
                 }
             } catch (e: CancellationException) {
-                // The screen went away mid-save. Not an error to show anyone, and the
-                // cancellation must keep propagating.
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to save service")

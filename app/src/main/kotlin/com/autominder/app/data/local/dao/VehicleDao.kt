@@ -13,6 +13,15 @@ interface VehicleDao {
     @Query("SELECT * FROM vehicles ORDER BY updatedAt DESC")
     fun getAllVehiclesIncludingArchived(): Flow<List<VehicleEntity>>
 
+    @Query("SELECT * FROM vehicles WHERE isArchived = 0 ORDER BY updatedAt DESC LIMIT 1")
+    suspend fun getPrimaryVehicleOnce(): VehicleEntity?
+
+    @Query("SELECT * FROM vehicles WHERE isArchived = 0 ORDER BY updatedAt DESC")
+    suspend fun getAllActiveVehiclesOnce(): List<VehicleEntity>
+
+    @Query("SELECT * FROM vehicles ORDER BY updatedAt DESC")
+    suspend fun getAllVehiclesOnce(): List<VehicleEntity>
+
     @Query("SELECT * FROM vehicles WHERE id = :id")
     fun getVehicleById(id: Long): Flow<VehicleEntity?>
 
@@ -25,6 +34,9 @@ interface VehicleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVehicle(vehicle: VehicleEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertVehicles(vehicles: List<VehicleEntity>): List<Long>
 
     @Update
     suspend fun updateVehicle(vehicle: VehicleEntity)

@@ -10,14 +10,23 @@ interface ServiceDao {
     @Query("SELECT * FROM services ORDER BY serviceDate DESC")
     fun getAllServices(): Flow<List<ServiceEntity>>
 
+    @Query("SELECT * FROM services ORDER BY serviceDate DESC")
+    suspend fun getAllServicesOnce(): List<ServiceEntity>
+
     @Query("SELECT * FROM services WHERE vehicleId = :vehicleId ORDER BY serviceDate DESC")
     fun getServicesForVehicle(vehicleId: Long): Flow<List<ServiceEntity>>
+
+    @Query("SELECT * FROM services WHERE vehicleId = :vehicleId ORDER BY serviceDate DESC")
+    suspend fun getServicesForVehicleOnce(vehicleId: Long): List<ServiceEntity>
 
     @Query("SELECT * FROM services WHERE id = :id")
     fun getServiceById(id: Long): Flow<ServiceEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertService(service: ServiceEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertServices(services: List<ServiceEntity>): List<Long>
 
     @Update
     suspend fun updateService(service: ServiceEntity)

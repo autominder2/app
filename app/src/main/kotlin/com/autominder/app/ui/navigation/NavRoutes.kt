@@ -61,6 +61,10 @@ sealed class NavRoutes {
     @Serializable
     data class FuelHistory(val vehicleId: Long) : NavRoutes()
 
+    // ── Quote Auditor ─────────────────────────────────────────────────────
+    @Serializable
+    data class QuoteAuditor(val vehicleId: Long? = null) : NavRoutes()
+
     // ── Utility ───────────────────────────────────────────────────────────
     @Serializable
     object About : NavRoutes()

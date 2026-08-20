@@ -63,7 +63,8 @@ fun MaintenanceVerdictCard(
             }
             Text(
                 text = headlineText,
-                style = MaterialTheme.typography.headlineSmall,
+                fontFamily = com.autominder.app.ui.theme.Exo2,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )

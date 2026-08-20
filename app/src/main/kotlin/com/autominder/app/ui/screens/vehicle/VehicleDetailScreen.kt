@@ -1,6 +1,9 @@
 package com.autominder.app.ui.screens.vehicle
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.autominder.app.ui.components.pressScale
+import com.autominder.app.ui.theme.Exo2
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
@@ -173,9 +176,11 @@ fun VehicleDetailScreen(
                 title = {
                     if (showBarTitle) {
                         Text(
-                            uiState.vehicle?.let {
+                            text = uiState.vehicle?.let {
                                 stringResource(R.string.vehicle_make_model, it.make, it.model)
-                            } ?: stringResource(R.string.vehicle_detail_title)
+                            } ?: stringResource(R.string.vehicle_detail_title),
+                            fontFamily = Exo2,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 },
@@ -480,12 +485,15 @@ private fun VehicleDetailContent(
             val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
                 DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
             }
+            val odometerInteractionSource = remember { MutableInteractionSource() }
             Surface(
                 onClick = { showMileageSheet = true },
+                interactionSource = odometerInteractionSource,
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .pressScale(odometerInteractionSource)
                     .padding(horizontal = 16.dp)
             ) {
                 Row(
@@ -939,7 +947,7 @@ private fun AllClearBanner(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
