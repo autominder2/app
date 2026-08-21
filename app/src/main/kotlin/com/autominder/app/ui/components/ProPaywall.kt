@@ -1,4 +1,4 @@
-package com.autominder.app.ui.components
+﻿package com.autominder.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -215,20 +215,17 @@ private fun FeatureComparisonTable() {
                 )
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            // No vehicle-count gate exists in v1.0 — both tiers are unlimited.
-            FeatureRow(stringResource(R.string.paywall_feature_vehicles), free = true, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             FeatureRow(stringResource(R.string.paywall_feature_reminders), free = true, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             FeatureRow(stringResource(R.string.paywall_feature_fuel_log), free = true, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_analytics), free = false, pro = true)
+            FeatureRow(stringResource(R.string.paywall_feature_quote_auditor), free = false, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_charts), free = false, pro = true)
+            FeatureRow(stringResource(R.string.paywall_feature_garage), free = false, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_backup), free = false, pro = true)
+            FeatureRow(stringResource(R.string.paywall_feature_passport), free = false, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_export), free = false, pro = true)
+            FeatureRow(stringResource(R.string.paywall_feature_predictions), free = false, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             FeatureRow(stringResource(R.string.paywall_feature_ad_free), free = false, pro = true)
         }
@@ -255,8 +252,6 @@ private fun FeatureRow(feature: String, free: Boolean, pro: Boolean) {
 private fun FeatureCheck(enabled: Boolean, modifier: Modifier = Modifier) {
     Icon(
         imageVector = if (enabled) Icons.Default.Check else Icons.Default.Close,
-        // TalkBack must hear tier inclusion — the icon is the only carrier
-        // of this information (WCAG 1.1.1 / 4.1.2).
         contentDescription = stringResource(
             if (enabled) R.string.cd_paywall_included else R.string.cd_paywall_not_included
         ),

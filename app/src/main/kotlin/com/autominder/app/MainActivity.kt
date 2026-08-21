@@ -1,4 +1,4 @@
-package com.autominder.app
+﻿package com.autominder.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -220,13 +220,13 @@ class MainActivity : ComponentActivity() {
                             // beneath the banner ad when one is shown, and
                             // beneath the tabs when it isn't.
                             Column(modifier = Modifier.navigationBarsPadding()) {
-                                BottomNavBar(navController = navController)
                                 if (!isProUser) {
                                     BannerAdView(
                                         adUnitId = bannerAdUnitId,
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
+                                BottomNavBar(navController = navController)
                             }
                         }
                     }
@@ -249,3 +249,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+

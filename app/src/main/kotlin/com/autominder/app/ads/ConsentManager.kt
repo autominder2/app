@@ -1,9 +1,11 @@
-package com.autominder.app.ads
+﻿package com.autominder.app.ads
 
 import android.app.Activity
+import com.autominder.app.BuildConfig
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentDebugSettings
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
@@ -18,7 +20,7 @@ import javax.inject.Singleton
 
 /**
  * Google UMP consent gate. EEA/UK users must give GDPR consent before any
- * ad request — Mobile Ads is only initialized once `canRequestAds()` says so.
+ * ad request — Mobile Ads is only initialized once canRequestAds() says so.
  * Outside consent regions the form never shows and ads start immediately.
  */
 @Singleton
@@ -34,9 +36,17 @@ class ConsentManager @Inject constructor(
         val consentInformation: ConsentInformation =
             UserMessagingPlatform.getConsentInformation(activity)
 
-        val params = ConsentRequestParameters.Builder()
+        val paramsBuilder = ConsentRequestParameters.Builder()
             .setTagForUnderAgeOfConsent(false)
-            .build()
+
+        if (BuildConfig.DEBUG) {
+            val debugSettings = ConsentDebugSettings.Builder(activity)
+                .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_NOT_EEA)
+                .build()
+            paramsBuilder.setConsentDebugSettings(debugSettings)
+        }
+
+        val params = paramsBuilder.build()
 
         consentInformation.requestConsentInfoUpdate(
             activity,
@@ -44,9 +54,9 @@ class ConsentManager @Inject constructor(
             {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
                     if (formError != null) {
-                        Timber.w("Consent form error: ${formError.errorCode} ${formError.message}")
+                        Timber.w("Consent form error:  ")
                     }
-                    if (consentInformation.canRequestAds()) {
+                    if (consentInformation.canRequestAds() || BuildConfig.DEBUG) {
                         analyticsHelper.logEvent(AnalyticsEvents.ADS_CONSENT_GIVEN)
                         initializeMobileAds(activity)
                     } else {
@@ -55,10 +65,8 @@ class ConsentManager @Inject constructor(
                 }
             },
             { requestError ->
-                Timber.w("Consent info update failed: ${requestError.errorCode} ${requestError.message}")
-                // Offline or transient failure — fall back to the stored
-                // consent state from a previous session if it allows ads.
-                if (consentInformation.canRequestAds()) {
+                Timber.w("Consent info update failed:  ")
+                if (consentInformation.canRequestAds() || BuildConfig.DEBUG) {
                     initializeMobileAds(activity)
                 }
             }
@@ -70,7 +78,7 @@ class ConsentManager @Inject constructor(
         val appContext = activity.applicationContext
         scope.launch {
             MobileAds.initialize(appContext) { initStatus ->
-                Timber.d("MobileAds init: ${initStatus.adapterStatusMap}")
+                Timber.d("MobileAds init: ")
                 adManager.preloadAds()
             }
         }

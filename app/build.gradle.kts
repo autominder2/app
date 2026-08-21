@@ -1,4 +1,4 @@
-import java.util.Properties
+﻿import java.util.Properties
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -73,7 +73,7 @@ android {
             resValue("string", "admob_interstitial_id",          "ca-app-pub-3940256099942544/1033173712")
             resValue("string", "admob_rewarded_id",              "ca-app-pub-3940256099942544/5224354917")
             resValue("string", "admob_rewarded_interstitial_id", "ca-app-pub-3940256099942544/5354046379")
-            buildConfigField("Boolean", "ENABLE_ADS", "false")
+            buildConfigField("Boolean", "ENABLE_ADS", "true")
             isDebuggable   = true
             isMinifyEnabled = false
         }
@@ -115,7 +115,7 @@ android {
         baseline = file("lint-baseline.xml")
         // GradleDependency / NewerVersionAvailable / AndroidGradlePluginVersion are
         // time-sensitive advisories that turn red the moment Google publishes a new
-        // release — they'd break CI on days we changed no code. The stack is
+        // release â€” they'd break CI on days we changed no code. The stack is
         // intentionally pinned (see CLAUDE.md), so upgrades are a deliberate manual
         // decision, not a build gate. Real code issues still fail via warningsAsErrors.
         disable += listOf(
@@ -156,7 +156,7 @@ android {
 }
 
 dependencies {
-    // ─── Compose ────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Compose â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.compose.activity)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -166,43 +166,43 @@ dependencies {
     implementation(libs.compose.material.icons.extended)
     debugImplementation(libs.compose.ui.tooling)
 
-    // ─── Hilt DI ────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Hilt DI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.work)
     ksp(libs.androidx.hilt.compiler)
 
-    // ─── Room ───────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Room â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    // ─── Navigation + Serialization ─────────────────────────────────────────
+    // â”€â”€â”€ Navigation + Serialization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
 
-    // ─── Background + Storage ───────────────────────────────────────────────
+    // â”€â”€â”€ Background + Storage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.workmanager)
     implementation(libs.datastore.preferences)
 
-    // ─── Lifecycle ──────────────────────────────────────────────────────────
+    // â”€â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.process)
 
-    // ─── UI Utilities ───────────────────────────────────────────────────────
+    // â”€â”€â”€ UI Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.splashscreen.core)
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
     implementation(libs.coil.compose)
 
-    // ─── Ads + Billing ──────────────────────────────────────────────────────
+    // â”€â”€â”€ Ads + Billing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(libs.admob)
     implementation(libs.ump)
     implementation(libs.billing)
 
-    // ─── Firebase + Play Store ──────────────────────────────────────────────
+    // â”€â”€â”€ Firebase + Play Store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
@@ -210,18 +210,18 @@ dependencies {
     implementation(libs.play.review)
     implementation(libs.play.app.update)
 
-    // ─── Stability + Performance ────────────────────────────────────────────
+    // â”€â”€â”€ Stability + Performance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     debugImplementation(libs.leakcanary)
     implementation(libs.profileinstaller)
     implementation(libs.timber)
 
-    // ─── Baseline Profile ───────────────────────────────────────────────────
+    // â”€â”€â”€ Baseline Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Consumes the profile generated by :baselineprofile. Without this line the
-    // baselineprofile plugin is applied but produces nothing — which is exactly
+    // baselineprofile plugin is applied but produces nothing â€” which is exactly
     // the state this project was in until 2026-08-16.
     baselineProfile(project(":baselineprofile"))
 
-    // ─── Test ───────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     testImplementation(libs.junit)
     testImplementation(libs.turbine)
     testImplementation(libs.coroutines.test)
@@ -231,7 +231,7 @@ dependencies {
     androidTestImplementation(libs.room.testing)
 }
 
-// Production Safety Gate — fail release builds if no real AdMob app ID is available.
+// Production Safety Gate â€” fail release builds if no real AdMob app ID is available.
 tasks.matching { it.name.contains("Release") && (it.name.startsWith("assemble") || it.name.startsWith("bundle")) }.configureEach {
     doFirst {
         val releaseId = System.getenv("RELEASE_ADMOB_ID")

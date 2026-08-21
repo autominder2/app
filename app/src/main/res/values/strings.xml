@@ -387,7 +387,7 @@
     <string name="settings_about">About</string>
     <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_upgrade_title">Upgrade to Pro</string>
-    <string name="settings_upgrade_subtitle">Unlock analytics, charts, backup, export &amp; more</string>
+    <string name="settings_upgrade_subtitle">Unlock Quote Auditor, Garage Sync, export &amp; zero ads</string>
     <string name="settings_upgrade_button">Upgrade</string>
     <string name="settings_pro_active">AutoMinder Pro</string>
     <string name="settings_pro_active_subtitle">All premium features unlocked</string>
@@ -498,8 +498,13 @@
     <string name="cd_select_date">Select date</string>
 
     <!-- Pro Paywall -->
-    <string name="paywall_title">Upgrade to AutoMinder Pro</string>
-    <string name="paywall_subtitle">Smarter maintenance. Zero ads. Your data backed up safely.</string>
+    <string name="paywall_title">Never overpay for car repairs again</string>
+    <string name="paywall_subtitle">Audit repair quotes, track family vehicles, and protect your car\'s resale value.</string>
+    <string name="paywall_trial_reassurance">7-day free trial • Cancel anytime with 1 tap in Google Play</string>
+    <string name="paywall_feature_quote_auditor">Quote price auditor (Fair price check)</string>
+    <string name="paywall_feature_garage">Multi-vehicle garage sync</string>
+    <string name="paywall_feature_passport">Service history export (JSON &amp; CSV)</string>
+    <string name="paywall_feature_predictions">Predictive wear &amp; due date alerts</string>
     <!-- Prices are product-details-driven (Play formattedPrice), never
          hardcoded — see ProPaywall.kt. %1$s is the localized price string. -->
     <string name="paywall_yearly_best_value">Best value</string>
@@ -527,12 +532,12 @@
     <string name="billing_error_generic">Something went wrong with your purchase. Please try again.</string>
     <string name="paywall_feature_vehicles">Vehicles</string>
     <string name="paywall_feature_reminders">Maintenance reminders</string>
-    <string name="paywall_feature_fuel_log">Fuel tracking</string>
+    <string name="paywall_feature_fuel_log">Fuel &amp; mileage tracking</string>
     <string name="paywall_feature_analytics">Cost analytics</string>
     <string name="paywall_feature_charts">Fuel efficiency charts</string>
     <string name="paywall_feature_backup">Cloud backup</string>
     <string name="paywall_feature_export">PDF + CSV export</string>
-    <string name="paywall_feature_ad_free">Ad-free experience</string>
+    <string name="paywall_feature_ad_free">100% Ad-free experience</string>
     <string name="paywall_column_free">Free</string>
     <string name="paywall_column_pro">Pro</string>
     <string name="paywall_pro_badge">PRO</string>
