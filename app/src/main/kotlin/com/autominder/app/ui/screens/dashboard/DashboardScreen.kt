@@ -79,6 +79,7 @@ fun DashboardScreen(
     onNavigateToAddVehicle: () -> Unit,
     onNavigateToAddService: (Long) -> Unit,
     onNavigateToAddFuel: (Long) -> Unit,
+    onNavigateToMileageLog: (Long) -> Unit,
     onNavigateToQuoteAuditor: (Long) -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
@@ -215,7 +216,13 @@ fun DashboardScreen(
                         QuickLogSection(
                             onLogService = { onNavigateToAddService(activeVehicle.id) },
                             onAddFuel = { onNavigateToAddFuel(activeVehicle.id) },
-                            onLogMileage = { onNavigateToVehicleDetail(activeVehicle.id) }
+                            // Was onNavigateToVehicleDetail: this screen had no
+                            // mileage callback at all, so a button labelled
+                            // "Log mileage" opened the vehicle page instead.
+                            // NavRoutes.MileageLog and MileageLogScreen already
+                            // existed and VehicleDetail already reached them —
+                            // only the dashboard was unwired.
+                            onLogMileage = { onNavigateToMileageLog(activeVehicle.id) }
                         )
                     }
 

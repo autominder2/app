@@ -112,6 +112,9 @@ fun NavGraph(
                 onNavigateToAddFuel = { vehicleId ->
                     navController.navigate(NavRoutes.AddFuel(vehicleId))
                 },
+                onNavigateToMileageLog = { vehicleId ->
+                    navController.navigate(NavRoutes.MileageLog(vehicleId))
+                },
                 onNavigateToQuoteAuditor = { vehicleId ->
                     navController.navigate(NavRoutes.QuoteAuditor(vehicleId))
                 }

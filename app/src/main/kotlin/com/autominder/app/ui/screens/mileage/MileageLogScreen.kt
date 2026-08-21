@@ -383,18 +383,14 @@ private fun MileageCockpitCard(
             OutlinedTextField(
                 value = uiState.newOdometer,
                 onValueChange = onOdometerChanged,
+                // The label already carries the unit — fuel_label_odometer is
+                // "Odometer (%1$s)" — so the trailing suffix that used to sit
+                // here stated it twice in one field.
                 label = { Text(stringResource(R.string.fuel_label_odometer, DistanceUtil.unitLabel(unit))) },
-                trailingIcon = {
-                    Text(
-                        text = DistanceUtil.unitLabel(unit),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(end = 12.dp)
-                    )
-                },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                // 14.dp is the field token (.claude/rules/ui.md: card 16 / field
+                // 14); this was 16.dp, the card radius.
+                shape = RoundedCornerShape(14.dp),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done

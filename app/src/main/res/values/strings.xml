@@ -672,10 +672,10 @@
     <!-- Mileage Log 2026 Enhanced Strings -->
     <string name="mileage_quick_tags_title">Quick trip tags</string>
     <string name="mileage_tag_commute">Commute</string>
-    <string name="mileage_tag_roadtrip">Road Trip</string>
-    <string name="mileage_tag_work">Work Errand</string>
+    <string name="mileage_tag_roadtrip">Road trip</string>
+    <string name="mileage_tag_work">Work errand</string>
     <string name="mileage_tag_weekend">Weekend</string>
-    <string name="mileage_tag_service">Service Run</string>
+    <string name="mileage_tag_service">Service run</string>
     <string name="mileage_delta_since_last">+%1$s %2$s since %3$s</string>
     <string name="mileage_delta_entry">+%1$s %2$s</string>
     <string name="mileage_current_reading_card">Update odometer</string>
