@@ -126,3 +126,15 @@ play-store-readiness). Reviewers: .claude/agents/ (read-only).
 Reference: docs/GOVERNANCE_REFERENCE.md (StatusCalculator, notification
 cooldowns, fuel-intelligence v1.1 spec, AdMob pattern, ownership defaults).
 State: HANDOFF.md — verify freshness against git log before trusting.
+Code graph: graphify-out/graph.json (~1.9k nodes, ~4.2k edges), rebuilt by a
+post-commit hook — never hand-rebuild unless `built_at_commit` lags HEAD, then
+`graphify update .` (AST only, no LLM, no token cost). Ask the graph BEFORE
+grepping for any relational question (what uses X, what breaks if X changes,
+where does this flow go); grep stays correct for a single literal in a known
+file. Query the BARE SYMBOL, not a verb: the traversal filters edges by the
+verb it infers, and `calls` is only 747 of 4217 edges against `imports` 1094
+and `references` 942 — "what calls VehicleCatalog" returned nothing while its
+three real importers sat in the graph. One symbol also yields several nodes
+(class plus each method); the class-level node carries the cross-file edges.
+graph.json/graph.html are gitignored: 5.4MB of regenerable output that would
+otherwise append to history on every commit.

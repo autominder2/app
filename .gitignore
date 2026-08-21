@@ -82,3 +82,13 @@ graphify-out/.graphify_root
 # Git history is append-only, so committing binaries this size inflates every
 # future clone permanently. Regenerate with the visual-qa skill instead.
 screenshots/
+# Large regenerable graph artifacts. graph.json is the queryable data and
+# graph.html the human viewer — together ~5.4MB. With the post-commit rebuild
+# hook active, tracking them would append a fresh 5.4MB blob to history on
+# every commit, and git history never shrinks. Rebuilding is local tree-sitter
+# parsing with no API cost, so each machine builds its own.
+graphify-out/graph.html
+graphify-out/graph.json
+graphify-out/*/
+graphify-out/*.sig
+graphify-out/manifest.json
