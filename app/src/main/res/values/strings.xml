@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">AutoMinder</string>
 
@@ -412,12 +412,13 @@
     <string name="about_copyright">© %1$d AutoMinder. All rights reserved.</string>
 
     <!-- Onboarding Screen -->
-    <string name="onboarding_welcome_title">Welcome to AutoMinder</string>
+    <string name="onboarding_tagline">Your car. Remembered.</string>
+    <string name="onboarding_welcome_title">Never miss what your car needs.</string>
     <string name="onboarding_notify_title">We\'ll tap you on the shoulder</string>
     <string name="onboarding_notify_subtitle">Gentle reminders arrive before things are due — never spammy, always in time.</string>
-    <string name="onboarding_welcome_value">Log services in seconds, get reminded before anything is due — all offline, all yours.</string>
+    <string name="onboarding_welcome_value">Maintenance, renewals, inspections and important car tasks — all in one place.</string>
     <string name="onboarding_add_my_car">Add my car</string>
-    <string name="onboarding_skip_for_now">Skip for now</string>
+    <string name="onboarding_skip_for_now">I\'ll do this later</string>
     <string name="onboarding_add_car_title">Which car should we look after?</string>
     <string name="onboarding_add_car_subtitle">Just the make and model — everything else can wait.</string>
     <string name="onboarding_do_this_later">I\'ll do this later</string>
@@ -782,13 +783,34 @@
     <string name="cd_back">Back</string>
     <string name="cd_delete_item">Delete line item</string>
 
-    <!-- Onboarding 2026 Polish -->
-    <string name="onboarding_pillar_privacy">100% Offline &amp; Private</string>
-    <string name="onboarding_pillar_privacy_desc">No accounts, no ads, no cloud tracking</string>
-    <string name="onboarding_pillar_prediction">Smart Predictions</string>
-    <string name="onboarding_pillar_prediction_desc">Proactive date &amp; distance intervals</string>
-    <string name="onboarding_pillar_speed">Fast 15-Sec Logging</string>
-    <string name="onboarding_pillar_speed_desc">Effortless maintenance &amp; fuel tracking</string>
+    <!-- Onboarding 2026 4 Core Value Pillars -->
+    <string name="onboarding_pillar_maintenance">Maintenance</string>
+    <string name="onboarding_pillar_maintenance_desc">Oil changes, brakes, tires &amp; scheduled factory service</string>
+    <string name="onboarding_pillar_documents">Documents</string>
+    <string name="onboarding_pillar_documents_desc">Registration renewals, insurance &amp; inspection dates</string>
+    <string name="onboarding_pillar_reminders">Reminders</string>
+    <string name="onboarding_pillar_reminders_desc">Proactive time &amp; mileage countdowns</string>
+    <string name="onboarding_pillar_ai">Quote check</string>
+    <string name="onboarding_pillar_ai_desc">Check a repair quote for fair pricing before you pay</string>
+    <string name="onboarding_browse_all_makes">Browse all makes</string>
+    <string name="onboarding_browse_all_models">Browse all models</string>
+    <string name="onboarding_picker_search_makes_hint">Search makes…</string>
+    <string name="onboarding_picker_search_models_hint">Search models…</string>
+    <string name="onboarding_picker_no_makes">No makes match \"%1$s\"</string>
+    <string name="onboarding_picker_no_models">No models match \"%1$s\"</string>
+    <string name="onboarding_picker_manual_entry">Can\'t find your car? Enter it manually</string>
+    <string name="onboarding_odometer_reassurance">You can change this anytime.</string>
+    <string name="onboarding_plan_mileage_not_added">Mileage not added — showing date-only reminders.</string>
+    <string name="onboarding_plan_add_mileage_action">Add mileage</string>
+    <string name="onboarding_plan_revision_title">Adjust starting plan</string>
+    <string name="onboarding_plan_update_cta">Update plan</string>
+    <string name="onboarding_plan_metric_mileage">Mileage</string>
+    <string name="onboarding_plan_metric_driving">Driving amount</string>
+    <string name="onboarding_plan_metric_not_added">Not added</string>
+    <string name="driving_light">Light</string>
+    <string name="driving_range_low">Up to %1$s %2$s / year</string>
+    <string name="driving_range_typical">%1$s – %2$s %3$s / year</string>
+    <string name="driving_range_high">%1$s+ %2$s / year</string>
     <string name="onboarding_popular_models_title">Popular models</string>
 
     <!-- Data Sovereignty & Manual Backup Strings -->
@@ -834,5 +856,74 @@
     <string name="mileage_pace_rate">%1$.1f %2$s/day</string>
     <string name="mileage_pace_delta">+%1$s %2$s in %3$d days</string>
     <string name="mileage_pace_single_day">+%1$s %2$s today</string>
+    <!-- Navigation Tabs V2 -->
+    <string name="nav_garage">Garage</string>
+    <string name="nav_activity">Activity</string>
+
+    <!-- Home V2 Vehicle Command Center -->
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_subtitle_on_track">Your car is on track.</string>
+    <string name="home_subtitle_fleet_on_track">Your cars are on track.</string>
+    <string name="home_subtitle_upcoming">You have %1$d things coming up.</string>
+    <string name="home_subtitle_attention">Your %1$s needs attention.</string>
+    <string name="home_subtitle_overdue">One maintenance item is overdue.</string>
+    <string name="home_subtitle_setup_incomplete">Let\'s finish setting up your car.</string>
+
+    <string name="home_status_healthy_title">You\'re all caught up</string>
+    <string name="home_status_healthy_desc">Nothing needs attention right now.</string>
+    <string name="home_status_updated_now">Updated just now</string>
+    <string name="home_status_upcoming_title">%1$d things coming up</string>
+    <string name="home_status_duesoon_title">%1$d thing needs attention</string>
+    <string name="home_status_overdue_title">%1$d overdue item</string>
+    <string name="home_status_setup_incomplete_title">Finish setting up your car</string>
+    <string name="home_status_setup_incomplete_desc">Add your current mileage so AutoMinder can calculate maintenance reminders more accurately.</string>
+    <string name="home_status_update_mileage_cta">Update mileage</string>
+
+    <string name="home_section_coming_up">Coming up</string>
+    <string name="home_section_see_all">See all</string>
+    <string name="home_section_quick_log">Quick log</string>
+    <string name="home_section_recent_activity">Recent activity</string>
+    <string name="home_log_service">Log service</string>
+    <string name="home_add_fuel">Add fuel</string>
+    <string name="home_log_mileage">Log mileage</string>
+    <string name="home_empty_coming_up_title">You\'re clear for now.</string>
+    <string name="home_empty_coming_up_desc">We\'ll show your next maintenance here when it\'s due.</string>
+    <string name="home_empty_activity_title">Nothing logged yet.</string>
+    <string name="home_empty_activity_desc">Your service and fuel history will appear here.</string>
+    <string name="home_activity_mileage_updated">Mileage updated</string>
+    <string name="home_activity_fuel">Fuel</string>
+    <string name="home_fab_log">Log</string>
+    <string name="home_switch_vehicle">Switch vehicle</string>
+    <string name="home_vehicle_details">Vehicle details</string>
+    <string name="home_reminder_due_approx">~%1$s %2$s left • around %3$s</string>
+    <string name="home_reminder_due_date_only">Due on %1$s</string>
+    <string name="home_section_whats_next">What\'s next</string>
+    <string name="home_status_next_check">Next check: %1$s · ~%2$s %3$s</string>
+    <string name="home_empty_whats_next_title">You\'re clear for now</string>
+    <string name="home_empty_whats_next_desc">We\'ll show what\'s next when maintenance approaches.</string>
+
+    <string name="why_reminder_title">Why am I seeing this?</string>
+    <string name="why_reminder_subtitle">Calculated from your vehicle data and maintenance rules:</string>
+    <string name="why_reminder_last_service">Last recorded service</string>
+    <string name="why_reminder_interval">Service interval</string>
+    <string name="why_reminder_current_odo">Current odometer</string>
+    <string name="why_reminder_target_due">Target milestone</string>
+    <string name="why_reminder_remaining">Remaining</string>
+    <string name="why_reminder_no_previous_service">No prior service recorded</string>
+    <string name="why_reminder_confidence_high">High confidence · Odometer recently updated</string>
+    <string name="why_reminder_confidence_med">Medium confidence</string>
+    <string name="why_reminder_confidence_low">Low confidence · Odometer hasn\'t been updated recently</string>
+    <string name="why_reminder_confidence_incomplete">Incomplete data · Current mileage missing</string>
+    <string name="why_reminder_log_now_cta">Log this service</string>
+    <string name="brand_name">AutoMinder</string>
+    <string name="why_reminder_rule_desc">whichever comes first</string>
+    <string name="why_reminder_mileage_current">Mileage data is current</string>
+    <string name="why_reminder_log_completed">Log completed service</string>
+    <string name="why_reminder_edit">Edit reminder</string>
+    <string name="home_empty_activity">Nothing logged yet. Completed services and fuel logs will appear here.</string>
 </resources>
+
+
 

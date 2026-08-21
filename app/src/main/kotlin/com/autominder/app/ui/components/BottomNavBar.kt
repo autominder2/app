@@ -1,10 +1,10 @@
 package com.autominder.app.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -32,13 +32,13 @@ private data class BottomNavItem(
 )
 
 // 4 tabs, equal-importance top-level destinations (Material 3 supports 3-5).
-// Records is cross-vehicle service history — confirmed a real top-level
-// destination, not a per-vehicle detail screen.
+// Garage: Vehicle management mental model.
+// Activity: Chronological history mental model.
 private val bottomNavItems = listOf(
-    BottomNavItem(R.string.nav_home, Icons.Default.Dashboard, NavRoutes.Dashboard),
-    BottomNavItem(R.string.nav_vehicles, Icons.Default.DirectionsCar, NavRoutes.VehicleList),
-    BottomNavItem(R.string.nav_records, Icons.Default.History, NavRoutes.ServiceHistory),
-    BottomNavItem(R.string.nav_settings, Icons.Default.Settings, NavRoutes.Settings())
+    BottomNavItem(R.string.nav_home, Icons.Rounded.Dashboard, NavRoutes.Dashboard),
+    BottomNavItem(R.string.nav_garage, Icons.Rounded.DirectionsCar, NavRoutes.VehicleList),
+    BottomNavItem(R.string.nav_activity, Icons.Rounded.History, NavRoutes.ServiceHistory),
+    BottomNavItem(R.string.nav_settings, Icons.Rounded.Settings, NavRoutes.Settings())
 )
 
 @Composable

@@ -76,3 +76,9 @@ graphify-out/cost.json
 graphify-out/cache/
 graphify-out/.graphify_python
 graphify-out/.graphify_root
+
+# ─── UI audit screenshots ───────────────────────────────────────────────────
+# Device captures from visual QA runs — ~18MB and regenerated on demand.
+# Git history is append-only, so committing binaries this size inflates every
+# future clone permanently. Regenerate with the visual-qa skill instead.
+screenshots/

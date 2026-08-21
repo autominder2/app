@@ -1,6 +1,5 @@
 package com.autominder.app.ui.screens.onboarding
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,13 +14,14 @@ import com.autominder.app.domain.repository.IVehicleRepository
 import com.autominder.app.domain.usecase.CreateDefaultRemindersUseCase
 import com.autominder.app.domain.usecase.PlannedReminder
 import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.domain.util.VehicleCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import javax.inject.Inject
 
 data class OnboardingUiState(
     val brand: String = "",
@@ -29,26 +29,17 @@ data class OnboardingUiState(
     val odometer: String = "",
     val drivingAmount: DrivingAmount = DrivingAmount.TYPICAL,
     val suggestedModels: List<String> = emptyList(),
-    /** Seeded plan preview — non-empty means the reveal step has real content. */
     val plan: List<PlannedReminder> = emptyList(),
-    /** Odometer in km captured at preview time; save consumes exactly this. */
+    /** The odometer value in km that produced [plan] (null when no plan is ready). */
     val planOdometerKm: Int? = null,
     val isSaving: Boolean = false,
     val vehicleSaved: Boolean = false,
-    @StringRes val errorRes: Int? = null
+    val errorRes: Int? = null
 ) {
+    val canProceedFromAddCar: Boolean get() = brand.isNotBlank() && model.isNotBlank()
     val planReady: Boolean get() = plan.isNotEmpty() && planOdometerKm != null
 }
 
-/**
- * Activation-first onboarding with a plan reveal BEFORE the notification
- * permission ask. Invariant enforced here: [saveVehicle] refuses to run
- * until [previewPlan] has produced a plan — so the reveal step structurally
- * precedes both the save and the permission request.
- *
- * Form fields live in [SavedStateHandle] so rotation, backgrounding, and
- * ordinary process recreation all restore the user's input.
- */
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
@@ -66,7 +57,7 @@ class OnboardingViewModel @Inject constructor(
             model = savedStateHandle[KEY_MODEL] ?: "",
             odometer = savedStateHandle[KEY_ODOMETER] ?: "",
             drivingAmount = DrivingAmount.fromNameOrDefault(savedStateHandle[KEY_DRIVING]),
-            suggestedModels = getModelsForBrand(initialBrand)
+            suggestedModels = VehicleCatalog.modelsForMake(initialBrand)
         )
     )
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -81,7 +72,7 @@ class OnboardingViewModel @Inject constructor(
     fun onBrandChanged(value: String) {
         savedStateHandle[KEY_BRAND] = value
         invalidatePlan()
-        val models = getModelsForBrand(value)
+        val models = VehicleCatalog.modelsForMake(value)
         _uiState.value = _uiState.value.copy(
             brand = value,
             suggestedModels = models,
@@ -236,27 +227,5 @@ class OnboardingViewModel @Inject constructor(
 
         /** 1,000,000 display units — beyond any plausible odometer. */
         const val MAX_PLAUSIBLE_DISPLAY = 1_000_000
-
-        private val POPULAR_MODELS_MAP = mapOf(
-            "Toyota" to listOf("RAV4", "Camry", "Corolla", "Highlander", "Tacoma", "Prius"),
-            "Honda" to listOf("CR-V", "Civic", "Accord", "Pilot", "HR-V"),
-            "Ford" to listOf("F-150", "Explorer", "Escape", "Mustang", "Bronco"),
-            "Chevrolet" to listOf("Silverado", "Equinox", "Malibu", "Tahoe", "Traverse"),
-            "Nissan" to listOf("Rogue", "Altima", "Sentra", "Pathfinder"),
-            "Hyundai" to listOf("Tucson", "Elantra", "Santa Fe", "Sonata", "Kona"),
-            "Kia" to listOf("Sportage", "Forte", "Telluride", "Sorento", "Soul"),
-            "BMW" to listOf("3 Series", "X3", "5 Series", "X5", "M3"),
-            "Mercedes" to listOf("C-Class", "E-Class", "GLC", "GLE", "A-Class"),
-            "Volkswagen" to listOf("Golf", "Jetta", "Tiguan", "Passat", "Atlas"),
-            "Tesla" to listOf("Model 3", "Model Y", "Model S", "Model X"),
-            "Mazda" to listOf("CX-5", "Mazda3", "CX-30", "CX-50", "Miata"),
-            "Subaru" to listOf("Outback", "Forester", "Crosstrek", "Impreza", "WRX"),
-            "Jeep" to listOf("Grand Cherokee", "Wrangler", "Cherokee", "Compass")
-        )
-
-        fun getModelsForBrand(brand: String): List<String> {
-            val key = POPULAR_MODELS_MAP.keys.firstOrNull { it.equals(brand.trim(), ignoreCase = true) }
-            return if (key != null) POPULAR_MODELS_MAP[key].orEmpty() else emptyList()
-        }
     }
 }

@@ -28,30 +28,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-/**
- * State-machine proof for Phase 1: the plan reveal structurally precedes
- * both the save and (therefore) the notification-permission step, because
- * saveVehicle refuses to run until previewPlan has produced a plan, and the
- * NOTIFY step is only reachable via vehicleSaved.
- */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OnboardingViewModelTest {
 
     private val dispatcher = UnconfinedTestDispatcher()
+    private val prefs: UserPreferences = mockk(relaxed = true)
+    private val vehicleRepo: IVehicleRepository = mockk(relaxed = true)
+    private val reminderRepo: IReminderRepository = mockk(relaxed = true)
+    private val analytics: AnalyticsHelper = mockk(relaxed = true)
 
-    private lateinit var vehicleRepo: IVehicleRepository
-    private lateinit var reminderRepo: IReminderRepository
-    private lateinit var prefs: UserPreferences
-    private lateinit var analytics: AnalyticsHelper
     private lateinit var vm: OnboardingViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        vehicleRepo = mockk()
-        reminderRepo = mockk(relaxed = true)
-        prefs = mockk(relaxed = true)
-        analytics = mockk(relaxed = true)
 
         val initialState = slot<suspend (Long) -> Unit>()
         coEvery {
@@ -85,7 +75,7 @@ class OnboardingViewModelTest {
         vm.onOdometerChanged("50000")
     }
 
-    // ── Reveal-before-save invariant ────────────────────────────────────────
+    // ─── Reveal-before-save invariant ──────────────────────────────────────────
 
     @Test
     fun `saveVehicle refuses to run before previewPlan`() = runTest {
@@ -123,7 +113,7 @@ class OnboardingViewModelTest {
         }
     }
 
-    // ── Mileage validation boundaries ───────────────────────────────────────
+    // ─── Mileage validation boundaries ─────────────────────────────────────────
 
     @Test
     fun `blank mileage is allowed and treated as zero`() {
@@ -181,7 +171,7 @@ class OnboardingViewModelTest {
         assertNotNull(vm.uiState.value.errorRes)
     }
 
-    // ── Revision from the reveal without restarting ────────────────────────
+    // ─── Revision from the reveal without restarting ───────────────────────────
 
     @Test
     fun `changing driving amount recomputes the plan dates`() {
@@ -226,7 +216,7 @@ class OnboardingViewModelTest {
         assertTrue(after > before)
     }
 
-    // ── Regression: default-reminder creation path still runs in-transaction ──
+    // ─── Regression: default-reminder creation path still runs in-transaction ──
 
     @Test
     fun `reminders are created inside the vehicle insert transaction lambda`() = runTest {
@@ -255,5 +245,25 @@ class OnboardingViewModelTest {
 
         assertTrue(restored.uiState.value.planReady)
         assertEquals(DrivingAmount.HIGH, restored.uiState.value.drivingAmount)
+    }
+
+    // ─── VehicleCatalog integration tests ─────────────────────────────────────
+
+    @Test
+    fun `suggestedModels now sourced from VehicleCatalog and covers makes beyond the old 14-brand map`() {
+        vm.onBrandChanged("Audi")
+        assertTrue(vm.uiState.value.suggestedModels.contains("A4"))
+        assertTrue(vm.uiState.value.suggestedModels.contains("Q5"))
+
+        vm.onBrandChanged("Porsche")
+        assertTrue(vm.uiState.value.suggestedModels.contains("911"))
+        assertTrue(vm.uiState.value.suggestedModels.contains("Cayenne"))
+    }
+
+    @Test
+    fun `unrecognized or custom make typed manually yields empty suggestedModels without error`() {
+        vm.onBrandChanged("CustomUniqueKitCar")
+        assertTrue(vm.uiState.value.suggestedModels.isEmpty())
+        assertNull(vm.uiState.value.errorRes)
     }
 }

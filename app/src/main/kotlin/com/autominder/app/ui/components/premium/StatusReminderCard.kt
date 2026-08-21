@@ -1,4 +1,4 @@
-package com.autominder.app.ui.components.premium
+﻿package com.autominder.app.ui.components.premium
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -15,14 +15,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Snooze
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -115,9 +120,12 @@ fun StatusReminderCard(
                         modifier = Modifier.weight(1f)
                     )
                     if (onEdit != null) {
-                        IconButton(onClick = onEdit) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.minimumInteractiveComponentSize()
+                        ) {
                             Icon(
-                                Icons.Default.Edit,
+                                Icons.Rounded.Edit,
                                 contentDescription = editContentDescription,
                                 modifier = Modifier.size(18.dp),
                                 tint = contentColor.copy(alpha = 0.7f)
@@ -144,24 +152,59 @@ fun StatusReminderCard(
                 }
 
                 if ((doneLabel != null && onDone != null) || (snoozeLabel != null && onSnooze != null)) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (snoozeLabel != null && onSnooze != null) {
-                            TextButton(onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                                onSnooze()
-                            }) {
-                                Text(snoozeLabel, color = contentColor)
+                            OutlinedButton(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                    onSnooze()
+                                },
+                                modifier = Modifier
+                                    .height(38.dp)
+                                    .minimumInteractiveComponentSize(),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Snooze,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = contentColor
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(snoozeLabel, color = contentColor, style = MaterialTheme.typography.labelLarge)
                             }
                         }
                         if (doneLabel != null && onDone != null) {
-                            TextButton(onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                                onDone()
-                            }) {
-                                Text(doneLabel, color = contentColor, fontWeight = FontWeight.SemiBold)
+                            FilledTonalButton(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                                    onDone()
+                                },
+                                modifier = Modifier
+                                    .height(38.dp)
+                                    .minimumInteractiveComponentSize(),
+                                shape = MaterialTheme.shapes.medium,
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = doneLabel,
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                         }
                     }
