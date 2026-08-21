@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -214,7 +215,11 @@ class MainActivity : ComponentActivity() {
                             enter = slideInVertically(initialOffsetY = { it }),
                             exit = slideOutVertically(targetOffsetY = { it })
                         ) {
-                            Column {
+                            // The Column owns the gesture inset, not the
+                            // NavigationBar inside it — so the padding lands
+                            // beneath the banner ad when one is shown, and
+                            // beneath the tabs when it isn't.
+                            Column(modifier = Modifier.navigationBarsPadding()) {
                                 BottomNavBar(navController = navController)
                                 if (!isProUser) {
                                     BannerAdView(

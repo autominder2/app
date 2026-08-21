@@ -1,5 +1,6 @@
 package com.autominder.app.ui.components
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.DirectionsCar
@@ -49,7 +50,17 @@ fun BottomNavBar(navController: NavHostController) {
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = NavigationBarDefaults.Elevation
+        tonalElevation = NavigationBarDefaults.Elevation,
+        // Consume NO system inset here. NavigationBar's default
+        // (NavigationBarDefaults.windowInsets) pads its own bottom for the
+        // gesture bar, which is correct only when nothing sits beneath it. In
+        // MainActivity a banner ad is stacked below this bar for non-Pro users,
+        // so that padding landed BETWEEN the tabs and the ad while the ad —
+        // the thing actually touching the screen edge — got no inset at all.
+        // The wrapping Column owns navigationBarsPadding() instead, so the
+        // inset always ends up under whatever is genuinely last. This is the
+        // bar's only call site (MainActivity), so zeroing it here is safe.
+        windowInsets = WindowInsets(0)
     ) {
         bottomNavItems.forEach { item ->
             val selected = currentDestination?.hasRoute(item.route::class) == true
