@@ -155,7 +155,18 @@ fun StatusReminderCard(
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        // Start, not End. A FAB permanently owns the bottom-end
+                        // corner of the screen, so a right-aligned row action
+                        // collides with it at whatever scroll offset brings the
+                        // two together — on VehicleDetail the FAB sat directly
+                        // on top of "Done". Trailing content padding cannot fix
+                        // that: it only clears the LAST item, while a FAB covers
+                        // whatever happens to be beneath it. Leading alignment is
+                        // immune at every scroll position, and it puts the
+                        // actions under the text they act on. Alignment.Start
+                        // also mirrors correctly in RTL, which End did too but
+                        // into the same collision.
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (snoozeLabel != null && onSnooze != null) {

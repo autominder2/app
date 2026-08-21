@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DirectionsCar
@@ -29,8 +28,6 @@ import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -87,10 +84,8 @@ fun DashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 40 } }
     val haptic = LocalHapticFeedback.current
 
-    var showQuickLogSheet by remember { mutableStateOf(false) }
     var showVehicleSwitcherSheet by remember { mutableStateOf(false) }
     var selectedExplanation by remember { mutableStateOf<ReminderExplanation?>(null) }
 
@@ -152,15 +147,14 @@ fun DashboardScreen(
                         start = 20.dp,
                         end = 20.dp,
                         top = 16.dp,
-                        // Clears the FAB and nothing more. The FAB is BottomEnd
-                        // with bottom = 24.dp and an ExtendedFAB is 56.dp tall,
-                        // so 80.dp is the exact overlap; 8.dp is breathing room.
-                        // This does NOT need to clear the navigation bar —
-                        // MainActivity's Scaffold already hands this screen
-                        // innerPadding for that, so anything added here is dead
-                        // space at the end of a short list. Measured on a
-                        // gesture-nav device: 108.dp left a 128.dp empty band.
-                        bottom = 88.dp
+                        // No FAB on this screen any more, and MainActivity's
+                        // Scaffold already hands it innerPadding for the
+                        // navigation bar — so this is breathing room only.
+                        // It was 108.dp to clear a FAB that duplicated the
+                        // inline Quick Log row; measured on a gesture-nav
+                        // device, that left a 128.dp empty band below the
+                        // last card.
+                        bottom = 24.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                     modifier = Modifier.fillMaxSize()
@@ -235,32 +229,6 @@ fun DashboardScreen(
                     }
                 }
 
-                // Contextual Floating Action Button (+ Log)
-                ExtendedFloatingActionButton(
-                    text = {
-                        Text(
-                            text = stringResource(R.string.home_fab_log),
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = stringResource(R.string.home_fab_log)
-                        )
-                    },
-                    expanded = !isScrolled,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                        showQuickLogSheet = true
-                    },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 20.dp, bottom = 24.dp)
-                )
 
                 // Deterministic Explainability Bottom Sheet
                 selectedExplanation?.let { explanation ->
@@ -279,59 +247,6 @@ fun DashboardScreen(
                     )
                 }
 
-                // Quick Log Bottom Sheet
-                if (showQuickLogSheet) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showQuickLogSheet = false },
-                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 16.dp)
-                                .navigationBarsPadding(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.home_fab_log),
-                                fontFamily = Exo2,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            QuickLogSheetOption(
-                                label = stringResource(R.string.home_log_service),
-                                icon = Icons.Rounded.Build,
-                                tint = MaterialTheme.colorScheme.primary,
-                                onClick = {
-                                    showQuickLogSheet = false
-                                    onNavigateToAddService(activeVehicle.id)
-                                }
-                            )
-                            QuickLogSheetOption(
-                                label = stringResource(R.string.home_add_fuel),
-                                icon = Icons.Rounded.LocalGasStation,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                onClick = {
-                                    showQuickLogSheet = false
-                                    onNavigateToAddFuel(activeVehicle.id)
-                                }
-                            )
-                            QuickLogSheetOption(
-                                label = stringResource(R.string.home_log_mileage),
-                                icon = Icons.Rounded.Speed,
-                                tint = MaterialTheme.colorScheme.tertiary,
-                                onClick = {
-                                    showQuickLogSheet = false
-                                    onNavigateToVehicleDetail(activeVehicle.id)
-                                }
-                            )
-                        }
-                    }
-                }
 
                 // Multi-vehicle Switcher Bottom Sheet
                 if (showVehicleSwitcherSheet && state.vehicles.size > 1) {
