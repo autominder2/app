@@ -68,3 +68,11 @@ repomix-output.*
 emulator_out.txt
 HANDOFF_SESSION_*.md
 repomix.config.json
+
+# ─── Graphify knowledge graph ───────────────────────────────────────────────
+# graphify-out/ itself is committed (shared map for the whole team); only
+# per-machine/per-run local state is excluded.
+graphify-out/cost.json
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
