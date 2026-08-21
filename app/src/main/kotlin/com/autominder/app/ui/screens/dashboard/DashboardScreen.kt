@@ -152,7 +152,15 @@ fun DashboardScreen(
                         start = 20.dp,
                         end = 20.dp,
                         top = 16.dp,
-                        bottom = 108.dp
+                        // Clears the FAB and nothing more. The FAB is BottomEnd
+                        // with bottom = 24.dp and an ExtendedFAB is 56.dp tall,
+                        // so 80.dp is the exact overlap; 8.dp is breathing room.
+                        // This does NOT need to clear the navigation bar —
+                        // MainActivity's Scaffold already hands this screen
+                        // innerPadding for that, so anything added here is dead
+                        // space at the end of a short list. Measured on a
+                        // gesture-nav device: 108.dp left a 128.dp empty band.
+                        bottom = 88.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                     modifier = Modifier.fillMaxSize()
