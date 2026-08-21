@@ -127,8 +127,10 @@ Reference: docs/GOVERNANCE_REFERENCE.md (StatusCalculator, notification
 cooldowns, fuel-intelligence v1.1 spec, AdMob pattern, ownership defaults).
 State: HANDOFF.md — verify freshness against git log before trusting.
 Code graph: graphify-out/graph.json (~1.9k nodes, ~4.2k edges), rebuilt by a
-post-commit hook — never hand-rebuild unless `built_at_commit` lags HEAD, then
-`graphify update .` (AST only, no LLM, no token cost). Ask the graph BEFORE
+post-commit hook, which skips commits touching no code — so `built_at_commit`
+correctly points at the last CODE commit and lagging HEAD is normal, not
+stale. Hand-rebuild only to index uncommitted work: `graphify update .`
+(AST only, no LLM, no token cost). Ask the graph BEFORE
 grepping for any relational question (what uses X, what breaks if X changes,
 where does this flow go); grep stays correct for a single literal in a known
 file. Query the BARE SYMBOL, not a verb: the traversal filters edges by the
