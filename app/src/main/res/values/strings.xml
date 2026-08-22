@@ -923,6 +923,16 @@
     <string name="why_reminder_log_completed">Log completed service</string>
     <string name="why_reminder_edit">Edit reminder</string>
     <string name="home_empty_activity">Nothing logged yet. Completed services and fuel logs will appear here.</string>
+
+    <!-- Semantic Operational State Strings (V3 Quality Standard) -->
+    <string name="state_all_clear">All clear</string>
+    <string name="state_coming_up">Coming up</string>
+    <string name="state_due_soon">Due soon</string>
+    <string name="state_overdue">Overdue</string>
+    <string name="state_setup_incomplete">Setup incomplete</string>
+    <string name="cost_not_recorded">Not recorded</string>
+    <string name="mileage_not_added">Mileage not added</string>
+    <string name="service_no_history_recorded">No service history recorded</string>
 </resources>
 
 

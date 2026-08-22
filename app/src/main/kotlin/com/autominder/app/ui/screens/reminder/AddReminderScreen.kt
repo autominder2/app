@@ -630,7 +630,7 @@ private fun AddReminderVehicleHeader(
 
                 Column {
                     Text(
-                        text = "${vehicle.make} ${vehicle.model}",
+                        text = com.autominder.app.domain.util.VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface

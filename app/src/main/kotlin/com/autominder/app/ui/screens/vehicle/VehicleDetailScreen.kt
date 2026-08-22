@@ -92,6 +92,8 @@ import com.autominder.app.LocalIsProUser
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.ListSkeleton
+import com.autominder.app.domain.util.VehicleDisplayNameFormatter
+import com.autominder.app.ui.components.AutoMinderServiceStatusBadge
 import com.autominder.app.ui.components.ProFeatureGate
 import com.autominder.app.ui.components.QuickMileageSheet
 import com.autominder.app.ui.components.ReminderDetailSheet
@@ -468,14 +470,14 @@ private fun VehicleDetailContent(
         // 1 — The car is the hero. Name appears exactly once on screen.
         item(key = "hero") {
             VehicleHeroCard(
-                title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model),
+                title = VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year),
                 variant = VehicleHeroVariant.Expanded,
                 yearText = vehicle.year.takeIf { it > 0 }?.toString(),
                 photoUri = vehicle.photoUri,
                 photoContentDescription = stringResource(
                     R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model
                 ),
-                statusChip = worstStatus?.let { s -> { StatusChip(status = s) } },
+                statusChip = worstStatus?.let { s -> { AutoMinderServiceStatusBadge(status = s) } },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }

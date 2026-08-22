@@ -730,7 +730,7 @@ private fun VehicleFilterRow(
             FilterChip(
                 selected = selectedVehicleId == vehicle.id,
                 onClick = { onSelectVehicle(vehicle.id) },
-                label = { Text("${vehicle.make} ${vehicle.model}") },
+                label = { Text(com.autominder.app.domain.util.VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year)) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer

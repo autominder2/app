@@ -355,7 +355,7 @@ private fun VehicleSelectorRow(
                 onClick = { onSelectVehicle(vehicle.id) },
                 label = {
                     Text(
-                        text = "${vehicle.make} ${vehicle.model}",
+                        text = com.autominder.app.domain.util.VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year),
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
                 },

@@ -237,7 +237,12 @@ dependencies {
     androidTestImplementation(libs.room.testing)
 }
 
-// Production Safety Gate — fail release builds if no real AdMob app ID is available.
+// Production Safety Gate — fail release builds if any real AdMob ID is missing.
+// Covers the app ID AND all four ad unit IDs: the app ID alone passing this
+// gate previously let a release ship with a PLACEHOLDER banner/interstitial/
+// rewarded/rewarded-interstitial ID if just one CI secret or local.properties
+// line was missing — a real ad slot silently requesting a malformed unit ID
+// in production instead of failing the build loudly.
 tasks.matching { it.name.contains("Release") && (it.name.startsWith("assemble") || it.name.startsWith("bundle")) }.configureEach {
     doFirst {
         val releaseId = System.getenv("RELEASE_ADMOB_ID")
@@ -246,6 +251,23 @@ tasks.matching { it.name.contains("Release") && (it.name.startsWith("assemble") 
             ?: localProps.getProperty("ADMOB_APP_ID")
         if (releaseId.isNullOrBlank() || releaseId == "PLACEHOLDER") {
             throw GradleException("FATAL: No AdMob app ID found. Set RELEASE_ADMOB_ID (or ADMOB_APP_ID) in local.properties or the CI environment before a production build.")
+        }
+
+        val requiredUnitIds = mapOf(
+            "ADMOB_BANNER_ID" to (System.getenv("ADMOB_BANNER_ID") ?: localProps.getProperty("ADMOB_BANNER_ID")),
+            "ADMOB_INTERSTITIAL_ID" to (System.getenv("ADMOB_INTERSTITIAL_ID") ?: localProps.getProperty("ADMOB_INTERSTITIAL_ID")),
+            "ADMOB_REWARDED_ID" to (System.getenv("ADMOB_REWARDED_ID") ?: localProps.getProperty("ADMOB_REWARDED_ID")),
+            "ADMOB_REWARDED_INTERSTITIAL_ID" to (System.getenv("ADMOB_REWARDED_INTERSTITIAL_ID") ?: localProps.getProperty("ADMOB_REWARDED_INTERSTITIAL_ID"))
+        )
+        val missingOrPlaceholder = requiredUnitIds.filter { (_, value) ->
+            value.isNullOrBlank() || value.contains("PLACEHOLDER")
+        }.keys
+        if (missingOrPlaceholder.isNotEmpty()) {
+            throw GradleException(
+                "FATAL: Missing real AdMob ad unit ID(s) for a production build: " +
+                    "${missingOrPlaceholder.joinToString(", ")}. Set them in local.properties " +
+                    "or the CI environment before a production build."
+            )
         }
     }
 }

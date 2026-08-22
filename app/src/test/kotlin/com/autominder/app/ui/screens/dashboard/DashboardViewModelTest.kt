@@ -11,6 +11,7 @@ import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.ServiceType
 import com.autominder.app.domain.model.Vehicle
+import com.autominder.app.domain.model.VehicleOperationalStatus
 import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.repository.IMileageLogRepository
 import com.autominder.app.domain.repository.IServiceRepository

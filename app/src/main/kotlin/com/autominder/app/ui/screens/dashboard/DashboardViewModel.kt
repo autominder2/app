@@ -23,6 +23,8 @@ import com.autominder.app.domain.usecase.ReminderExplanation
 import com.autominder.app.domain.usecase.ReminderPriorityEngine
 import com.autominder.app.domain.usecase.ReminderWithStatus
 import com.autominder.app.domain.usecase.VehicleWithStatus
+import com.autominder.app.domain.model.VehicleOperationalStatus
+import com.autominder.app.domain.util.VehicleDisplayNameFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,14 +38,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
-
-enum class VehicleOperationalStatus {
-    HEALTHY,
-    UPCOMING,
-    DUE_SOON,
-    OVERDUE,
-    SETUP_INCOMPLETE
-}
 
 data class RemindersDelayedState(val lastCheckedAt: Long?)
 
@@ -168,7 +162,7 @@ class DashboardViewModel @Inject constructor(
                 val nextCheck = prioritized.firstOrNull { it.remainingKm != null && it.remainingKm > 0 }
 
                 val recentActivity = buildRecentActivity(
-                    vehicleName = "${activeVehicle.vehicle.make} ${activeVehicle.vehicle.model}".trim(),
+                    vehicleName = VehicleDisplayNameFormatter.format(activeVehicle.vehicle.make, activeVehicle.vehicle.model),
                     services = services,
                     fuels = fuels,
                     mileageLogs = mileageLogs,

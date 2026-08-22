@@ -1,6 +1,5 @@
 package com.autominder.app.ui.screens.dashboard.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,19 +26,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.autominder.app.R
+import com.autominder.app.domain.model.VehicleOperationalStatus
 import com.autominder.app.domain.usecase.PrioritizedReminder
 import com.autominder.app.domain.util.DistanceUtil
 import com.autominder.app.ui.components.pressScale
-import com.autominder.app.ui.screens.dashboard.VehicleOperationalStatus
 import com.autominder.app.ui.theme.Exo2
 import com.autominder.app.ui.util.DistanceFormat
 
@@ -67,16 +63,16 @@ fun VehicleStatusCard(
         }
         VehicleOperationalStatus.DUE_SOON -> {
             AttentionBanner(
-                title = "Service coming up",
-                subtitle = "One item is due soon.",
+                title = stringResource(R.string.home_status_duesoon_title, 1),
+                subtitle = stringResource(R.string.status_due_soon),
                 isOverdue = false,
                 modifier = modifier
             )
         }
         VehicleOperationalStatus.OVERDUE -> {
             AttentionBanner(
-                title = "Attention needed",
-                subtitle = "One or more maintenance items are overdue.",
+                title = stringResource(R.string.home_status_overdue_title, 1),
+                subtitle = stringResource(R.string.home_subtitle_overdue),
                 isOverdue = true,
                 modifier = modifier
             )
@@ -93,40 +89,35 @@ fun VehicleStatusCard(
 
 @Composable
 private fun HealthyBanner(modifier: Modifier = Modifier) {
-    val greenBg = Color(0xFF10B981)
+    val containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+    val tintColor = MaterialTheme.colorScheme.primary
 
-    Box(
+    Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFFF0FDF4),
-                        Color(0xFFDCFCE7).copy(alpha = 0.6f)
-                    )
-                )
-            )
-            .padding(18.dp)
             .semantics {
                 contentDescription = "You're all caught up. Nothing needs attention right now."
-            }
+            },
+        shape = RoundedCornerShape(20.dp),
+        color = containerColor
     ) {
         Row(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
         ) {
             Surface(
                 shape = CircleShape,
-                color = greenBg,
+                color = tintColor,
                 modifier = Modifier.size(38.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -138,13 +129,13 @@ private fun HealthyBanner(modifier: Modifier = Modifier) {
                     fontFamily = Exo2,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF065F46)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     text = stringResource(R.string.home_status_healthy_desc),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF047857)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -156,13 +147,13 @@ private fun HealthyBanner(modifier: Modifier = Modifier) {
                     Icon(
                         imageVector = Icons.Rounded.AccessTime,
                         contentDescription = null,
-                        tint = Color(0xFF059669).copy(alpha = 0.8f),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = stringResource(R.string.home_status_updated_now),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF059669)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }

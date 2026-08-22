@@ -1,35 +1,34 @@
 /* AutoMinder — 2026 Website Design System */
-/* Racing Teal Brand | Responsive | Dark Mode */
+/* Midnight Cobalt Brand | ported from app/src/main/kotlin/.../ui/theme/Color.kt */
+/* Responsive | Dark Mode */
 
 :root {
-    --teal-50: #e0f5f2;
-    --teal-100: #b3e6df;
-    --teal-200: #80d6cb;
-    --teal-300: #4dc6b7;
-    --teal-400: #26b9a7;
-    --teal-500: #00ac98;
-    --teal-600: #009d8a;
-    --teal-700: #008a78;
-    --teal-800: #006B5F;
-    --teal-900: #004d44;
-    --teal-950: #002f2a;
+    /* Fixed brand mark — the literal launcher icon plate colour. Unlike
+       --primary below, this never changes with theme: the app icon itself
+       doesn't repaint in dark mode, so the logo badge shouldn't either. */
+    --brand-icon-bg: #0B4FC4;
+    --brand-icon-fg: #ffffff;
+    /* Fixed lighter cobalt for decorative gradients only — CobaltDark from
+       Color.kt, reused here regardless of theme so gradients stay two-tone
+       instead of collapsing to a solid fill in dark mode. */
+    --primary-light: #7AB4FF;
 
-    --surface: #ffffff;
-    --surface-dim: #f8fafa;
-    --surface-container: #f0f4f3;
-    --surface-container-high: #e8edec;
-    --on-surface: #1a1c1b;
-    --on-surface-variant: #3f4947;
-    --outline: #6f7976;
-    --outline-variant: #bfc9c6;
+    --surface: #F7F9FC;
+    --surface-dim: #D8DEE7;
+    --surface-container: #ECF1F8;
+    --surface-container-high: #E5EBF4;
+    --on-surface: #0E1420;
+    --on-surface-variant: #4A5568;
+    --outline: #77869A;
+    --outline-variant: #D5DEE8;
 
-    --primary: #006B5F;
+    --primary: #0B4FC4;
     --on-primary: #ffffff;
-    --primary-container: #72f8e2;
-    --on-primary-container: #00201c;
+    --primary-container: #D8E4FF;
+    --on-primary-container: #001B3F;
 
-    --error: #ba1a1a;
-    --error-container: #ffdad6;
+    --error: #B3261E;
+    --error-container: #FBDAD7;
 
     --radius-sm: 8px;
     --radius-md: 16px;
@@ -51,22 +50,22 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --surface: #1a1c1b;
-        --surface-dim: #111312;
-        --surface-container: #1e2120;
-        --surface-container-high: #282b2a;
-        --on-surface: #e1e3e1;
-        --on-surface-variant: #bfc9c6;
-        --outline: #899390;
-        --outline-variant: #3f4947;
+        --surface: #0F1316;
+        --surface-dim: #0B0E11;
+        --surface-container: #171C20;
+        --surface-container-high: #1F262B;
+        --on-surface: #E8EDF1;
+        --on-surface-variant: #98A4AD;
+        --outline: #606F7B;
+        --outline-variant: #2C353B;
 
-        --primary: #50dbc6;
-        --on-primary: #003731;
-        --primary-container: #005048;
-        --on-primary-container: #72f8e2;
+        --primary: #7AB4FF;
+        --on-primary: #0F1316;
+        --primary-container: #12304F;
+        --on-primary-container: #CFE3FF;
 
-        --error: #ffb4ab;
-        --error-container: #93000a;
+        --error: #FF8A80;
+        --error-container: #40201E;
 
         --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
         --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
@@ -156,13 +155,14 @@ button {
     justify-content: center;
     width: 40px;
     height: 40px;
-    background: var(--primary);
-    color: var(--on-primary);
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 14px;
+    background: var(--brand-icon-bg);
+    color: var(--brand-icon-fg);
     border-radius: var(--radius-sm);
-    letter-spacing: -0.5px;
+}
+
+.nav-logo svg {
+    width: 22px;
+    height: 22px;
 }
 
 .nav-title {
@@ -262,15 +262,15 @@ button {
     inset: 0;
     background:
         radial-gradient(ellipse 80% 60% at 50% 0%, var(--primary-container) 0%, transparent 70%),
-        radial-gradient(ellipse 60% 40% at 80% 80%, var(--teal-100) 0%, transparent 50%);
+        radial-gradient(ellipse 60% 40% at 80% 80%, var(--primary-container) 0%, transparent 50%);
     opacity: 0.4;
 }
 
 @media (prefers-color-scheme: dark) {
     .hero-bg {
         background:
-            radial-gradient(ellipse 80% 60% at 50% 0%, var(--teal-950) 0%, transparent 70%),
-            radial-gradient(ellipse 60% 40% at 80% 80%, var(--teal-900) 0%, transparent 50%);
+            radial-gradient(ellipse 80% 60% at 50% 0%, var(--primary-container) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 40% at 80% 80%, var(--primary-container) 0%, transparent 50%);
         opacity: 0.6;
     }
 }
@@ -306,7 +306,7 @@ button {
 }
 
 .hero-accent {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--teal-500) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -397,20 +397,21 @@ button {
     margin-bottom: 20px;
 }
 
-.feature-icon--remind { background: #e8f5e9; color: #2e7d32; }
-.feature-icon--fuel { background: #fff3e0; color: #e65100; }
-.feature-icon--history { background: #e3f2fd; color: #1565c0; }
-.feature-icon--multi { background: #fce4ec; color: #c62828; }
-.feature-icon--widget { background: #f3e5f5; color: #6a1b9a; }
-.feature-icon--privacy { background: #e0f2f1; color: #00695c; }
+/* One accent, not six — the app never mixes hues for plain categorisation
+   (see ServiceTypeGrid.kt: selected state tints with MaterialTheme.colorScheme.primary,
+   nothing else). Every feature chip shares the same Midnight Cobalt tone. */
+.feature-icon--remind,
+.feature-icon--fuel,
+.feature-icon--history,
+.feature-icon--multi,
+.feature-icon--widget,
+.feature-icon--privacy {
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+}
 
 @media (prefers-color-scheme: dark) {
-    .feature-icon--remind { background: #1b5e20; color: #a5d6a7; }
-    .feature-icon--fuel { background: #bf360c; color: #ffcc80; }
-    .feature-icon--history { background: #0d47a1; color: #90caf9; }
-    .feature-icon--multi { background: #b71c1c; color: #ef9a9a; }
-    .feature-icon--widget { background: #4a148c; color: #ce93d8; }
-    .feature-icon--privacy { background: #004d40; color: #80cbc4; }
+    /* Same single-accent chip in dark mode — tokens already flip via the media query above. */
 }
 
 .feature-card h3 {
@@ -425,6 +426,42 @@ button {
     font-size: 0.95rem;
     color: var(--on-surface-variant);
     line-height: 1.6;
+}
+
+.feature-card p a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Screenshots — real device captures, not renders */
+.screenshots {
+    padding: 60px 0 100px;
+}
+
+.screenshots-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 340px));
+    justify-content: center;
+    gap: 40px;
+    margin-top: 48px;
+}
+
+.screenshot-card {
+    text-align: center;
+}
+
+.screenshot-card img {
+    width: 100%;
+    border-radius: 32px;
+    border: 1px solid var(--outline-variant);
+    box-shadow: var(--shadow-xl);
+}
+
+.screenshot-card figcaption {
+    margin-top: 16px;
+    font-size: 0.9rem;
+    color: var(--on-surface-variant);
 }
 
 /* Why Section */
@@ -481,7 +518,7 @@ button {
 
 .cta-card {
     text-align: center;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--teal-600) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     border-radius: var(--radius-xl);
     padding: 80px 40px;
     color: var(--on-primary);
@@ -688,6 +725,274 @@ button {
     margin-bottom: 0;
 }
 
+/* Free Tools (maintenance schedule generator, etc.) */
+.tool-header {
+    padding: calc(var(--nav-height) + 60px) 0 40px;
+    text-align: center;
+    background: var(--surface-dim);
+    border-bottom: 1px solid var(--outline-variant);
+}
+
+.tool-header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 4vw, 2.8rem);
+    font-weight: 800;
+    color: var(--on-surface);
+    margin-bottom: 8px;
+}
+
+.tool-header .subtitle {
+    font-size: 1.05rem;
+    color: var(--on-surface-variant);
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.tool-trust-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.tool-body {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 100px;
+}
+
+.tool-form {
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    margin-bottom: 40px;
+}
+
+.tool-field {
+    margin-bottom: 24px;
+}
+
+.tool-field:last-child {
+    margin-bottom: 0;
+}
+
+.tool-field label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--on-surface);
+    margin-bottom: 8px;
+}
+
+.tool-field .field-hint {
+    font-size: 0.82rem;
+    color: var(--on-surface-variant);
+    margin-top: 6px;
+}
+
+.tool-odometer-row {
+    display: flex;
+    gap: 10px;
+}
+
+.tool-odometer-row input {
+    flex: 1;
+}
+
+.unit-toggle {
+    display: flex;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.unit-toggle button {
+    border: none;
+    background: var(--surface);
+    color: var(--on-surface-variant);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0 16px;
+    cursor: pointer;
+}
+
+.unit-toggle button.active {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+
+.tool-field input[type="number"],
+.tool-field input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--font-body);
+    font-size: 1rem;
+}
+
+.tool-field input:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.driving-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.driving-option {
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+
+.driving-option .amount-label {
+    display: block;
+    font-weight: 700;
+    color: var(--on-surface);
+    font-size: 0.9rem;
+}
+
+.driving-option .amount-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+    margin-top: 2px;
+}
+
+.driving-option.active {
+    border-color: var(--primary);
+    background: var(--primary-container);
+}
+
+.driving-option.active .amount-label,
+.driving-option.active .amount-hint {
+    color: var(--on-primary-container);
+}
+
+.tool-submit {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.tool-results {
+    display: none;
+}
+
+.tool-results.visible {
+    display: block;
+}
+
+.results-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.results-heading h2 {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    color: var(--on-surface);
+}
+
+.results-print {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.plan-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+}
+
+.plan-item-rank {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--outline);
+    min-width: 22px;
+}
+
+.plan-item-body {
+    flex: 1;
+}
+
+.plan-item-label {
+    font-weight: 700;
+    color: var(--on-surface);
+    font-size: 1rem;
+}
+
+.plan-item-detail {
+    font-size: 0.85rem;
+    color: var(--on-surface-variant);
+    margin-top: 2px;
+}
+
+.tool-disclaimer {
+    font-size: 0.82rem;
+    color: var(--on-surface-variant);
+    background: var(--surface-container);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin: 32px 0;
+    line-height: 1.6;
+}
+
+.tool-cta {
+    text-align: center;
+    background: var(--surface-container-high);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px;
+    margin-top: 8px;
+}
+
+.tool-cta h3 {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: var(--on-surface);
+    margin-bottom: 8px;
+}
+
+.tool-cta p {
+    color: var(--on-surface-variant);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+@media print {
+    .nav, .tool-form, .tool-cta, .footer, .results-print {
+        display: none !important;
+    }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .features-grid {
@@ -704,6 +1009,10 @@ button {
 }
 
 @media (max-width: 768px) {
+    .screenshots-grid {
+        grid-template-columns: minmax(0, 340px);
+    }
+
     .nav-links {
         display: none;
         position: absolute;

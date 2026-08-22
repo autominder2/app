@@ -34,10 +34,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.domain.util.VehicleDisplayNameFormatter
+import com.autominder.app.ui.components.AutoMinderServiceStatusBadge
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.ListSkeleton
-import com.autominder.app.ui.components.StatusChip
 import com.autominder.app.ui.components.premium.VehicleHeroCard
 import com.autominder.app.ui.components.premium.VehicleHeroVariant
 import com.autominder.app.ui.theme.LocalDistanceUnit
@@ -170,7 +171,7 @@ private fun VehicleListRow(
 ) {
     val vehicle = item.vehicle
     val distanceUnit = LocalDistanceUnit.current
-    val title = stringResource(R.string.vehicle_make_model, vehicle.make, vehicle.model)
+    val title = VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year)
     val yearText = vehicle.year.takeIf { it > 0 }?.toString()
     // A blank odometer field is stored as 0 (AddVehicleViewModel:
     // `toIntOrNull() ?: 0`), so 0 means "never entered" in practice — the
@@ -221,7 +222,7 @@ private fun VehicleListRow(
         photoUri = vehicle.photoUri,
         photoContentDescription = photoDescription,
         mergedContentDescription = mergedDescription,
-        statusChip = { StatusChip(status = item.status) },
+        statusChip = { AutoMinderServiceStatusBadge(status = item.status) },
         railStatus = item.status,
         concernText = concernText,
         onClick = onClick
@@ -233,7 +234,7 @@ private fun ServiceStatus.labelRes(): Int = when (this) {
     ServiceStatus.OVERDUE -> R.string.status_overdue
     ServiceStatus.DUE_SOON -> R.string.status_due_soon
     ServiceStatus.SNOOZED -> R.string.status_snoozed
-    ServiceStatus.OK -> R.string.status_ok
+    ServiceStatus.OK -> R.string.state_all_clear
     ServiceStatus.COMPLETED -> R.string.status_completed
     ServiceStatus.UNKNOWN -> R.string.status_unknown
 }

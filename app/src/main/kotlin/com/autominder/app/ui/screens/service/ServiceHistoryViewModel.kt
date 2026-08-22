@@ -168,7 +168,7 @@ class ServiceHistoryViewModel @Inject constructor(
                 exportFlow
             ) { allServices: List<Service>, vehicles: List<Vehicle>, unit: String, filter: ServiceFilterCriteria, exportInfo: Pair<Uri?, Boolean> ->
                 val (exportUri, isExporting) = exportInfo
-                val vehicleNameMap = vehicles.associate { it.id to "${it.make} ${it.model}" }
+                val vehicleNameMap = vehicles.associate { it.id to com.autominder.app.domain.util.VehicleDisplayNameFormatter.format(it.make, it.model, it.year) }
 
                 // 1. Filter logic
                 val filtered = allServices.filter { service ->

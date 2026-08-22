@@ -40,7 +40,7 @@ import coil3.request.crossfade
 import com.autominder.app.R
 import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.util.DistanceUtil
-import com.autominder.app.domain.util.VehicleDisplayName
+import com.autominder.app.domain.util.VehicleDisplayNameFormatter
 import com.autominder.app.ui.components.pressScale
 import com.autominder.app.ui.theme.Exo2
 import com.autominder.app.ui.theme.JetBrainsMono
@@ -57,12 +57,12 @@ fun ActiveVehicleCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val haptic = LocalHapticFeedback.current
-    val title = VehicleDisplayName.format(vehicle.make, vehicle.model, vehicle.year)
+    val title = VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year)
     val displayOdo = DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit)
     val odoText = if (vehicle.currentOdometer > 0) {
         "${DistanceFormat.grouped(displayOdo)} ${DistanceUtil.unitLabel(distanceUnit)}"
     } else {
-        "Odometer not set"
+        stringResource(R.string.mileage_not_added)
     }
 
     val hasMultipleCars = totalVehiclesCount > 1

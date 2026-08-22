@@ -3,6 +3,7 @@ package com.autominder.app.domain.usecase
 import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.Vehicle
+import com.autominder.app.domain.model.VehicleOperationalStatus
 import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.domain.repository.IVehicleRepository
 import kotlinx.coroutines.flow.Flow
@@ -16,7 +17,8 @@ data class VehicleWithStatus(
     val vehicle: Vehicle,
     val status: ServiceStatus,
     val overdueCount: Int = 0,
-    val dueSoonCount: Int = 0
+    val dueSoonCount: Int = 0,
+    val operationalStatus: VehicleOperationalStatus = VehicleOperationalStatus.HEALTHY
 )
 
 data class ReminderWithStatus(
@@ -44,7 +46,7 @@ class GetDashboardDataUseCase @Inject constructor(
             reminderRepository.getAllPendingReminders()
         ) { vehicles, allReminders ->
             val now = System.currentTimeMillis()
-            
+
             // 1. Calculate status for all reminders
             val remindersWithStatus = allReminders.map { reminder ->
                 val vehicle = vehicles.find { it.id == reminder.vehicleId }
@@ -62,26 +64,34 @@ class GetDashboardDataUseCase @Inject constructor(
             // 2. Aggregate status by vehicle
             val vehiclesWithStatus = vehicles.map { vehicle ->
                 val vehicleReminders = remindersWithStatus.filter { it.reminder.vehicleId == vehicle.id }
-                
-                // Overall vehicle status is the highest severity of its active reminders
+
+                val overdueCount = vehicleReminders.count { it.status == ServiceStatus.OVERDUE }
+                val dueSoonCount = vehicleReminders.count { it.status == ServiceStatus.DUE_SOON }
+
                 val overallStatus = vehicleReminders
                     .map { it.status }
                     .maxByOrNull { it.severity } ?: ServiceStatus.OK
 
-                val overdueCount = vehicleReminders.count { it.status == ServiceStatus.OVERDUE }
-                val dueSoonCount = vehicleReminders.count { it.status == ServiceStatus.DUE_SOON }
+                val operationalStatus = when {
+                    vehicle.currentOdometer <= 0 -> VehicleOperationalStatus.SETUP_INCOMPLETE
+                    overdueCount > 0 -> VehicleOperationalStatus.OVERDUE
+                    dueSoonCount > 0 -> VehicleOperationalStatus.DUE_SOON
+                    vehicleReminders.isNotEmpty() -> VehicleOperationalStatus.UPCOMING
+                    else -> VehicleOperationalStatus.HEALTHY
+                }
 
                 VehicleWithStatus(
                     vehicle = vehicle,
                     status = overallStatus,
                     overdueCount = overdueCount,
-                    dueSoonCount = dueSoonCount
+                    dueSoonCount = dueSoonCount,
+                    operationalStatus = operationalStatus
                 )
             }
 
             // 3. Overall dashboard alert count
-            val totalAlerts = remindersWithStatus.count { 
-                it.status == ServiceStatus.OVERDUE || it.status == ServiceStatus.DUE_SOON 
+            val totalAlerts = remindersWithStatus.count {
+                it.status == ServiceStatus.OVERDUE || it.status == ServiceStatus.DUE_SOON
             }
 
             // 4. Sorted list of upcoming/urgent reminders

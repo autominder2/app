@@ -5,23 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoMinder - Smart Car Maintenance Reminders</title>
     <meta name="description" content="Never miss an oil change again. AutoMinder tracks every service, reminds you before anything goes overdue, and logs your fuel efficiency — all offline.">
-    <meta name="theme-color" content="#006B5F">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="theme-color" content="#0B4FC4">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="AutoMinder — Smart Car Maintenance Reminders">
+    <meta property="og:description" content="Never miss an oil change again. AutoMinder tracks every service, reminds you before anything goes overdue, and logs your fuel efficiency — all offline.">
+    <meta property="og:url" content="https://com-autominder-app.web.app/">
+    <meta property="og:site_name" content="AutoMinder">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="AutoMinder — Smart Car Maintenance Reminders">
+    <meta name="twitter:description" content="Never miss an oil change again. AutoMinder tracks every service, reminds you before anything goes overdue, and logs your fuel efficiency — all offline.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@700;800&family=Nunito+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles.css?v=2">
 </head>
 <body>
     <nav class="nav">
         <div class="nav-inner">
             <a href="/" class="nav-brand">
-                <span class="nav-logo">AM</span>
+                <span class="nav-logo"><svg viewBox="0 0 108 108" fill="currentColor"><path d="M74,52 L68,38 C67,35 64,33 61,33 L47,33 C44,33 41,35 40,38 L34,52 L28,52 C26,52 24,54 24,56 L24,68 C24,70 26,72 28,72 L32,72 C32,75.3 34.7,78 38,78 C41.3,78 44,75.3 44,72 L64,72 C64,75.3 66.7,78 70,78 C73.3,78 76,75.3 76,72 L80,72 C82,72 84,70 84,68 L84,56 C84,54 82,52 80,52 Z M38,75 C36.3,75 35,73.7 35,72 C35,70.3 36.3,69 38,69 C39.7,69 41,70.3 41,72 C41,73.7 39.7,75 38,75 Z M70,75 C68.3,75 67,73.7 67,72 C67,70.3 68.3,69 70,69 C71.7,69 73,70.3 73,72 C73,73.7 71.7,75 70,75 Z M44,50 L48,38 L60,38 L64,50 Z"/></svg></span>
                 <span class="nav-title">AutoMinder</span>
             </a>
             <div class="nav-links">
                 <a href="#features">Features</a>
                 <a href="#why">Why Us</a>
+                <a href="/tools/maintenance-schedule.html">Free Tools</a>
                 <a href="/privacy.html">Privacy</a>
                 <a href="/support.html">Support</a>
                 <a href="https://play.google.com/store/apps/details?id=com.autominder.app" class="btn btn-sm">Get the App</a>
@@ -46,20 +55,36 @@
             </div>
             <div class="hero-stats">
                 <div class="stat">
-                    <span class="stat-num">98</span>
-                    <span class="stat-label">Kotlin Files</span>
+                    <span class="stat-num">0</span>
+                    <span class="stat-label">Accounts Required</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-num">0</span>
-                    <span class="stat-label">Data Uploaded</span>
+                    <span class="stat-num">16</span>
+                    <span class="stat-label">Service Types Tracked</span>
                 </div>
                 <div class="stat">
                     <span class="stat-num">6h</span>
-                    <span class="stat-label">Reminder Cadence</span>
+                    <span class="stat-label">Reminder Check Cadence</span>
                 </div>
             </div>
         </div>
     </header>
+
+    <section class="screenshots">
+        <div class="container">
+            <h2 class="section-title">Real screens. Real data.<br>No mockups.</h2>
+            <div class="screenshots-grid">
+                <figure class="screenshot-card">
+                    <img src="/assets/screenshots/dashboard.png" alt="AutoMinder dashboard showing a Toyota Camry, upcoming tire rotation, wiper blades, and oil service reminders" loading="lazy">
+                    <figcaption>Home — everything due, at a glance</figcaption>
+                </figure>
+                <figure class="screenshot-card">
+                    <img src="/assets/screenshots/vehicle-detail.png" alt="AutoMinder vehicle detail screen for a Toyota Camry with odometer, log service and add fuel actions, and the next service date" loading="lazy">
+                    <figcaption>Vehicle detail — log a service in seconds</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
 
     <section id="features" class="features">
         <div class="container">
@@ -105,7 +130,7 @@
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
                     </div>
                     <h3>Privacy First</h3>
-                    <p>No accounts. No cloud sync. Your vehicle records never leave your device — period. We see only anonymous crash and usage counts.</p>
+                    <p>No accounts. No cloud sync. Your vehicle records never leave your device — period. See exactly what's collected for ads and stability in our <a href="/privacy.html">Privacy Policy</a>.</p>
                 </div>
             </div>
         </div>
@@ -137,6 +162,16 @@
     <section class="cta-section">
         <div class="container">
             <div class="cta-card">
+                <h2>Not ready to install yet?</h2>
+                <p>Try the free maintenance schedule generator — same math the app uses, runs entirely in your browser, nothing uploaded.</p>
+                <a href="/tools/maintenance-schedule.html" class="btn btn-primary btn-lg">Generate My Schedule — Free</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-card">
                 <h2>Ready to stop guessing?</h2>
                 <p>Download AutoMinder and never miss another oil change, tire rotation, or registration renewal.</p>
                 <a href="https://play.google.com/store/apps/details?id=com.autominder.app" class="btn btn-primary btn-lg">Get AutoMinder Free</a>
@@ -147,7 +182,7 @@
     <footer class="footer">
         <div class="container footer-inner">
             <div class="footer-brand">
-                <span class="nav-logo">AM</span>
+                <span class="nav-logo"><svg viewBox="0 0 108 108" fill="currentColor"><path d="M74,52 L68,38 C67,35 64,33 61,33 L47,33 C44,33 41,35 40,38 L34,52 L28,52 C26,52 24,54 24,56 L24,68 C24,70 26,72 28,72 L32,72 C32,75.3 34.7,78 38,78 C41.3,78 44,75.3 44,72 L64,72 C64,75.3 66.7,78 70,78 C73.3,78 76,75.3 76,72 L80,72 C82,72 84,70 84,68 L84,56 C84,54 82,52 80,52 Z M38,75 C36.3,75 35,73.7 35,72 C35,70.3 36.3,69 38,69 C39.7,69 41,70.3 41,72 C41,73.7 39.7,75 38,75 Z M70,75 C68.3,75 67,73.7 67,72 C67,70.3 68.3,69 70,69 C71.7,69 73,70.3 73,72 C73,73.7 71.7,75 70,75 Z M44,50 L48,38 L60,38 L64,50 Z"/></svg></span>
                 <span>AutoMinder</span>
             </div>
             <div class="footer-links">

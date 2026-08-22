@@ -55,11 +55,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
+import com.autominder.app.domain.model.VehicleOperationalStatus
 import com.autominder.app.domain.usecase.PrioritizedReminder
 import com.autominder.app.domain.usecase.ReminderExplanation
 import com.autominder.app.domain.usecase.VehicleWithStatus
 import com.autominder.app.domain.util.DistanceUtil
-import com.autominder.app.domain.util.VehicleDisplayName
+import com.autominder.app.domain.util.VehicleDisplayNameFormatter
 import com.autominder.app.ui.components.EmptyState
 import com.autominder.app.ui.components.pressScale
 import com.autominder.app.ui.screens.dashboard.components.ActiveVehicleCard
@@ -436,7 +437,7 @@ private fun VehicleSwitcherRow(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val vehicle = item.vehicle
-    val title = VehicleDisplayName.format(vehicle.make, vehicle.model, vehicle.year)
+    val title = VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year)
     val displayOdo = DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit)
     val odoText = "${DistanceFormat.grouped(displayOdo)} ${DistanceUtil.unitLabel(distanceUnit)}"
 
