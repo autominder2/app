@@ -1,0 +1,94 @@
+# ─── Secrets / Credentials ─────────────────────────────────────────────────
+local.properties
+*.keystore
+*.jks
+.env
+.env.*
+
+# ─── Google Services ────────────────────────────────────────────────────────
+google-services.json
+GoogleService-Info.plist
+
+# ─── Build Outputs ──────────────────────────────────────────────────────────
+/build
+**/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# ─── IDE / Android Studio ───────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+.DS_Store
+*.swp
+*.orig
+
+# ─── Gradle ─────────────────────────────────────────────────────────────────
+.gradle/
+
+# ─── Kotlin / Java ──────────────────────────────────────────────────────────
+/out/
+*.class
+
+# ─── OS ─────────────────────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─── Logs & build output dumps ─────────────────────────────────────────────
+*.log
+build_*.txt
+build_*.log
+all_files*.txt
+test_out.txt
+findings.txt
+gate_full_log.txt
+gate_summary.txt
+
+# ─── Agent / social media / non-project files ──────────────────────────────
+.gradle-user-home/
+.kotlin/
+.agents/
+# Claude Code: keep local settings ignored, but version skills and agents
+.claude/*
+!.claude/skills/
+!.claude/agents/
+!.claude/rules/
+competitor_*.md
+*_reels_*.md
+~$*
+
+# repomix packed output — regenerate, never commit
+repomix-output.*
+
+# session scratch — never commit
+emulator_out.txt
+HANDOFF_SESSION_*.md
+repomix.config.json
+
+# ─── Graphify knowledge graph ───────────────────────────────────────────────
+# graphify-out/ itself is committed (shared map for the whole team); only
+# per-machine/per-run local state is excluded.
+graphify-out/cost.json
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+
+# ─── UI audit screenshots ───────────────────────────────────────────────────
+# Device captures from visual QA runs — ~18MB and regenerated on demand.
+# Git history is append-only, so committing binaries this size inflates every
+# future clone permanently. Regenerate with the visual-qa skill instead.
+screenshots/
+# Large regenerable graph artifacts. graph.json is the queryable data and
+# graph.html the human viewer — together ~5.4MB. With the post-commit rebuild
+# hook active, tracking them would append a fresh 5.4MB blob to history on
+# every commit, and git history never shrinks. Rebuilding is local tree-sitter
+# parsing with no API cost, so each machine builds its own.
+graphify-out/graph.html
+graphify-out/graph.json
+graphify-out/*/
+graphify-out/*.sig
+graphify-out/manifest.json

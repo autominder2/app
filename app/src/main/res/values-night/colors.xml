@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash ground, dark theme — Night Garage ground.
+
+         Overrides the base splash_background by resource name, the normal
+         Android qualifier mechanism — NOT a second, differently-named colour.
+         The value itself was #001F1A, a second retired teal that survived the
+         rebrand because the two-name split meant only the day resource had
+         been looked at. The naming split was the actual defect: it also left
+         this colour with no base-folder declaration, which lint flags as
+         MissingDefaultResource — a real crash risk in configurations that
+         don't resolve the night qualifier, not a false positive. -->
+    <color name="splash_background">#0F1316</color>
+</resources>

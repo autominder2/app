@@ -1,0 +1,934 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">AutoMinder</string>
+
+    <!-- Bottom navigation — 4 tabs: Home / Vehicles / Records / Settings -->
+    <string name="nav_home">Home</string>
+    <string name="nav_vehicles">Vehicles</string>
+    <string name="nav_records">Records</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">My Vehicles</string>
+    <string name="dashboard_empty_title">No vehicles yet</string>
+    <string name="dashboard_empty_subtitle">Tap the + button to add your first vehicle</string>
+
+    <!-- Actions -->
+    <string name="cd_add_vehicle">Add vehicle</string>
+    <string name="retry">Retry</string>
+
+    <!-- Errors -->
+    <string name="error_title">Something went wrong</string>
+
+    <!-- ViewModel error resources — hardcoded-string cleanup pass (2026-07).
+         Replaces raw e.message display: user-facing text is always this
+         localized fallback; the real exception detail goes to Timber only. -->
+    <string name="error_make_model_required">Make and model are required</string>
+    <string name="error_invalid_odometer">Please enter a valid odometer reading</string>
+    <string name="error_select_service_date">Please select a service date</string>
+    <string name="error_custom_service_name_required">Please specify a name for the custom service</string>
+    <string name="error_invalid_cost">Please enter a valid cost</string>
+    <string name="error_invalid_fuel_amount">Enter a valid fuel amount and odometer</string>
+    <string name="error_cost_negative">Cost cannot be negative</string>
+    <string name="error_custom_reminder_name_required">Please specify a name for your custom reminder</string>
+    <string name="error_reminder_due_required">Please specify a due date or due odometer</string>
+    <string name="error_service_not_found">Service not found</string>
+    <string name="error_vehicle_not_found">Vehicle not found</string>
+    <string name="error_reminder_not_found">Reminder not found</string>
+    <string name="label_unknown_vehicle">Unknown vehicle</string>
+    <string name="error_odometer_below_current">Odometer reading cannot be lower than current (%1$s)</string>
+    <string name="error_load_vehicles_failed">Failed to load vehicles</string>
+    <string name="error_load_mileage_failed">Failed to load mileage logs</string>
+    <string name="error_restore_mileage_failed">Failed to restore log entry</string>
+    <string name="error_add_mileage_failed">Failed to add mileage log</string>
+    <string name="error_delete_mileage_failed">Failed to delete log entry</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_load_service_failed">Failed to load service</string>
+    <string name="error_delete_service_failed">Failed to delete service</string>
+    <string name="error_load_vehicle_failed">Failed to load vehicle</string>
+    <string name="error_update_odometer_failed">Failed to update odometer</string>
+    <string name="error_export_failed">Export failed</string>
+    <string name="error_archive_vehicle_failed">Failed to archive vehicle</string>
+    <string name="error_complete_reminder_failed">Failed to complete reminder</string>
+    <string name="error_snooze_reminder_failed">Failed to snooze reminder</string>
+    <string name="error_save_vehicle_failed">Failed to save vehicle</string>
+    <string name="error_save_service_failed">Failed to save service</string>
+    <string name="error_load_records_failed">Failed to load records</string>
+    <string name="error_save_reminder_failed">Failed to save reminder</string>
+    <string name="error_save_fuel_failed">Failed to save</string>
+    <string name="error_load_reminder_failed">Failed to load reminder</string>
+    <string name="error_delete_reminder_failed">Failed to delete reminder</string>
+    <string name="error_load_fuel_failed">Failed to load fuel entries</string>
+
+    <!-- domain/validation/Validators.kt messages — mapped from
+         ValidationErrorCode at the ViewModel boundary (Validators.kt itself
+         stays pure Kotlin, no Android imports). -->
+    <string name="validation_year_too_early">Year must be 1900 or later</string>
+    <string name="validation_year_too_late">Year cannot be later than %1$d</string>
+    <string name="validation_odometer_negative">Odometer reading cannot be negative</string>
+    <string name="validation_field_required">%1$s is required</string>
+    <string name="validation_vin_invalid_format">VIN must be exactly 17 alphanumeric characters</string>
+
+    <!-- Snackbars -->
+    <string name="vehicle_saved">Vehicle saved</string>
+    <string name="service_logged_successfully">Service logged successfully</string>
+    <string name="reminder_saved">Reminder saved</string>
+    <string name="reminder_marked_complete">Reminder marked complete</string>
+    <string name="reminder_snoozed">Reminder snoozed for 14 days</string>
+
+    <!-- Reminder Status -->
+    <string name="status_overdue">Overdue</string>
+    <string name="status_due_soon">Due soon</string>
+    <string name="status_snoozed">Snoozed</string>
+    <string name="status_ok">OK</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_unknown">Unknown</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_description">Vehicle service and maintenance reminders</string>
+    <string name="notification_overdue">%1$s — overdue service reminder</string>
+    <string name="notification_due_soon">%1$s — service coming up soon</string>
+
+    <!-- Reminder notification content. These were hardcoded English literals in
+         ReminderCheckWorker until 2026-08-16; notifications are the app's
+         primary surface and were its least localized part. -->
+    <string name="notification_title_overdue">Overdue: %1$s</string>
+    <string name="notification_title_due_soon">Due soon: %1$s</string>
+    <string name="notification_body_separator"> · </string>
+    <plurals name="notification_days_overdue">
+        <item quantity="one">%1$d day overdue</item>
+        <item quantity="other">%1$d days overdue</item>
+    </plurals>
+    <plurals name="notification_days_until">
+        <item quantity="one">due in %1$d day</item>
+        <item quantity="other">due in %1$d days</item>
+    </plurals>
+    <string name="notification_due_today">due today</string>
+    <string name="notification_distance_overdue">%1$s overdue</string>
+    <string name="notification_distance_remaining">%1$s remaining</string>
+    <string name="notification_due_by_odometer">due now by odometer</string>
+
+    <!-- Staleness heartbeat: shown when the background check has not completed
+         recently, which on aggressive-OEM devices means the reminder engine has
+         been killed. Telling the user beats silently failing. -->
+    <string name="reminders_delayed_title">Reminders may be delayed</string>
+    <string name="reminders_delayed_body">AutoMinder hasn\'t been able to check your vehicles since %1$s.</string>
+    <string name="reminders_delayed_body_never">AutoMinder hasn\'t been able to check your vehicles in the background yet.</string>
+    <string name="reminders_delayed_action">How to fix this</string>
+
+    <!-- Shared Actions -->
+    <string name="action_back">Back</string>
+    <string name="action_save">Save</string>
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_archive">Archive</string>
+    <string name="action_snooze">Snooze</string>
+    <string name="action_done">Done</string>
+    <string name="action_add_vehicle">Add vehicle</string>
+    <string name="action_add_photo">Add photo</string>
+    <string name="action_save_vehicle">Save Vehicle</string>
+    <string name="action_save_changes">Save changes</string>
+    <string name="action_save_reminder">Save reminder</string>
+    <string name="action_saving">Saving…</string>
+
+    <!-- Shared Labels -->
+    <string name="label_make">Make</string>
+    <string name="label_model">Model</string>
+    <string name="label_year">Year</string>
+    <string name="label_current_odometer_km">Current Odometer (km)</string>
+    <string name="label_plate_number">Plate number</string>
+    <string name="label_vin_optional">VIN (optional)</string>
+    <string name="label_notes_optional">Notes (optional)</string>
+    <string name="label_service_type">Service type</string>
+    <string name="label_reminder_name">Reminder name</string>
+    <string name="label_reminder_name_placeholder">e.g. Brake Fluid Flush</string>
+    <string name="label_due_at_odometer_km">Due at odometer (km)</string>
+    <string name="label_due_date_optional">Due date (optional)</string>
+    <string name="label_select_date">Select date</string>
+    <string name="label_interval_km">Repeat every (km)</string>
+    <string name="label_interval_km_placeholder">e.g. 8000</string>
+    <string name="label_interval_days">Repeat every (days)</string>
+    <string name="label_interval_days_placeholder">e.g. 180</string>
+
+    <!-- Content Descriptions -->
+    <string name="cd_vehicle_photo">Vehicle photo</string>
+    <string name="cd_add_photo">Add photo</string>
+    <string name="cd_add_reminder">Add reminder</string>
+    <string name="cd_vehicle_photo_description">%1$s %2$s</string>
+
+    <!-- Shared Formatted -->
+    <string name="vehicle_make_model">%1$s %2$s</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_top_bar_title">AutoMinder</string>
+    <plurals name="dashboard_attention_headline">
+        <item quantity="one">%1$d service needs attention</item>
+        <item quantity="other">%1$d services need attention</item>
+    </plurals>
+    <string name="dashboard_all_clear_headline">All clear</string>
+    <string name="dashboard_all_clear_supporting">Nothing needs attention right now.</string>
+    <string name="dashboard_cockpit_supporting">Fix the small stuff before it becomes expensive.</string>
+    <string name="dashboard_section_attention">Needs attention</string>
+    <string name="dashboard_section_vehicles">Your vehicles</string>
+    <string name="dashboard_no_vehicles_title">No vehicles yet</string>
+    <string name="dashboard_no_vehicles_subtitle">Add your first vehicle to start tracking maintenance.</string>
+    <string name="dashboard_error">Could not load dashboard</string>
+    <string name="dashboard_vehicle_summary">%1$d • %2$d km</string>
+    <plurals name="dashboard_overdue_count">
+        <item quantity="one">%1$d overdue</item>
+        <item quantity="other">%1$d overdue</item>
+    </plurals>
+    <plurals name="dashboard_due_soon_count">
+        <item quantity="one">%1$d due soon</item>
+        <item quantity="other">%1$d due soon</item>
+    </plurals>
+
+    <!-- Vehicle List Screen -->
+    <string name="vehicle_list_title">My vehicles</string>
+    <string name="vehicle_list_empty_title">No vehicles yet</string>
+    <string name="vehicle_list_empty_subtitle">Tap the + button to add your first vehicle.</string>
+    <string name="vehicle_list_odometer_km">%1$d km</string>
+    <string name="vehicle_list_concern_overdue">%1$s is overdue</string>
+    <string name="vehicle_list_concern_due_soon">%1$s is due soon</string>
+    <string name="vehicle_list_no_reminders">No reminders yet</string>
+    <string name="vehicle_list_mileage_not_added">Mileage not added</string>
+
+    <!-- Add Vehicle Screen -->
+    <string name="add_vehicle_title">Add vehicle</string>
+
+    <!-- Edit Vehicle Screen -->
+    <string name="edit_vehicle_title">Edit vehicle</string>
+
+    <!-- Vehicle Detail Screen -->
+    <string name="vehicle_detail_title">Vehicle details</string>
+    <string name="vehicle_detail_not_found">Vehicle not found</string>
+    <string name="vehicle_detail_not_found_subtitle">This vehicle may have been deleted.</string>
+    <string name="vehicle_detail_unknown_error">Unknown error</string>
+    <string name="vehicle_detail_odometer">Odometer</string>
+    <string name="vehicle_detail_odometer_km">%1$d km</string>
+    <string name="vehicle_detail_log_service">Log service</string>
+    <string name="vehicle_detail_mileage">Mileage</string>
+    <string name="vehicle_detail_no_reminders">No reminders yet. Tap + to add one.</string>
+    <string name="vehicle_detail_due_date">Due: %1$s</string>
+    <string name="vehicle_detail_forecast">≈ %1$s %2$s left · expect it around %3$s</string>
+    <string name="vehicle_detail_overdue_by_km">Overdue by %1$s %2$s</string>
+    <!-- Shown instead of the exact distance once a reminder is more than one
+         full service interval past due, where the number stops informing and
+         starts looking like a defect. -->
+    <string name="reminder_overdue_log_to_reset">Log a service to reset tracking</string>
+    <!-- The dashboard's second line for a reminder overdue on mileage past that
+         ceiling. The odometer it was due at is real, is bounded by the service
+         plan rather than by how far the car has since travelled, and differs per
+         row — unlike the instruction above, which is identical on every row. -->
+    <string name="reminder_was_due_at">Was due at %1$s %2$s</string>
+    <string name="vehicle_detail_show_all">Show all (%1$d)</string>
+    <string name="vehicle_detail_show_less">Show less</string>
+    <string name="vehicle_detail_start_with">Start with: %1$s</string>
+    <string name="cd_more_options">More options</string>
+    <string name="vehicle_detail_needs_attention">Needs attention</string>
+    <string name="vehicle_detail_upcoming">Upcoming</string>
+    <string name="vehicle_detail_all_clear">All clear — nothing needs attention.</string>
+    <string name="vehicle_detail_all_clear_until">All clear — next service expected around %1$s.</string>
+
+    <!-- Weekly digest notification -->
+    <string name="digest_title">Your weekly car check</string>
+    <!-- tools:ignore — real pluralization would need getQuantityString in
+         WeeklyDigestWorker.kt, which is out of scope (WorkManager files are
+         locked for this pass); count phrasing here is acceptable as-is. -->
+    <plurals name="digest_summary">
+        <item quantity="one">%1$d service needs attention</item>
+        <item quantity="other">%1$d services need attention</item>
+    </plurals>
+    <string name="digest_status_overdue">overdue</string>
+    <string name="digest_status_due_soon">due soon</string>
+
+    <!-- Reminder detail sheet -->
+    <string name="reminder_detail_severity_overdue">Overdue — act now</string>
+    <string name="reminder_detail_severity_due_soon">Due soon — plan it</string>
+    <string name="reminder_detail_severity_snoozed">Snoozed</string>
+    <string name="reminder_detail_severity_ok">On schedule</string>
+    <string name="reminder_detail_timing">Your timing</string>
+    <string name="reminder_detail_timing_overdue">This is past due — schedule it as soon as you can.</string>
+    <string name="reminder_detail_timing_unset">No schedule set — edit this reminder to add one.</string>
+    <string name="reminder_detail_what_it_means">What it means</string>
+    <string name="reminder_detail_can_it_wait">Can it wait?</string>
+
+    <!-- Service knowledge base — plain language, no jargon -->
+    <string name="info_oil_what">Engine oil lubricates and cools the engine\'s moving parts. It degrades with distance and with time — even when the car mostly sits.</string>
+    <string name="info_oil_wait">A little while, yes. But running long past the interval accelerates engine wear — the most expensive damage a routine service can prevent.</string>
+    <string name="info_tires_what">Front and rear tires wear at different rates. Rotating them evens out the wear so the set lasts longer and grips predictably.</string>
+    <string name="info_tires_wait">Briefly, yes — but uneven wear compounds. Skipped rotations can cut thousands of kilometres from a tire set\'s life.</string>
+    <string name="info_brakes_what">Pads, discs and brake fluid wear gradually. An inspection catches thinning pads before they start damaging the discs.</string>
+    <string name="info_brakes_wait">Not if you hear grinding or feel vibration when braking. Worn pads quickly ruin discs and multiply the repair cost — brakes are not a wait-and-see system.</string>
+    <string name="info_battery_what">Car batteries age chemically, typically lasting 3–5 years. Cold mornings and lots of short trips age them faster.</string>
+    <string name="info_battery_wait">Usually it warns you first — slow cranking on cold starts. If yours is past 4 years, have it tested before winter rather than waiting for a no-start.</string>
+    <string name="info_airfilter_what">The engine air filter keeps dust out of the combustion chambers. A clogged filter chokes airflow.</string>
+    <string name="info_airfilter_wait">Yes, for a while — a dirty filter costs fuel economy and performance long before it causes any damage.</string>
+    <string name="info_cabinfilter_what">Filters the air you breathe inside the car — pollen, dust and soot.</string>
+    <string name="info_cabinfilter_wait">Yes — there\'s no mechanical risk. But a saturated filter means weak airflow, windows that fog up, and musty smells.</string>
+    <string name="info_transmission_what">Transmission fluid lubricates and cools the gearbox. It degrades slowly and is the easiest interval to forget.</string>
+    <string name="info_transmission_wait">You can schedule ahead, but don\'t skip it — old fluid is a leading cause of transmission failure, one of the costliest repairs on any car.</string>
+    <string name="info_coolant_what">Coolant carries heat away from the engine and prevents corrosion inside it. Its protective additives wear out over the years.</string>
+    <string name="info_coolant_wait">Short-term, yes. Long-term, degraded coolant corrodes the radiator and water pump from the inside out.</string>
+    <string name="info_sparkplugs_what">Spark plugs ignite the fuel. Worn plugs misfire, waste fuel, and strain the ignition coils.</string>
+    <string name="info_sparkplugs_wait">For a while — but severely worn plugs can take the much pricier ignition coils with them.</string>
+    <string name="info_timingbelt_what">The timing belt keeps the engine\'s rotating parts synchronized. It\'s rubber — it ages whether you drive or not.</string>
+    <string name="info_timingbelt_wait">This is the one interval never to gamble on. If the belt snaps, the engine destroys itself in seconds. Replace it on schedule.</string>
+    <string name="info_wipers_what">Wiper rubber hardens and splits with sun and frost, usually within a year or two.</string>
+    <string name="info_wipers_wait">Only until the first heavy rain at night. Streaking wipers are a visibility risk, and the fix takes minutes.</string>
+    <string name="info_insurance_what">Your policy has a fixed expiry date, and driving uninsured is illegal in most places.</string>
+    <string name="info_insurance_wait">No. A lapse can void claims, bring fines, and raise your future premiums.</string>
+    <string name="info_registration_what">Vehicle registration must be renewed on the schedule set by your local authority.</string>
+    <string name="info_registration_wait">No — driving on expired registration risks fines and can complicate insurance claims.</string>
+    <string name="info_inspection_what">Periodic technical inspection verifies the car is roadworthy and legal to drive.</string>
+    <string name="info_inspection_wait">Only until the deadline. Driving past it usually means fines, and it can void insurance cover.</string>
+    <string name="info_emissions_what">Emissions testing checks that the exhaust system meets legal limits.</string>
+    <string name="info_emissions_wait">Only until the deadline — an expired certificate carries the same legal risk as a failed one.</string>
+    <string name="info_custom_what">A reminder you created for this vehicle.</string>
+    <string name="info_custom_wait">You set this schedule — you know it best. Check the notes you saved with it.</string>
+    <string name="vehicle_detail_due_at_odometer">Due at: %1$d km</string>
+    <string name="vehicle_detail_cost_this_year">This year</string>
+    <string name="vehicle_detail_cost_all_time">All time</string>
+
+    <!-- Add Reminder Screen -->
+    <string name="add_reminder_title">Add reminder</string>
+
+    <!-- Edit Reminder Screen -->
+    <string name="edit_reminder_title">Edit reminder</string>
+    <string name="edit_reminder_delete">Delete reminder</string>
+    <string name="edit_reminder_delete_title">Delete reminder</string>
+    <string name="edit_reminder_delete_message">Are you sure you want to delete this reminder? This action cannot be undone.</string>
+
+    <!-- Add Service Screen -->
+    <string name="add_service_title">Log service</string>
+
+    <!-- Service type labels (UI-layer localization of domain ServiceType) -->
+    <string name="service_type_oil_change">Oil change</string>
+    <string name="service_type_tire_rotation">Tyre rotation</string>
+    <string name="service_type_brake_service">Brake service</string>
+    <string name="service_type_battery">Battery</string>
+    <string name="service_type_air_filter">Air filter</string>
+    <string name="service_type_cabin_filter">Cabin filter</string>
+    <string name="service_type_transmission">Transmission</string>
+    <string name="service_type_coolant">Coolant</string>
+    <string name="service_type_spark_plugs">Spark plugs</string>
+    <string name="service_type_timing_belt">Timing belt</string>
+    <string name="service_type_wiper_blades">Wiper blades</string>
+    <string name="service_type_insurance">Insurance</string>
+    <string name="service_type_registration">Registration</string>
+    <string name="service_type_inspection">Inspection</string>
+    <string name="service_type_emissions_test">Emissions test</string>
+    <!-- Log Service — the fast path -->
+    <string name="add_service_what_was_done">What was done?</string>
+    <string name="add_service_recently_used">Recently used</string>
+    <string name="add_service_common">Common</string>
+    <string name="add_service_view_all">View all services</string>
+    <string name="add_service_all_services">All services</string>
+    <string name="add_service_vehicle_context">%1$s · %2$s</string>
+    <string name="service_type_custom">Custom</string>
+    <string name="add_service_name_label">Service name</string>
+    <string name="add_service_name_placeholder">e.g. Brake fluid flush</string>
+    <string name="add_service_odometer_label">Odometer at service (%1$s)</string>
+    <string name="add_service_date_label">Service date</string>
+    <string name="add_service_select_date">Select date</string>
+    <string name="add_service_cost_label">Cost (optional)</string>
+    <string name="add_service_cost_placeholder">0.00</string>
+    <string name="add_service_cost_prefix">$</string>
+    <string name="add_service_shop_label">Shop name (optional)</string>
+    <string name="add_service_notes_label">Notes (optional)</string>
+    <string name="add_service_saving">Saving\u2026</string>
+    <string name="add_service_save">Save service</string>
+    <string name="add_service_remind_title">Remind me for the next one</string>
+    <string name="add_service_remind_subtitle">We\'ll schedule the next service so you never have to remember.</string>
+    <string name="add_service_remind_every_distance">Every (%1$s)</string>
+    <string name="add_service_remind_every_months">Every (months)</string>
+
+    <!-- Service Detail Screen -->
+    <string name="service_detail_title">Service details</string>
+    <string name="service_detail_delete">Delete</string>
+    <string name="service_detail_delete_title">Delete service</string>
+    <string name="service_detail_delete_message">Are you sure you want to delete this service record? This action cannot be undone.</string>
+    <string name="service_detail_custom_service">Custom service</string>
+    <string name="service_detail_odometer">Odometer</string>
+    <string name="service_detail_odometer_value">%1$d km</string>
+    <string name="service_detail_cost">Cost</string>
+    <string name="service_detail_shop">Shop</string>
+    <string name="service_detail_notes">Notes</string>
+    <string name="service_detail_not_found_title">Service not found</string>
+    <string name="service_detail_not_found_subtitle">This service record may have been deleted.</string>
+
+    <!-- Service History Screen -->
+    <string name="service_history_title">Records</string>
+    <string name="service_history_empty_title">No service records</string>
+    <string name="service_history_empty_subtitle">Service records will appear here once you log maintenance for your vehicles.</string>
+
+    <!-- Mileage Log Screen -->
+    <string name="mileage_log_title">Mileage log</string>
+    <string name="mileage_log_new_reading">New reading</string>
+    <string name="mileage_log_odometer_label">Odometer (km)</string>
+    <string name="mileage_log_notes_label">Notes (optional)</string>
+    <string name="mileage_log_add_reading">Add reading</string>
+    <string name="mileage_log_history">History</string>
+    <string name="mileage_log_empty">No mileage readings recorded yet.</string>
+    <string name="mileage_log_odometer_value">%1$d km</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_enable_notifications">Enable notifications</string>
+    <string name="settings_notifications_description">Get reminded about upcoming maintenance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_distance_unit">Distance unit</string>
+    <string name="settings_unit_km">Kilometers (km)</string>
+    <string name="settings_unit_mi">Miles (mi)</string>
+    <string name="settings_about">About</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_upgrade_title">Upgrade to Pro</string>
+    <string name="settings_upgrade_subtitle">Unlock Quote Auditor, Garage Sync, export &amp; zero ads</string>
+    <string name="settings_upgrade_button">Upgrade</string>
+    <string name="settings_pro_active">AutoMinder Pro</string>
+    <string name="settings_pro_active_subtitle">All premium features unlocked</string>
+    <string name="settings_app_version">AutoMinder v%1$s</string>
+
+    <!-- About Screen -->
+    <string name="about_title">About</string>
+    <string name="about_navigate_back">Navigate back</string>
+    <string name="about_app_name">AutoMinder</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">Your smart car maintenance companion</string>
+    <string name="about_developer_label">Developer</string>
+    <string name="about_developer_name">AutoMinder Team</string>
+    <string name="about_privacy_policy_label">Privacy Policy</string>
+    <string name="about_privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
+    <string name="about_rate_title">Enjoying AutoMinder?</string>
+    <string name="about_rate_description">Consider rating us on the Play Store to help others discover the app!</string>
+    <string name="about_feedback_title">Send Feedback</string>
+    <string name="about_feedback_description">Found a bug or have a suggestion? We\'d love to hear from you.</string>
+    <string name="about_feedback_email">autominder2@gmail.com</string>
+    <string name="about_feedback_subject">AutoMinder Feedback — v%1$s</string>
+    <string name="about_copyright">© %1$d AutoMinder. All rights reserved.</string>
+
+    <!-- Onboarding Screen -->
+    <string name="onboarding_tagline">Your car. Remembered.</string>
+    <string name="onboarding_welcome_title">Never miss what your car needs.</string>
+    <string name="onboarding_notify_title">We\'ll tap you on the shoulder</string>
+    <string name="onboarding_notify_subtitle">Gentle reminders arrive before things are due — never spammy, always in time.</string>
+    <string name="onboarding_welcome_value">Maintenance, renewals, inspections and important car tasks — all in one place.</string>
+    <string name="onboarding_add_my_car">Add my car</string>
+    <string name="onboarding_skip_for_now">I\'ll do this later</string>
+    <string name="onboarding_add_car_title">Which car should we look after?</string>
+    <string name="onboarding_add_car_subtitle">Just the make and model — everything else can wait.</string>
+    <string name="onboarding_do_this_later">I\'ll do this later</string>
+    <string name="onboarding_turn_on_reminders">Turn on reminders</string>
+    <string name="onboarding_maybe_later">Maybe later</string>
+    <string name="onboarding_error_brand_model">Brand and model are required</string>
+    <string name="onboarding_error_save_failed">Couldn\'t save your car. Please try again.</string>
+
+    <!-- Add Vehicle form -->
+    <string name="action_change_photo">Change</string>
+    <string name="add_vehicle_headline">What are you driving?</string>
+    <string name="add_vehicle_subhead">Just the make and model — you can add the rest anytime.</string>
+    <string name="add_vehicle_auto_reminders">We\'ll set up your maintenance reminders automatically.</string>
+    <string name="add_vehicle_more_details">Add more details (optional)</string>
+    <string name="add_vehicle_cta">Add vehicle</string>
+
+    <!-- Additional -->
+    <string name="privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Shows your fleet health score and next vehicle maintenance reminder</string>
+    <string name="widget_next_service">Next service</string>
+    <string name="widget_all_caught_up">All caught up!</string>
+    <string name="widget_due">Due: %1$s</string>
+    <string name="widget_tap_to_open">Tap to open AutoMinder</string>
+    <plurals name="widget_attention_label">
+        <item quantity="one">Needs attention</item>
+        <item quantity="other">Need attention</item>
+    </plurals>
+    <string name="widget_vehicles">%1$d vehicles</string>
+    <string name="widget_overdue_count">%1$d overdue</string>
+    <string name="widget_fleet_status">Fleet status</string>
+
+    <!-- Vehicle Detail — Export -->
+    <string name="vehicle_detail_export">Export history</string>
+    <string name="vehicle_detail_export_share_title">Service history</string>
+
+    <!-- Vehicle Detail — reminder setup (shown when nothing is tracked yet) -->
+    <string name="vehicle_reminders_setup_title">Start tracking maintenance</string>
+    <string name="vehicle_reminders_setup_subtitle">Add a reminder and AutoMinder will tell you when this vehicle is due.</string>
+
+    <!-- Fuel Intelligence -->
+    <string name="fuel_history_title">Fuel history</string>
+    <string name="fuel_add_title">Add fuel</string>
+    <string name="fuel_label_volume">Volume (%1$s)</string>
+    <string name="fuel_label_cost">Total cost (%1$s)</string>
+    <string name="fuel_label_odometer">Odometer (%1$s)</string>
+    <string name="fuel_label_date">Date</string>
+    <string name="fuel_label_notes">Notes (optional)</string>
+    <string name="fuel_action_save">Save fuel entry</string>
+    <string name="fuel_entry_saved">Fuel entry saved</string>
+    <string name="fuel_empty_history">No fuel history yet. Log your first fill-up!</string>
+    <string name="fuel_efficiency_label">Efficiency</string>
+    <string name="fuel_efficiency_value_km_l">%1$.1f km/L</string>
+    <string name="fuel_efficiency_value_l_100km">%1$.1f L/100km</string>
+    <string name="fuel_efficiency_value_mpg_us">%1$.1f MPG (US)</string>
+    <string name="fuel_efficiency_value_mpg_uk">%1$.1f MPG (UK)</string>
+    <string name="fuel_unit_liters">Liters</string>
+    <string name="fuel_unit_gallons_us">Gallons (US)</string>
+    <string name="fuel_unit_gallons_uk">Gallons (UK)</string>
+    <string name="fuel_cost_per_unit">%1$s per %2$s</string>
+    <string name="vehicle_reminders_add_reminder">Add reminder</string>
+
+    <!-- Dynamic Labels (unit-aware) -->
+    <string name="label_current_odometer_dynamic">Current odometer (%1$s)</string>
+    <string name="vehicle_detail_due_at_dynamic">Due at: %1$s %2$s</string>
+
+    <!-- Archive Dialog -->
+    <string name="vehicle_detail_archive_title">Archive vehicle</string>
+    <string name="vehicle_detail_archive_message">Are you sure you want to archive this vehicle? It will no longer appear on your dashboard.</string>
+
+    <!-- Dynamic Service Labels -->
+    <string name="add_service_odometer_dynamic">Odometer at Service (%1$s)</string>
+    <string name="mileage_log_odometer_dynamic">Odometer (%1$s)</string>
+
+    <!-- Accessibility -->
+    <string name="cd_select_date">Select date</string>
+
+    <!-- Pro Paywall -->
+    <string name="paywall_title">Never overpay for car repairs again</string>
+    <string name="paywall_subtitle">Audit repair quotes, track family vehicles, and protect your car\'s resale value.</string>
+    <string name="paywall_trial_reassurance">7-day free trial • Cancel anytime with 1 tap in Google Play</string>
+    <string name="paywall_feature_quote_auditor">Quote price auditor (Fair price check)</string>
+    <string name="paywall_feature_garage">Multi-vehicle garage sync</string>
+    <string name="paywall_feature_passport">Service history export (JSON &amp; CSV)</string>
+    <string name="paywall_feature_predictions">Predictive wear &amp; due date alerts</string>
+    <!-- Prices are product-details-driven (Play formattedPrice), never
+         hardcoded — see ProPaywall.kt. %1$s is the localized price string. -->
+    <string name="paywall_yearly_best_value">Best value</string>
+    <string name="paywall_price_loading">Loading price…</string>
+    <string name="paywall_restore">Restore purchases</string>
+    <string name="paywall_plan_monthly">Monthly</string>
+    <string name="paywall_plan_yearly">Yearly</string>
+    <string name="paywall_plan_lifetime">Lifetime</string>
+    <string name="paywall_plan_lifetime_subtitle">Pay once, own forever</string>
+    <string name="paywall_continue">Continue</string>
+    <string name="paywall_price_unavailable">Unavailable</string>
+    <string name="cd_paywall_included">Included</string>
+    <string name="cd_paywall_not_included">Not included</string>
+    <!-- Billing feedback — purchase and restore outcomes -->
+    <string name="purchase_success">Purchase successful! Welcome to Pro.</string>
+    <string name="purchase_cancelled">Purchase cancelled.</string>
+    <string name="purchase_pending">Your purchase is pending. We\'ll activate Pro once it completes.</string>
+    <string name="restore_success">Purchase restored!</string>
+    <string name="restore_not_found">No active purchase found to restore.</string>
+    <string name="restore_error">Couldn\'t restore your purchase. Please try again.</string>
+    <string name="billing_error_no_connection">Couldn\'t connect to Google Play. Please try again.</string>
+    <string name="billing_error_unavailable">Billing isn\'t available on this device.</string>
+    <string name="billing_error_item_unavailable">This item isn\'t available right now.</string>
+    <string name="billing_error_network">Network error. Please check your connection and try again.</string>
+    <string name="billing_error_generic">Something went wrong with your purchase. Please try again.</string>
+    <string name="paywall_feature_vehicles">Vehicles</string>
+    <string name="paywall_feature_reminders">Maintenance reminders</string>
+    <string name="paywall_feature_fuel_log">Fuel &amp; mileage tracking</string>
+    <string name="paywall_feature_analytics">Cost analytics</string>
+    <string name="paywall_feature_charts">Fuel efficiency charts</string>
+    <string name="paywall_feature_backup">Cloud backup</string>
+    <string name="paywall_feature_export">PDF + CSV export</string>
+    <string name="paywall_feature_ad_free">100% Ad-free experience</string>
+    <string name="paywall_column_free">Free</string>
+    <string name="paywall_column_pro">Pro</string>
+    <string name="paywall_pro_badge">PRO</string>
+    <string name="paywall_locked_feature">Unlock with Pro</string>
+
+    <!-- Pro Feature Gate -->
+    <string name="pro_gate_title">Pro Feature</string>
+    <string name="pro_gate_unlock">Upgrade to unlock this feature</string>
+
+    <!-- ASO — Play Store Metadata -->
+    <string name="aso_short_description">Smart car maintenance reminders, fuel tracking &amp; cost analytics</string>
+    <string name="aso_full_description">AutoMinder keeps your vehicles in top shape with intelligent maintenance reminders, fuel efficiency tracking, and cost analytics. Never miss an oil change, tire rotation, or brake service again.\n\nKey Features:\n• Smart maintenance reminders with dual triggers (date + odometer)\n• Fleet health score — see all your vehicles at a glance\n• Fuel efficiency tracking with trend analysis\n• Service cost analytics and reporting\n• Multiple vehicle support for the whole family\n• Home screen widgets for quick status checks\n• Privacy-first — your data stays on your device\n• Beautiful Material 3 design with dark mode support\n• Export service history as CSV or PDF\n• Notification reminders that respect your time</string>
+
+    <!-- Dashboard enhanced -->
+    <string name="dashboard_fleet_score">Fleet Score</string>
+    <string name="dashboard_add_first_vehicle_hint">Most users add their first vehicle in under 30 seconds</string>
+
+    <!-- Empty State Teaching -->
+    <string name="empty_service_hint">Your first service record will appear here. Logging takes 10 seconds.</string>
+    <string name="empty_fuel_hint">After 3 fill-ups, you\'ll see your fuel efficiency trends here.</string>
+    <string name="empty_reminders_hint">Add a reminder to stay ahead of maintenance.</string>
+    <string name="empty_mileage_hint">Record your odometer to track driving patterns over time.</string>
+
+    <!-- Quick Mileage Sheet -->
+    <string name="quick_mileage_title">Quick update</string>
+    <string name="quick_mileage_update">Update odometer</string>
+
+    <!-- Service Detail Additions -->
+    <string name="service_detail_receipt">Service receipt</string>
+
+    <!-- Swipe to delete + undo -->
+    <string name="action_undo">Undo</string>
+    <string name="fuel_entry_deleted">Fuel entry deleted</string>
+    <string name="mileage_entry_deleted">Mileage entry deleted</string>
+    <string name="service_deleted">Service record deleted</string>
+    <string name="cd_swipe_delete">Swipe to delete</string>
+
+    <!-- Quick odometer update -->
+    <string name="odometer_updated">Odometer updated</string>
+    <string name="vehicle_detail_tap_to_update">Tap to update</string>
+
+    <!-- Dashboard quick actions + greeting -->
+    <string name="dashboard_quick_actions">Quick add</string>
+    <string name="dashboard_quick_log_service">Log service</string>
+    <string name="dashboard_quick_add_fuel">Add fuel</string>
+    <string name="dashboard_pick_vehicle">Choose a vehicle</string>
+    <string name="cd_quick_actions">Quick actions</string>
+    <string name="dashboard_greeting_morning">Good morning — let\'s keep your cars healthy</string>
+    <string name="dashboard_greeting_afternoon">Good afternoon — everything under control</string>
+    <string name="dashboard_greeting_evening">Good evening — your fleet at a glance</string>
+
+    <!-- Pro analytics charts -->
+    <string name="chart_monthly_spending">Last 6 months</string>
+    <string name="chart_cost_by_type">Spending by service</string>
+    <string name="chart_other">Other</string>
+    <string name="vehicle_detail_cost_per_km">≈ %1$s per %2$s of ownership</string>
+
+    <!-- Settings sections -->
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_section_about">About &amp; Legal</string>
+    <string name="settings_ad_privacy">Ad privacy options</string>
+
+    <!-- Form UX -->
+    <string name="form_saved">Saved</string>
+    <string name="form_discard_title">Discard changes?</string>
+    <string name="form_discard_message">You have unsaved changes. If you leave now, they will be lost.</string>
+    <string name="form_discard_confirm">Discard</string>
+    <string name="form_keep_editing">Keep editing</string>
+
+    <!-- Notification inline actions -->
+    <string name="notif_action_snooze_3d">Snooze 3 days</string>
+    <string name="notif_action_update_mileage">Update mileage</string>
+
+    <!-- Onboarding: driving amount + plan reveal (Phase 1) -->
+    <string name="onboarding_driving_label">How much do you drive?</string>
+    <string name="driving_low">A little</string>
+    <string name="driving_typical">Average</string>
+    <string name="driving_high">A lot</string>
+    <string name="driving_support_value">≈%1$s %2$s/yr</string>
+    <string name="onboarding_see_my_plan">See my plan</string>
+    <string name="onboarding_plan_title">Your starting reminders</string>
+    <string name="onboarding_plan_subtitle">A general reminder cadence based on mileage and driving amount. Nothing is saved yet.</string>
+    <string name="onboarding_plan_first_label">FIRST REMINDER</string>
+    <plurals name="onboarding_plan_why">
+        <item quantity="one">Every %1$s %2$s or %3$d month — whichever comes first</item>
+        <item quantity="other">Every %1$s %2$s or %3$d months — whichever comes first</item>
+    </plurals>
+    <string name="onboarding_plan_review_by">Starting reminder: %1$s or %2$s %3$s</string>
+    <!-- Date-only variant, used when no starting odometer was entered. Without
+         a baseline reading there is no distance to promise against. -->
+    <string name="onboarding_plan_review_by_date">Starting reminder: %1$s. Add your mileage to track by distance too.</string>
+    <string name="onboarding_plan_more_title">OTHER STARTING REMINDERS</string>
+    <string name="onboarding_plan_honesty">These are editable general reminders, not %1$s\'s official schedule or proof that service is due.</string>
+    <string name="onboarding_plan_missing">We don\'t know this car\'s service history. Confirm recent work and the owner\'s manual before relying on these dates.</string>
+    <string name="onboarding_plan_adjust">Adjust mileage or driving</string>
+    <string name="onboarding_plan_cta">Save plan &amp; continue</string>
+    <string name="onboarding_error_invalid_mileage">Enter mileage as a whole number, or leave it empty for now.</string>
+    <string name="onboarding_error_mileage_too_high">That mileage looks too high — double-check the number.</string>
+    <string name="onboarding_error_plan_required">Review a valid starting plan before saving.</string>
+    <!-- Edit Vehicle Section Titles -->
+    <string name="vehicle_info_title">Vehicle details</string>
+    <string name="specifications_title">Specifications</string>
+    <string name="identification_title">Identification &amp; notes</string>
+
+    <!-- Add Service 2026 Enhanced Strings -->
+    <string name="quick_date_today">Today</string>
+    <string name="quick_date_yesterday">Yesterday</string>
+    <string name="quick_date_custom">Custom date</string>
+    <string name="quick_cost_title">Quick cost</string>
+    <string name="telemetry_and_date_title">Date &amp; mileage</string>
+    <string name="cost_and_shop_title">Cost &amp; workshop</string>
+    <string name="next_service_reminder_title">Next service schedule</string>
+    <string name="next_service_prediction_text">Next %1$s scheduled for ~%2$s or at %3$s %4$s</string>
+
+    <!-- Service Detail 2026 Enhanced Strings -->
+    <string name="service_detail_share_proof">Share service proof</string>
+    <string name="service_detail_share_title">Service Record — %1$s (%2$s)</string>
+    <string name="service_detail_share_body">%1$s Service Record\nVehicle: %2$s\nDate: %3$s\nOdometer: %4$s %5$s\nCost: %6$s\nWorkshop: %7$s\nNotes: %8$s\n\nLogged via AutoMinder</string>
+    <string name="service_detail_diy_workshop">Self-Serviced / DIY</string>
+    <string name="service_detail_no_cost">Free / Not recorded</string>
+    <string name="service_detail_notes_title">Work notes &amp; details</string>
+    <string name="service_detail_vehicle_title">Vehicle</string>
+    <!-- Add Fuel 2026 Enhanced Strings -->
+    <string name="fuel_quick_cost_title">Quick cost</string>
+    <string name="fuel_quick_volume_title">Quick volume</string>
+    <string name="fuel_price_per_unit_label">Price / %1$s (optional)</string>
+    <string name="fuel_price_per_unit_placeholder">0.00</string>
+    <string name="fuel_live_telemetry_title">Economy preview</string>
+    <string name="fuel_live_efficiency_stat">%1$.1f %2$s</string>
+    <string name="fuel_live_range_stat">≈ %1$s %2$s added</string>
+    <string name="fuel_live_cost_per_km">≈ %1$s / %2$s</string>
+    <string name="fuel_full_tank_toggle">Full tank</string>
+    <string name="fuel_distance_driven_since_last">Driven since last: %1$s %2$s</string>
+    <string name="fuel_station_label">Gas station / Brand (optional)</string>
+    <string name="fuel_station_placeholder">e.g. Shell, Chevron, BP</string>
+
+    <!-- Mileage Log 2026 Enhanced Strings -->
+    <string name="mileage_quick_tags_title">Quick trip tags</string>
+    <string name="mileage_tag_commute">Commute</string>
+    <string name="mileage_tag_roadtrip">Road trip</string>
+    <string name="mileage_tag_work">Work errand</string>
+    <string name="mileage_tag_weekend">Weekend</string>
+    <string name="mileage_tag_service">Service run</string>
+    <string name="mileage_delta_since_last">+%1$s %2$s since %3$s</string>
+    <string name="mileage_delta_entry">+%1$s %2$s</string>
+    <string name="mileage_current_reading_card">Update odometer</string>
+    <string name="mileage_entry_added">Odometer updated</string>
+    <string name="mileage_total_logged">%1$d entries</string>
+
+    <!-- Reminder 2026 Enhanced Strings -->
+    <string name="reminder_quick_date_3m">+3 Mo</string>
+    <string name="reminder_quick_date_6m">+6 Mo</string>
+    <string name="reminder_quick_date_1y">+1 Yr</string>
+    <string name="reminder_quick_date_2y">+2 Yr</string>
+    <string name="reminder_smart_summary">Triggers at %1$s %2$s or on %3$s</string>
+    <string name="reminder_smart_summary_date_only">Triggers on %1$s</string>
+    <string name="reminder_smart_summary_odo_only">Triggers at %1$s %2$s</string>
+    <string name="reminder_schedule_title">Due targets</string>
+    <string name="reminder_recurrence_title">Repeat intervals (optional)</string>
+
+    <!-- About Screen 2026 Enhanced Strings -->
+    <string name="about_feature_offline">Offline-First</string>
+    <string name="about_feature_privacy">Privacy-Focused</string>
+    <string name="about_feature_native">Native Android</string>
+    <string name="about_action_rate_subtitle">Support development with 5 stars</string>
+    <string name="about_action_feedback_subtitle">Share feature ideas or bug reports</string>
+    <string name="about_action_privacy_subtitle">Review how your data stays on your device</string>
+
+    <!-- Fuel History 2026 Enhanced Strings -->
+    <string name="fuel_intelligence_title">Fuel intelligence</string>
+    <string name="fuel_total_spent_label">Total spend</string>
+    <string name="fuel_avg_unit_price_label">Avg price / L</string>
+    <string name="fuel_avg_economy_label">Avg efficiency</string>
+    <string name="fuel_unit_price_format">%1$s / L</string>
+    <string name="fuel_full_tank_badge">Full tank</string>
+    <string name="fuel_partial_tank_badge">Partial</string>
+    <string name="fuel_empty_action_label">Log first fill-up</string>
+    <string name="fuel_history_total_entries">%1$d fill-ups</string>
+
+    <!-- Fuel History P0 Intelligence Upgrade -->
+    <string name="fuel_cost_per_distance_label">Cost / dist</string>
+    <string name="fuel_efficiency_trend_title">Efficiency trend</string>
+    <string name="fuel_trend_improving">Improving</string>
+    <string name="fuel_trend_declining">Declining</string>
+    <string name="fuel_trend_stable">Stable</string>
+    <string name="fuel_best_tank_label">Best tank</string>
+    <string name="fuel_worst_tank_label">Worst tank</string>
+    <string name="fuel_monthly_spending_title">Monthly spending</string>
+    <string name="fuel_period_total">6-month total: %1$s</string>
+
+    <!-- Service History 2026 Enhanced Strings -->
+    <string name="service_intelligence_title">Service intelligence</string>
+    <string name="service_total_invested">Total invested</string>
+    <string name="service_avg_cost_label">Avg cost</string>
+    <string name="service_total_services_label">Services</string>
+    <string name="service_filter_all_vehicles">All vehicles</string>
+    <string name="service_filter_all_categories">All</string>
+    <string name="service_search_placeholder">Search service, shop, or notes…</string>
+    <string name="service_no_filter_results">No matching service records</string>
+    <string name="service_no_filter_hint">Try adjusting your category or search filter</string>
+    <string name="service_clear_filters">Clear filters</string>
+    <string name="service_export_history">Export history</string>
+    <string name="service_export_sharing">Share service history (CSV)</string>
+    <string name="service_sort_newest">Newest first</string>
+    <string name="service_sort_oldest">Oldest first</string>
+    <string name="service_sort_highest_cost">Highest cost</string>
+    <string name="service_top_category_label">Top expense</string>
+    <string name="service_cost_per_distance">Cost / %1$s</string>
+    <string name="service_filter_count">%1$d records</string>
+    <string name="service_action_log_first">Log service</string>
+    <string name="service_filter_sort_title">Sort &amp; Filter</string>
+    <string name="service_export_empty_warning">No service records to export</string>
+
+    <!-- Quote Auditor 2026 Strings -->
+    <string name="quote_auditor_title">Quote auditor</string>
+    <string name="quote_auditor_subtitle">Counter defense against repair shop upsells</string>
+    <string name="quote_auditor_hero_title">Estimate audit</string>
+    <string name="quote_auditor_total_quoted">Total quoted</string>
+    <string name="quote_auditor_fair_range">Fair estimate range</string>
+    <string name="quote_auditor_potential_savings">Potential savings</string>
+    <string name="quote_auditor_add_item_title">Add quote line items</string>
+    <string name="quote_auditor_item_price_hint">Quoted price</string>
+    <string name="quote_auditor_analyze_cta">Analyze estimate</string>
+    <string name="quote_auditor_talking_points_title">What to ask the mechanic</string>
+    <string name="quote_auditor_talking_points_subtitle">Say these exact questions before authorizing work:</string>
+    <string name="quote_auditor_empty_title">Audit a repair estimate</string>
+    <string name="quote_auditor_empty_subtitle">Add items from your repair shop quote to check if they are legitimately due or premature upsells.</string>
+    <string name="quote_auditor_empty_hint">Select items below to start your offline audit.</string>
+    <string name="quote_auditor_clear_all">Reset</string>
+    <string name="quote_auditor_action_save_approved">Save approved to history</string>
+    <string name="quote_auditor_quick_add_title">Common quote items</string>
+    <string name="quote_auditor_items_count">%1$d line items</string>
+    <string name="quote_auditor_question_label">Counter question</string>
+    <string name="quote_auditor_fair_price_badge">Est. fair: %1$s – %2$s</string>
+
+    <!-- Verdict Statuses -->
+    <string name="quote_verdict_legitimate_title">Legitimate due</string>
+    <string name="quote_verdict_legitimate_desc">Interval reached. Recommend approving.</string>
+    <string name="quote_verdict_verify_title">Verify wear first</string>
+    <string name="quote_verdict_verify_desc">Ask for physical measurement before approving.</string>
+    <string name="quote_verdict_upsell_title">Likely upsell</string>
+    <string name="quote_verdict_upsell_desc">Completed recently in vehicle history. Strongly question or decline.</string>
+    <string name="quote_verdict_wait_title">Can wait</string>
+    <string name="quote_verdict_wait_desc">Not urgently due based on vehicle mileage.</string>
+    <string name="quick_action_audit_quote">Audit repair quote</string>
+    <string name="quick_action_audit_quote_desc">Check estimate against vehicle history</string>
+    <!-- Accessibility & Content Descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_delete_item">Delete line item</string>
+
+    <!-- Onboarding 2026 4 Core Value Pillars -->
+    <string name="onboarding_pillar_maintenance">Maintenance</string>
+    <string name="onboarding_pillar_maintenance_desc">Oil changes, brakes, tires &amp; scheduled factory service</string>
+    <string name="onboarding_pillar_documents">Documents</string>
+    <string name="onboarding_pillar_documents_desc">Registration renewals, insurance &amp; inspection dates</string>
+    <string name="onboarding_pillar_reminders">Reminders</string>
+    <string name="onboarding_pillar_reminders_desc">Proactive time &amp; mileage countdowns</string>
+    <string name="onboarding_pillar_ai">Quote check</string>
+    <string name="onboarding_pillar_ai_desc">Check a repair quote for fair pricing before you pay</string>
+    <string name="onboarding_browse_all_makes">Browse all makes</string>
+    <string name="onboarding_browse_all_models">Browse all models</string>
+    <string name="onboarding_picker_search_makes_hint">Search makes…</string>
+    <string name="onboarding_picker_search_models_hint">Search models…</string>
+    <string name="onboarding_picker_no_makes">No makes match \"%1$s\"</string>
+    <string name="onboarding_picker_no_models">No models match \"%1$s\"</string>
+    <string name="onboarding_picker_manual_entry">Can\'t find your car? Enter it manually</string>
+    <string name="onboarding_odometer_reassurance">You can change this anytime.</string>
+    <string name="onboarding_plan_mileage_not_added">Mileage not added — showing date-only reminders.</string>
+    <string name="onboarding_plan_add_mileage_action">Add mileage</string>
+    <string name="onboarding_plan_revision_title">Adjust starting plan</string>
+    <string name="onboarding_plan_update_cta">Update plan</string>
+    <string name="onboarding_plan_metric_mileage">Mileage</string>
+    <string name="onboarding_plan_metric_driving">Driving amount</string>
+    <string name="onboarding_plan_metric_not_added">Not added</string>
+    <string name="driving_light">Light</string>
+    <string name="driving_range_low">Up to %1$s %2$s / year</string>
+    <string name="driving_range_typical">%1$s – %2$s %3$s / year</string>
+    <string name="driving_range_high">%1$s+ %2$s / year</string>
+    <string name="onboarding_popular_models_title">Popular models</string>
+
+    <!-- Data Sovereignty & Manual Backup Strings -->
+    <string name="settings_section_backup">Data &amp; Backup</string>
+    <string name="settings_backup_export_title">Export full backup</string>
+    <string name="settings_backup_export_subtitle">Save a complete JSON snapshot of all vehicles, services, and fuel history</string>
+    <string name="settings_backup_import_title">Restore from backup</string>
+    <string name="settings_backup_import_subtitle">Restore or migrate vehicle records from a JSON backup file</string>
+    <string name="settings_backup_description">100% offline data sovereignty. Your data stays in your control — export or import anytime without cloud dependency.</string>
+    <string name="settings_backup_import_confirm_title">Restore vehicle records?</string>
+    <string name="settings_backup_import_confirm_message">This will import all vehicles, service records, reminders, and fuel logs from your backup file into the app.</string>
+    <string name="settings_backup_import_confirm_action">Restore backup</string>
+    <string name="backup_export_success">Backup exported successfully (%1$d records)</string>
+    <string name="backup_import_success">Restored %1$d vehicles, %2$d services, %3$d fuel logs</string>
+    <string name="backup_error_export_failed">Failed to export backup file</string>
+    <string name="backup_error_import_failed">Failed to read or parse backup file</string>
+
+    <!-- Widget 2026 Polish -->
+    <string name="widget_overdue_tag">Overdue</string>
+    <string name="widget_all_good_label">All good</string>
+
+    <!-- Dashboard Daily Utility Telemetry -->
+    <string name="dashboard_daily_telemetry_title">Driving telemetry</string>
+    <string name="dashboard_cost_per_km_label">Cost / %1$s</string>
+    <string name="dashboard_quick_log_title">Quick actions</string>
+    <string name="dashboard_action_log_odometer">Log odometer</string>
+
+    <!-- Maintenance Passport & Service Intelligence -->
+    <string name="service_export_passport_title">Certified Maintenance Passport</string>
+    <string name="service_export_passport_sharing">Share Vehicle Maintenance Passport</string>
+    <string name="service_export_passport_desc">Export a certified record to prove maintenance history for resale</string>
+    <string name="service_passport_header">AUTOMINDER CERTIFIED VEHICLE MAINTENANCE PASSPORT</string>
+    <string name="service_passport_vehicle_details">VEHICLE SPECIFICATIONS</string>
+    <string name="service_passport_summary">MAINTENANCE INVESTMENT SUMMARY</string>
+    <string name="service_passport_records">CHRONOLOGICAL SERVICE RECORDS</string>
+    <string name="service_passport_footer">Generated by AutoMinder — 100%% Verified Local Records</string>
+
+    <!-- Mileage Pace & Steppers -->
+    <string name="mileage_step_50">+50</string>
+    <string name="mileage_step_100">+100</string>
+    <string name="mileage_step_500">+500</string>
+    <string name="mileage_step_1000">+1,000</string>
+    <string name="mileage_pace_rate">%1$.1f %2$s/day</string>
+    <string name="mileage_pace_delta">+%1$s %2$s in %3$d days</string>
+    <string name="mileage_pace_single_day">+%1$s %2$s today</string>
+    <!-- Navigation Tabs V2 -->
+    <string name="nav_garage">Garage</string>
+    <string name="nav_activity">Activity</string>
+
+    <!-- Home V2 Vehicle Command Center -->
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_subtitle_on_track">Your car is on track.</string>
+    <string name="home_subtitle_fleet_on_track">Your cars are on track.</string>
+    <string name="home_subtitle_upcoming">You have %1$d things coming up.</string>
+    <string name="home_subtitle_attention">Your %1$s needs attention.</string>
+    <string name="home_subtitle_overdue">One maintenance item is overdue.</string>
+    <string name="home_subtitle_setup_incomplete">Let\'s finish setting up your car.</string>
+
+    <string name="home_status_healthy_title">You\'re all caught up</string>
+    <string name="home_status_healthy_desc">Nothing needs attention right now.</string>
+    <string name="home_status_updated_now">Updated just now</string>
+    <string name="home_status_upcoming_title">%1$d things coming up</string>
+    <string name="home_status_duesoon_title">%1$d thing needs attention</string>
+    <string name="home_status_overdue_title">%1$d overdue item</string>
+    <string name="home_status_setup_incomplete_title">Finish setting up your car</string>
+    <string name="home_status_setup_incomplete_desc">Add your current mileage so AutoMinder can calculate maintenance reminders more accurately.</string>
+    <string name="home_status_update_mileage_cta">Update mileage</string>
+
+    <string name="home_section_coming_up">Coming up</string>
+    <string name="home_section_see_all">See all</string>
+    <string name="home_section_quick_log">Quick log</string>
+    <string name="home_section_recent_activity">Recent activity</string>
+    <string name="home_log_service">Log service</string>
+    <string name="home_add_fuel">Add fuel</string>
+    <string name="home_log_mileage">Log mileage</string>
+    <string name="home_empty_coming_up_title">You\'re clear for now.</string>
+    <string name="home_empty_coming_up_desc">We\'ll show your next maintenance here when it\'s due.</string>
+    <string name="home_empty_activity_title">Nothing logged yet.</string>
+    <string name="home_empty_activity_desc">Your service and fuel history will appear here.</string>
+    <string name="home_activity_mileage_updated">Mileage updated</string>
+    <string name="home_activity_fuel">Fuel</string>
+    <string name="home_fab_log">Log</string>
+    <string name="home_switch_vehicle">Switch vehicle</string>
+    <string name="home_vehicle_details">Vehicle details</string>
+    <string name="home_reminder_due_approx">~%1$s %2$s left • around %3$s</string>
+    <string name="home_reminder_due_date_only">Due on %1$s</string>
+    <string name="home_section_whats_next">What\'s next</string>
+    <string name="home_status_next_check">Next check: %1$s · ~%2$s %3$s</string>
+    <string name="home_empty_whats_next_title">You\'re clear for now</string>
+    <string name="home_empty_whats_next_desc">We\'ll show what\'s next when maintenance approaches.</string>
+
+    <string name="why_reminder_title">Why am I seeing this?</string>
+    <string name="why_reminder_subtitle">Calculated from your vehicle data and maintenance rules:</string>
+    <string name="why_reminder_last_service">Last recorded service</string>
+    <string name="why_reminder_interval">Service interval</string>
+    <string name="why_reminder_current_odo">Current odometer</string>
+    <string name="why_reminder_target_due">Target milestone</string>
+    <string name="why_reminder_remaining">Remaining</string>
+    <string name="why_reminder_no_previous_service">No prior service recorded</string>
+    <string name="why_reminder_confidence_high">High confidence · Odometer recently updated</string>
+    <string name="why_reminder_confidence_med">Medium confidence</string>
+    <string name="why_reminder_confidence_low">Low confidence · Odometer hasn\'t been updated recently</string>
+    <string name="why_reminder_confidence_incomplete">Incomplete data · Current mileage missing</string>
+    <string name="why_reminder_log_now_cta">Log this service</string>
+    <string name="brand_name">AutoMinder</string>
+    <string name="why_reminder_rule_desc">whichever comes first</string>
+    <string name="why_reminder_mileage_current">Mileage data is current</string>
+    <string name="why_reminder_log_completed">Log completed service</string>
+    <string name="why_reminder_edit">Edit reminder</string>
+    <string name="home_empty_activity">Nothing logged yet. Completed services and fuel logs will appear here.</string>
+</resources>
+
+
+

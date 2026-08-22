@@ -1,0 +1,405 @@
+<title>AutoMinder MVP Plan</title>
+<style>
+  /* Palette is AutoMinder's own Midnight Cobalt system (docs/DESIGN_SYSTEM_2026.md),
+     not an invented one. Light is the bare :root; dark overrides tokens only. */
+  :root {
+    --ground:      #F7F9FC;
+    --surface:     #FFFFFF;
+    --surface-high:#ECF1F8;
+    --ink:         #0E1420;
+    --muted:       #4A5568;
+    --cobalt:      #0B4FC4;
+    --caution:     #7A5300;
+    --critical:    #B3261E;
+    --hairline:    #D5DEE8;
+    --shadow: 0 1px 2px rgba(14,20,32,.06), 0 8px 24px rgba(14,20,32,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0F1316;
+      --surface:     #171C20;
+      --surface-high:#1F262B;
+      --ink:         #E8EDF1;
+      --muted:       #98A4AD;
+      --cobalt:      #7AB4FF;
+      --caution:     #EFB552;
+      --critical:    #FF8A80;
+      --hairline:    #2C353B;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #0F1316;
+    --surface:     #171C20;
+    --surface-high:#1F262B;
+    --ink:         #E8EDF1;
+    --muted:       #98A4AD;
+    --cobalt:      #7AB4FF;
+    --caution:     #EFB552;
+    --critical:    #FF8A80;
+    --hairline:    #2C353B;
+    --shadow: none;
+  }
+
+  /* No webfont CDN — CSP blocks it and a silent fallback is worse than an
+     honest stack. Mono chain picks up JetBrains Mono when installed. */
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: clamp(24px, 5vw, 64px) clamp(20px, 5vw, 32px) 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 74ch; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  .mono {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- masthead ---- */
+  header { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); margin: 0;
+  }
+  h1 {
+    font-size: clamp(30px, 5.5vw, 44px); line-height: 1.1; margin: 0;
+    letter-spacing: -.025em; font-weight: 800; text-wrap: balance;
+  }
+  .standfirst { font-size: 18px; color: var(--muted); margin: 0; max-width: 60ch; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 10px;
+    border-top: 1px solid var(--hairline);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--muted);
+  }
+
+  /* ---- sections ---- */
+  section { display: flex; flex-direction: column; gap: 16px; }
+  h2 {
+    font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--muted); font-weight: 600; margin: 0;
+    padding-bottom: 10px; border-bottom: 1px solid var(--hairline);
+  }
+  h3 { font-size: 19px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  p { margin: 0; }
+  a { color: var(--cobalt); text-underline-offset: 3px; }
+
+  .thesis {
+    font-size: 21px; line-height: 1.45; font-weight: 600; margin: 0;
+    padding-left: 18px; border-left: 3px solid var(--cobalt); text-wrap: balance;
+  }
+
+  /* ---- the alert: the one finding that reorders the plan ---- */
+  .alert {
+    background: var(--surface); border: 1px solid var(--hairline);
+    border-left: 3px solid var(--critical);
+    border-radius: 14px; padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow);
+  }
+  .alert-tag {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--critical); font-weight: 700;
+  }
+  .filetree {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.9; color: var(--ink);
+    background: var(--surface-high); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; white-space: pre;
+  }
+  .filetree em { color: var(--critical); font-style: normal; }
+
+  /* ---- gates ---- */
+  .gates { display: flex; flex-direction: column; gap: 1px; background: var(--hairline);
+           border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
+  .gate { background: var(--surface); padding: 14px 18px; display: grid;
+          grid-template-columns: 44px 1fr auto; gap: 14px; align-items: baseline; }
+  .gate-id {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--muted); font-weight: 600;
+  }
+  .gate-name { font-size: 15px; }
+  .gate-note { display: block; color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+  .pill {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 999px; white-space: nowrap; font-weight: 600;
+    border: 1px solid currentColor;
+  }
+  .pill.blocked { color: var(--critical); }
+  .pill.partial { color: var(--caution); }
+  .pill.done    { color: var(--cobalt); }
+
+  /* ---- ordered queue: numbering is legitimate here, it is a real sequence ---- */
+  .queue { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: grid; grid-template-columns: 52px 1fr; gap: 18px;
+    padding: 20px 0; border-top: 1px solid var(--hairline);
+  }
+  .step:last-child { border-bottom: 1px solid var(--hairline); }
+  .step-num {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 22px; font-weight: 700; color: var(--cobalt); line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  .step.critical .step-num { color: var(--critical); }
+  .step-body { display: flex; flex-direction: column; gap: 7px; }
+  .step-body p { color: var(--muted); font-size: 15px; }
+  .step-body ul { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: 14.5px; }
+  .step-body li { margin-bottom: 3px; }
+  .branch {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--ink); background: var(--surface-high);
+    padding: 2px 7px; border-radius: 5px; align-self: flex-start;
+  }
+
+  /* ---- resolutions table ---- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 520px; }
+  th {
+    text-align: left; padding: 12px 16px; background: var(--surface-high);
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; white-space: nowrap;
+  }
+  td { padding: 13px 16px; border-top: 1px solid var(--hairline); background: var(--surface);
+       vertical-align: top; }
+  td strong { font-weight: 650; }
+
+  .next { display: flex; flex-direction: column; gap: 10px; }
+  .next-item { display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: baseline; }
+  .next-item span:first-child {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .deferred { color: var(--muted); font-size: 14.5px; padding-top: 6px; }
+
+  footer {
+    border-top: 1px solid var(--hairline); padding-top: 20px;
+    color: var(--muted); font-size: 13.5px; display: flex; flex-direction: column; gap: 6px;
+  }
+
+  @media (max-width: 560px) {
+    .gate { grid-template-columns: 34px 1fr; }
+    .gate .pill { grid-column: 2; justify-self: start; margin-top: 6px; }
+    .step { grid-template-columns: 36px 1fr; gap: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Source of truth &middot; supersedes PRD.md, DESIGN_SYSTEM.md, HANDOFF.md</p>
+    <h1>AutoMinder MVP Plan</h1>
+    <p class="standfirst">What ships to the Play Store, in what order, and what has to be true before any of it goes out.</p>
+    <div class="meta">
+      <span>2026-08-16</span>
+      <span>com.autominder.app</span>
+      <span>v1.0 &middot; feature-frozen</span>
+      <span>Billing deadline &middot; 15 days</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>Thesis</h2>
+    <p class="thesis">AutoMinder is the app that tells you what your car needs before it costs you money.</p>
+    <p>The market is full of maintenance loggers. AutoMinder does not win on logging. It wins on one promise: <strong>the reminder arrives on time, and everything it says is true.</strong></p>
+    <p>That leaves exactly three things worth being best at — the reminder fires correctly, nothing shown is invented, and logging costs almost nothing. Charts, OCR, analytics and silhouettes are decoration on top of those three, and none of them ship until all three are proven.</p>
+  </section>
+
+  <section>
+    <h2>The finding that reorders this plan</h2>
+    <div class="alert">
+      <span class="alert-tag">Revised on second audit &middot; highest risk</span>
+      <h3>The reminder engine cannot keep the promise — and it has no tests.</h3>
+      <p>The first version of this plan said the engine was untested. True, but too generous. This is the entire scheduling strategy:</p>
+      <div class="filetree">PeriodicWorkRequestBuilder&lt;ReminderCheckWorker&gt;(6, TimeUnit.HOURS).build()
+WorkManager.getInstance(context)
+    .enqueueUniquePeriodicWork(NAME, <em>ExistingPeriodicWorkPolicy.KEEP</em>, request)</div>
+      <p><span class="mono">PeriodicWorkRequest</span> is best-effort. It is deferred by Doze, by App Standby, and by the OEM process killers on Xiaomi, Huawei, Oppo, Vivo, Samsung and Realme &mdash; which is most of the South Asian market this product targets. <strong>On those phones the reminder never arrives, and nothing tells the user.</strong></p>
+      <p>There is no <span class="mono">AlarmManager</span> for date-critical items like insurance expiry, no exact-alarm permission declared, and <strong>zero</strong> battery-optimisation handling anywhere in the codebase. <span class="mono">KEEP</span> also means a future schedule change never reaches existing installs.</p>
+      <p>On top of that, all four workers have no tests between them while 70 tests pass elsewhere.</p>
+      <p><strong>A maintenance app whose reminder silently fails is worse than no app</strong> — the user believes they are covered, and finds out when something breaks. That is the exact harm this product exists to prevent.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Platform gates &middot; missed in the first draft</h2>
+    <p>These are 2026 Play and Android platform requirements, not preferences. Each needs a verified answer before submission.</p>
+    <div class="gates">
+      <div class="gate"><span class="gate-id">P1</span><span class="gate-name">16 KB memory page support<span class="gate-note">Required for Android 15+ targets. Every native library must be aligned or the app crashes on 16 KB devices.</span></span><span class="pill blocked">Unverified</span></div>
+      <div class="gate"><span class="gate-id">P2</span><span class="gate-name">Edge-to-edge enforcement<span class="gate-note">Enforced at targetSdk 36. Screens assuming old insets will clip.</span></span><span class="pill blocked">Unverified</span></div>
+      <div class="gate"><span class="gate-id">P3</span><span class="gate-name">Predictive back<span class="gate-note">Required by the design system on every in-progress form. Never verified.</span></span><span class="pill blocked">Unverified</span></div>
+      <div class="gate"><span class="gate-id">P4</span><span class="gate-name">Play Vitals headroom<span class="gate-note">Crashlytics is a dependency with no evidence it has reported a real session.</span></span><span class="pill blocked">Unverified</span></div>
+      <div class="gate"><span class="gate-id">P5</span><span class="gate-name">Backup actually restores the database<span class="gate-note">Room is the only copy. If backup excludes it, a phone upgrade wipes years of history — the exact failure that cost aCar 4.5→1.6 stars.</span></span><span class="pill blocked">Untested</span></div>
+      <div class="gate"><span class="gate-id">P6</span><span class="gate-name">Notification-denied path<span class="gate-note">Denied permission means the product has no function. It must say so.</span></span><span class="pill blocked">Not started</span></div>
+      <div class="gate"><span class="gate-id">S1</span><span class="gate-name">Baseline Profile is decorative<span class="gate-note">Plugin applied in app/build.gradle.kts; no producer module exists. No profile is generated — the 20–30% cold-start win is unclaimed.</span></span><span class="pill blocked">Not wired</span></div>
+    </div>
+    <p class="deferred"><strong>Data export must not be Pro-gated.</strong> For an offline-first app where the device holds the only copy, charging users to get their own data out is a trust failure and a data-portability risk. Export is free, forever.</p>
+  </section>
+
+  <section>
+    <h2>Blocking gates — cannot submit without these</h2>
+    <div class="gates">
+      <div class="gate"><span class="gate-id">B1</span><span class="gate-name">Billing 9.1.0 migrated, signed release verified<span class="gate-note">Code done, gates green in worktree. Release build unverified — needs keystore.</span></span><span class="pill partial">Partial</span></div>
+      <div class="gate"><span class="gate-id">B2</span><span class="gate-name">Reminder engine tested and device-verified<span class="gate-note">No tests exist on any worker.</span></span><span class="pill blocked">Not started</span></div>
+      <div class="gate"><span class="gate-id">B3</span><span class="gate-name">Privacy policy URL live<span class="gate-note">website/ committed but never deployed.</span></span><span class="pill blocked">Blocked</span></div>
+      <div class="gate"><span class="gate-id">B4</span><span class="gate-name">Data Safety form matches real SDK behaviour<span class="gate-note">AdMob, Firebase and Billing all collect.</span></span><span class="pill blocked">Not started</span></div>
+      <div class="gate"><span class="gate-id">B5</span><span class="gate-name">Locale claims match shipped translations<span class="gate-note">localeFilters declares es and pt-rBR; only values/ exists. A false store claim.</span></span><span class="pill blocked">Broken</span></div>
+      <div class="gate"><span class="gate-id">B6</span><span class="gate-name">Signed AAB from a clean release gate</span><span class="pill blocked">Blocked</span></div>
+      <div class="gate"><span class="gate-id">B7</span><span class="gate-name">Store listing and screenshots</span><span class="pill blocked">Blocked</span></div>
+      <div class="gate"><span class="gate-id">B8</span><span class="gate-name">Demo data is credible<span class="gate-note">Currently renders &ldquo;Overdue by 173,000 km&rdquo;.</span></span><span class="pill blocked">Broken</span></div>
+    </div>
+    <p class="deferred"><strong>B5 is a misrepresentation risk, not polish.</strong> Advertising Spanish and Portuguese while shipping only English is a false claim. The honest MVP fix is to drop the locale filters and launch English-only; translation is v1.1 work.</p>
+  </section>
+
+  <section>
+    <h2>The queue — one branch, one gate, one commit</h2>
+    <div class="queue">
+
+      <div class="step">
+        <span class="step-num">0</span>
+        <div class="step-body">
+          <h3>Commit the truthfulness fix</h3>
+          <p>Health-score removal. Compile, 70/70 tests, lint and assembleDebug all green. Blocked only on whether to bundle four pre-existing sentence-case string edits.</p>
+          <span class="branch">fix(ui): report maintenance status the app can actually know</span>
+        </div>
+      </div>
+
+      <div class="step critical">
+        <span class="step-num">1</span>
+        <div class="step-body">
+          <h3>Make the reminder engine trustworthy</h3>
+          <p>The highest-value work in this plan, and larger than first scoped. This is the product; everything else is packaging.</p>
+          <ul>
+            <li><strong>Fix the architecture</strong> — <span class="mono">AlarmManager</span> for date-critical items, exact-alarm permission declared, a battery-optimisation exemption asked once in context, <span class="mono">POLICY.UPDATE</span> so schedule changes reach existing installs, rescheduling on boot, update and timezone change</li>
+            <li><strong>Prove it</strong> — worker selection and cooldowns, boot rescheduling, an instrumented test that the notification posts and deep-links correctly, and a device pass through reboot, force-stop, Doze and one aggressive-OEM handset</li>
+            <li><strong>Be honest when we cannot deliver</strong> — if notifications are off or the app is battery-restricted, Home says so. Never let the user believe they are covered when they are not.</li>
+          </ul>
+          <span class="branch">fix/reminder-engine-reliability</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">2</span>
+        <div class="step-body">
+          <h3>Close Billing 9</h3>
+          <p>Branch exists and its gates are green. Needs signing config, then clean assembleRelease and bundleRelease, then a verified signed AAB. Hard external deadline: 2026-08-31.</p>
+          <span class="branch">migration/play-billing-9</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">3</span>
+        <div class="step-body">
+          <h3>Make the store surface honest</h3>
+          <p>Drop the unshipped locale filters, reseed demo data, deploy the privacy policy and link it in Settings, complete the Data Safety form against real SDK behaviour.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">4</span>
+        <div class="step-body">
+          <h3>Clear the platform and accessibility blockers</h3>
+          <p>P1&ndash;P6 above: 16 KB alignment, edge-to-edge, predictive back, Crashlytics actually reporting, a real device-transfer restore test, and the notification-denied path. Un-gate data export. Then the accessibility set — paywall icons unannounced to TalkBack, empty-state contrast at 3.8:1, FAB speed dial with no scrim or back handling, and the widget&rsquo;s raw unlocalised service label.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">5</span>
+        <div class="step-body">
+          <h3>Wire performance measurement</h3>
+          <p>Build the missing Baseline Profile producer so the applied plugin does something. Add a macrobenchmark for cold start — target: first verdict under 800&nbsp;ms on a mid-range device — and JankStats for real-device scroll regressions. Until this exists, every performance claim in every document here is unmeasured.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">6</span>
+        <div class="step-body">
+          <h3>Home reference slice</h3>
+          <p>Sentence-first verdict (done), attention count, a due list phrased the way BMW phrases it — date <em>or</em> distance — and a first-run checklist for the empty garage, which is what a new user actually sees today.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">7</span>
+        <div class="step-body">
+          <h3>Wire what already exists</h3>
+          <p><span class="mono">RecordsTimelineCard</span> and <span class="mono">FormSectionCard</span> were built, paid for, and have zero usages. Consume them. No new components.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">8</span>
+        <div class="step-body">
+          <h3>Release candidate</h3>
+          <p>The full gate: clean release build, R8 review, migration tests on device, billing purchase and restore through Play, UMP consent, test ads, TalkBack, 2.0&times; font, dark and light, process-death restoration, pre-launch report.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Contradictions, resolved</h2>
+    <p>Nine documents described this app and disagreed with each other and with the code. Each conflict is now decided.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Conflict</th><th>Resolution</th></tr></thead>
+        <tbody>
+          <tr><td>Status-dependent corner radii<br><span class="mono" style="font-size:12px">8 / 16 / 28dp</span></td><td><strong>Removed.</strong> Shape is set by component family. Status carries icon, label, colour, rail and copy — five channels, still colour-blind safe. BMW and Tesla both convey urgency with zero shape variation.</td></tr>
+          <tr><td><span class="mono">GOOD</span>, <span class="mono">DISABLED</span>, <span class="mono">NO_DATA</span></td><td><strong>Do not exist.</strong> The real enum is <span class="mono">OVERDUE, DUE_SOON, SNOOZED, OK, COMPLETED, UNKNOWN</span>.</td></tr>
+          <tr><td>Racing Teal vs Midnight Cobalt</td><td><strong>Midnight Cobalt.</strong> Shipped in the Night Garage commit; the older design doc is stale.</td></tr>
+          <tr><td>Exo&nbsp;2 + Nunito Sans vs Manrope</td><td><strong>Manrope + JetBrains Mono</strong> — but not implemented. No Manrope files exist in <span class="mono">res/font/</span>. Its own slice, in v1.1.</td></tr>
+          <tr><td>Health score</td><td><strong>Deleted.</strong> Four competing formulas existed; one scored <span class="mono">UNKNOWN</span> as 100/100.</td></tr>
+          <tr><td>Three tabs vs four</td><td><strong>Four:</strong> Home, Vehicles, Records, Settings. Records is never renamed.</td></tr>
+          <tr><td>Fuel Intelligence in v1.0</td><td><strong>v1.1.</strong> Governance overrides the PRD.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>What ships next &middot; v1.1</h2>
+    <div class="next">
+      <div class="next-item"><span>01</span><span><strong>Quote Auditor v0</strong> — paste or enter line items, rules-based, no AI and no OCR. The feature a user tells a friend about the same day.</span></div>
+      <div class="next-item"><span>02</span><span><strong>Mechanic prep script</strong> — pure templating from reminders already in the database.</span></div>
+      <div class="next-item"><span>03</span><span><strong>Seeded age and mileage templates</strong> — day-one value with zero history, which fixes the cold start.</span></div>
+      <div class="next-item"><span>04</span><span><strong>Don&rsquo;t-re-buy guard</strong> — flag work already done inside its interval.</span></div>
+      <div class="next-item"><span>05</span><span><strong>Notification actions</strong> — Done and Snooze inline.</span></div>
+      <div class="next-item"><span>06</span><span><strong>Manrope migration</strong>, then <strong>translations</strong> — properly, before the locale filters go back.</span></div>
+    </div>
+    <p class="deferred"><strong>Deferred indefinitely:</strong> OBD-II, VIN decode, cloud sync, receipt OCR, family sharing, marketplace, social and gamification, chat-as-home. Each was proposed in at least one document. None survives the test: <em>does it make the reminder arrive on time and true?</em></p>
+  </section>
+
+  <section>
+    <h2>Standing rules</h2>
+    <div class="next">
+      <div class="next-item"><span>&mdash;</span><span>No fabricated data, ever. An absent value and a zero value are different facts.</span></div>
+      <div class="next-item"><span>&mdash;</span><span>No advertised capability that does not exist — in the UI, the store listing, or the locale filters.</span></div>
+      <div class="next-item"><span>&mdash;</span><span>Status is never carried by colour alone, and never by shape.</span></div>
+      <div class="next-item"><span>&mdash;</span><span>Every bug fix gets a regression test. &ldquo;Compiles&rdquo; is not &ldquo;works&rdquo;.</span></div>
+      <div class="next-item"><span>&mdash;</span><span>State plainly what was not verified.</span></div>
+      <div class="next-item"><span>&mdash;</span><span>A spec that cites external research gets checked before anything is built on it. One handoff document attributed a bento-grid pattern to Mobbin; live Mobbin research showed the opposite.</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Full detail, including the document authority table and risk register, lives in <span class="mono">PLAN.md</span>. Screen contracts and Mobbin evidence live in <span class="mono">docs/exec-plans/mobbin-design-blueprint-2026.md</span>.</p>
+    <p>Not verified in this pass: any visual check. No emulator or adb was available, so UI changes are compile-verified only.</p>
+  </footer>
+
+</div>

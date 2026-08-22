@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <!-- Wrench + clipboard — "No service history" -->
+    <!-- Clipboard -->
+    <path
+        android:fillColor="#E0F2F1"
+        android:pathData="M60,50 L60,160 L140,160 L140,50 Q140,40 130,40 L70,40 Q60,40 60,50" />
+    <path
+        android:fillColor="#B2DFDB"
+        android:pathData="M85,35 L115,35 Q120,35 120,40 L120,48 L80,48 L80,40 Q80,35 85,35" />
+    <!-- Lines on clipboard -->
+    <path
+        android:pathData="M75,70 L125,70"
+        android:strokeColor="#006B5F"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M75,90 L115,90"
+        android:strokeColor="#80CBC4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M75,110 L120,110"
+        android:strokeColor="#80CBC4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M75,130 L100,130"
+        android:strokeColor="#80CBC4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+</vector>
