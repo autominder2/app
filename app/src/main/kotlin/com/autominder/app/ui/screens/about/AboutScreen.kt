@@ -1,7 +1,7 @@
 package com.autominder.app.ui.screens.about
 
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -138,7 +138,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                                 try {
                                     uriHandler.openUri(rateAppUrl)
                                 } catch (e: Exception) {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(rateAppUrl)).apply {
+                                    val intent = Intent(Intent.ACTION_VIEW, rateAppUrl.toUri()).apply {
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     }
                                     context.startActivity(intent)
@@ -154,7 +154,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                             onClick = {
                                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = Uri.parse("mailto:$feedbackEmail?subject=${Uri.encode(feedbackSubject)}")
+                                    data = "mailto:$feedbackEmail?subject=${java.net.URLEncoder.encode(feedbackSubject, "UTF-8")}".toUri()
                                 }
                                 try {
                                     context.startActivity(intent)
@@ -172,7 +172,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                                 try {
                                     uriHandler.openUri(privacyPolicyUrl)
                                 } catch (e: Exception) {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(privacyPolicyUrl)).apply {
+                                    val intent = Intent(Intent.ACTION_VIEW, privacyPolicyUrl.toUri()).apply {
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     }
                                     context.startActivity(intent)

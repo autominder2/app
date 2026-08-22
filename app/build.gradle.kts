@@ -120,7 +120,13 @@ android {
         // decision, not a build gate. Real code issues still fail via warningsAsErrors.
         disable += listOf(
             "TypographyFractions", "TypographyQuotes",
-            "GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion"
+            "GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion",
+            // ObsoleteSdkInt fires on mipmap-anydpi-v26/ but that qualifier is
+            // structurally required by AAPT for adaptive-icon resolution — removing
+            // it (or merging into mipmap-anydpi/) causes a BUILD FAILED because
+            // AAPT can no longer locate mipmap/ic_launcher. False positive for this
+            // specific resource folder type.
+            "ObsoleteSdkInt"
         )
     }
 

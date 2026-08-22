@@ -20,11 +20,11 @@ import com.autominder.app.ui.theme.Exo2
 fun EmptyState(
     title: String,
     subtitle: String,
+    modifier: Modifier = Modifier,
     onAction: (() -> Unit)? = null,
     actionLabel: String? = null,
     icon: ImageVector? = null,
     hint: String? = null,
-    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier

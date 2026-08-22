@@ -15,8 +15,8 @@ import com.autominder.app.R
 @Composable
 fun ErrorState(
     message: String,
+    modifier: Modifier = Modifier,
     onRetry: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier

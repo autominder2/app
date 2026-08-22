@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources,PluralsCandidate">
     <string name="app_name">AutoMinder</string>
 
     <!-- Bottom navigation — 4 tabs: Home / Vehicles / Records / Settings -->
@@ -819,7 +819,7 @@
     <string name="settings_backup_export_subtitle">Save a complete JSON snapshot of all vehicles, services, and fuel history</string>
     <string name="settings_backup_import_title">Restore from backup</string>
     <string name="settings_backup_import_subtitle">Restore or migrate vehicle records from a JSON backup file</string>
-    <string name="settings_backup_description">100% offline data sovereignty. Your data stays in your control — export or import anytime without cloud dependency.</string>
+    <string name="settings_backup_description">100%% offline data sovereignty. Your data stays in your control — export or import anytime without cloud dependency.</string>
     <string name="settings_backup_import_confirm_title">Restore vehicle records?</string>
     <string name="settings_backup_import_confirm_message">This will import all vehicles, service records, reminders, and fuel logs from your backup file into the app.</string>
     <string name="settings_backup_import_confirm_action">Restore backup</string>

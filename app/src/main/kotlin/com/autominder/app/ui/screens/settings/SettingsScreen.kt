@@ -3,6 +3,7 @@ package com.autominder.app.ui.screens.settings
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -693,7 +694,7 @@ fun SettingsScreen(
                                 .clickable {
                                     val intent = Intent(
                                         Intent.ACTION_VIEW,
-                                        Uri.parse("https://autominder.app/privacy")
+                                        "https://autominder.app/privacy".toUri()
                                     )
                                     context.startActivity(intent)
                                 }

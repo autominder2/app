@@ -50,8 +50,8 @@ fun ExplainableReminderSheet(
     distanceUnit: String,
     onDismiss: () -> Unit,
     onLogService: () -> Unit,
-    onEditReminder: () -> Unit = onDismiss,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditReminder: () -> Unit = onDismiss
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
