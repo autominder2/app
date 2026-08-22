@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AutoMinder · Vehicle Body Silhouette: HATCHBACK (compact liftgate)
+     Viewport 24×24dp. Single-colour filled path — tinted at runtime.
+     Distinguishing geometry: compact shorter body, near-vertical rear liftgate
+     (steep C/D pillar angle), no projecting trunk deck. Roof is slightly
+     lower than sedan and peaks closer to the front (A-pillar region). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="
+        M 2,17.5
+        L 2,16
+        C 2.5,14 4,12.5 6.5,12
+        L 8,10.5
+        C 9,9.5 10.5,9 12,9
+        L 13.5,9
+        C 14.5,9.5 15.5,10.5 16,12.5
+        C 16.5,14.5 17.5,16 19.5,17.5
+        L 17.5,17.5
+        A 2,2 0 0,0 13.5,17.5
+        L 6.5,17.5
+        A 2,2 0 0,0 2.5,17.5
+        Z" />
+
+</vector>

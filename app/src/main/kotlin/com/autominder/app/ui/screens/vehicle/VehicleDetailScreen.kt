@@ -469,6 +469,9 @@ private fun VehicleDetailContent(
     ) {
         // 1 — The car is the hero. Name appears exactly once on screen.
         item(key = "hero") {
+            val bodyType = remember(vehicle.make, vehicle.model) {
+                com.autominder.app.domain.util.VehicleBodyTypeResolver.resolve(vehicle.make, vehicle.model)
+            }
             VehicleHeroCard(
                 title = VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year),
                 variant = VehicleHeroVariant.Expanded,
@@ -478,6 +481,7 @@ private fun VehicleDetailContent(
                     R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model
                 ),
                 statusChip = worstStatus?.let { s -> { AutoMinderServiceStatusBadge(status = s) } },
+                bodyType = bodyType,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AutoMinder · Vehicle Body Silhouette: MINIVAN / MPV
+     Viewport 24×24dp. Single-colour filled path — tinted at runtime.
+     Distinguishing geometry: tall upright body with long flat roofline,
+     sloped one-box front windshield, boxy vertical tailgate. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="
+        M 1.5,17.5
+        L 1.5,15.5
+        C 2,13.5 3.5,11.5 5.5,10
+        L 7.5,8
+        C 8.5,7.5 10,7 11.5,7
+        L 18.5,7
+        C 19.5,7 20.5,7.5 21,8.5
+        L 21.5,15.5
+        L 21.5,17.5
+        L 20,17.5
+        A 2.2,2.2 0 0,0 15.6,17.5
+        L 7.9,17.5
+        A 2.2,2.2 0 0,0 3.5,17.5
+        Z" />
+
+</vector>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AutoMinder · Vehicle Body Silhouette: CONVERTIBLE (open top / roadster)
+     Viewport 24×24dp. Single-colour filled path — tinted at runtime.
+     Distinguishing geometry: very low body profile, windshield A-frame
+     visible with no solid roof above it. The open cockpit is represented
+     by a gap between the windshield top rail and the body — the most
+     immediately recognisable shape in the icon set. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Windshield A-pillar frame (open-top indicator) -->
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="
+        M 9,17.5
+        L 9,15
+        L 8.5,14
+        L 11,12.5
+        L 13,12.5
+        L 15.5,14
+        L 15,15
+        L 15,17.5
+        Z" />
+
+    <!-- Main low body / sill with wheel arches -->
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="
+        M 1.5,17.5
+        L 1.5,16.5
+        C 2,15.5 3.5,14.5 5.5,14.5
+        L 7,14.5
+        L 7,15.5
+        L 17,15.5
+        L 17,14.5
+        L 18.5,14.5
+        C 20.5,14.5 22,15.5 22.5,16.5
+        L 22.5,17.5
+        L 21,17.5
+        A 2,2 0 0,0 17,17.5
+        L 7,17.5
+        A 2,2 0 0,0 3,17.5
+        Z" />
+
+</vector>

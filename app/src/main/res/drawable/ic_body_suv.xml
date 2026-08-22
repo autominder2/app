@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AutoMinder · Vehicle Body Silhouette: SUV / CROSSOVER
+     Viewport 24×24dp. Single-colour filled path — tinted at runtime.
+     Distinguishing geometry: tall upright body (roof at y≈7), near-flat
+     roofline, boxy D-pillar, elevated ride height, substantial wheel arches. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="
+        M 1.5,17.5
+        L 1.5,15
+        C 2,13 3.5,11.5 5.5,11
+        L 6.5,9
+        C 7.5,7.5 9,7 11,7
+        L 14,7
+        C 16,7 17.5,7.8 19,9.5
+        C 20,11 21,13 21.5,15
+        L 21.5,17.5
+        L 20,17.5
+        A 2.2,2.2 0 0,0 15.6,17.5
+        L 7.9,17.5
+        A 2.2,2.2 0 0,0 3.5,17.5
+        Z" />
+
+</vector>

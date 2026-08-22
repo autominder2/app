@@ -191,6 +191,9 @@ private fun VehicleListRow(
     }
     val photoDescription = stringResource(R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model)
     val statusLabel = stringResource(item.status.labelRes())
+    val bodyType = remember(vehicle.make, vehicle.model) {
+        com.autominder.app.domain.util.VehicleBodyTypeResolver.resolve(vehicle.make, vehicle.model)
+    }
 
     val concernText = when {
         // Truthful no-data state: absent reminders are not "all good".
@@ -225,6 +228,7 @@ private fun VehicleListRow(
         statusChip = { AutoMinderServiceStatusBadge(status = item.status) },
         railStatus = item.status,
         concernText = concernText,
+        bodyType = bodyType,
         onClick = onClick
     )
 }

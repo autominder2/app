@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -41,7 +42,9 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.autominder.app.ui.components.pressScale
 import com.autominder.app.domain.model.ServiceStatus
+import com.autominder.app.domain.model.VehicleBodyType
 import com.autominder.app.ui.theme.JetBrainsMono
+import com.autominder.app.ui.util.toDrawableRes
 
 /** Layout variants: [Compact] for list rows, [Expanded] for detail heroes. */
 enum class VehicleHeroVariant { Compact, Expanded }
@@ -73,6 +76,8 @@ fun VehicleHeroCard(
      *  already fully formatted and localized by the caller. Null renders
      *  nothing, preserving prior call sites. */
     concernText: String? = null,
+    /** Semantic vehicle body type silhouette to render when [photoUri] is null. */
+    bodyType: com.autominder.app.domain.model.VehicleBodyType = com.autominder.app.domain.model.VehicleBodyType.DEFAULT,
     onClick: (() -> Unit)? = null
 ) {
     val semanticsModifier = if (mergedContentDescription != null) {
@@ -93,11 +98,11 @@ fun VehicleHeroCard(
             when (variant) {
                 VehicleHeroVariant.Compact -> CompactContent(
                     title, yearText, odometerText, photoUri, photoContentDescription,
-                    statusChip, concernText, concernColor
+                    statusChip, concernText, concernColor, bodyType
                 )
                 VehicleHeroVariant.Expanded -> ExpandedContent(
                     title, yearText, odometerText, photoUri, photoContentDescription,
-                    statusChip, concernText, concernColor
+                    statusChip, concernText, concernColor, bodyType
                 )
             }
         }
@@ -157,7 +162,8 @@ private fun CompactContent(
     photoContentDescription: String?,
     statusChip: (@Composable () -> Unit)?,
     concernText: String? = null,
-    concernColor: Color = Color.Unspecified
+    concernColor: Color = Color.Unspecified,
+    bodyType: com.autominder.app.domain.model.VehicleBodyType = com.autominder.app.domain.model.VehicleBodyType.DEFAULT
 ) {
     Row(
         modifier = Modifier
@@ -166,7 +172,7 @@ private fun CompactContent(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        VehicleAvatar(photoUri, photoContentDescription, size = 56.dp)
+        VehicleAvatar(photoUri, photoContentDescription, size = 56.dp, bodyType = bodyType)
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -228,7 +234,8 @@ private fun ExpandedContent(
     photoContentDescription: String?,
     statusChip: (@Composable () -> Unit)?,
     concernText: String? = null,
-    concernColor: Color = Color.Unspecified
+    concernColor: Color = Color.Unspecified,
+    bodyType: com.autominder.app.domain.model.VehicleBodyType = com.autominder.app.domain.model.VehicleBodyType.DEFAULT
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (photoUri != null) {
@@ -275,7 +282,7 @@ private fun ExpandedContent(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (photoUri == null) {
-                VehicleAvatar(photoUri = null, photoContentDescription, size = 64.dp)
+                VehicleAvatar(photoUri = null, photoContentDescription, size = 64.dp, bodyType = bodyType)
             }
             Column(
                 modifier = Modifier.weight(1f),
@@ -315,7 +322,8 @@ private fun ExpandedContent(
 private fun VehicleAvatar(
     photoUri: String?,
     photoContentDescription: String?,
-    size: androidx.compose.ui.unit.Dp
+    size: androidx.compose.ui.unit.Dp,
+    bodyType: com.autominder.app.domain.model.VehicleBodyType = com.autominder.app.domain.model.VehicleBodyType.DEFAULT
 ) {
     if (photoUri != null) {
         AsyncImage(
@@ -337,7 +345,7 @@ private fun VehicleAvatar(
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
                             MaterialTheme.colorScheme.surfaceContainerHigh
                         )
                     )
@@ -345,11 +353,11 @@ private fun VehicleAvatar(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.DirectionsCar,
+                painter = painterResource(bodyType.toDrawableRes()),
                 contentDescription = photoContentDescription,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(size / 4),
+                    .padding(size / 5),
                 tint = MaterialTheme.colorScheme.primary
             )
         }

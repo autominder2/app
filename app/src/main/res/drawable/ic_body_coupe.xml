@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AutoMinder · Vehicle Body Silhouette: COUPE (2-door, fastback)
+     Viewport 24×24dp. Single-colour filled path — tinted at runtime.
+     Distinguishing geometry: low swept roof (y≈10.5), long sloping C-pillar
+     fastback, no separate trunk deck — the roofline flows straight to the
+     rear bumper. Wide stance relative to body height. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="
+        M 1.5,17.5
+        L 1.5,16
+        C 2,14.5 3.5,13 6,12.5
+        L 8.5,11
+        C 10,10.5 11,10.5 12.5,10.5
+        L 13.5,10.5
+        C 15.5,10.5 17.5,12 19.5,14.5
+        C 20.5,16 21.5,17 22.5,17.5
+        L 20.5,17.5
+        A 2,2 0 0,0 16.5,17.5
+        L 7,17.5
+        A 2,2 0 0,0 3,17.5
+        Z" />
+
+</vector>
