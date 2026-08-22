@@ -1,4 +1,4 @@
-﻿package com.autominder.app.ui.components
+package com.autominder.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -221,7 +221,8 @@ private fun FeatureComparisonTable() {
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             FeatureRow(stringResource(R.string.paywall_feature_quote_auditor), free = false, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_garage), free = false, pro = true)
+            // No vehicle-count gate exists in v1.0 - both tiers are unlimited.
+            FeatureRow(stringResource(R.string.paywall_feature_garage), free = true, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
             FeatureRow(stringResource(R.string.paywall_feature_passport), free = false, pro = true)
             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))

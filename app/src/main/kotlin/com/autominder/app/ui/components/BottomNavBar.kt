@@ -1,4 +1,4 @@
-﻿package com.autominder.app.ui.components
+package com.autominder.app.ui.components
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons

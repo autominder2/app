@@ -8,6 +8,7 @@ import com.autominder.app.domain.model.Vehicle
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.Locale
 
 enum class ReminderUrgency {
     OVERDUE,
@@ -198,6 +199,6 @@ class ReminderPriorityEngine @Inject constructor() {
     }
 
     private fun formatNumber(num: Int): String {
-        return String.format("%,d", num)
+        return String.format(Locale.getDefault(), "%,d", num)
     }
 }

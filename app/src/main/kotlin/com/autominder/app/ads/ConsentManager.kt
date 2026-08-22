@@ -1,4 +1,4 @@
-﻿package com.autominder.app.ads
+package com.autominder.app.ads
 
 import android.app.Activity
 import com.autominder.app.BuildConfig

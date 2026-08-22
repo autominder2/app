@@ -1,4 +1,4 @@
-﻿package com.autominder.app
+package com.autominder.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
