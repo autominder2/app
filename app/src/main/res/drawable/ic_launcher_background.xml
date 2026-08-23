@@ -1,20 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    AutoMinder · Adaptive Icon — Background Layer
+    108×108dp viewport. Radial gradient matching the manually-designed icon:
+    - Centre: #2B5FD9  (bright cobalt highlight — Midnight Cobalt light)
+    - Mid:    #0E3080  (brand cobalt)
+    - Edge:   #060E28  (near-black navy corner — matches your icon corners)
+
+    The background is what peeks around the mask when the launcher applies
+    a squircle / circle / teardrop shape. Keeps the icon looking rich on
+    every Android launcher without banding.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
     <path android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
             <gradient
                 android:type="radial"
                 android:centerX="54"
-                android:centerY="52"
-                android:gradientRadius="62"
-                android:startColor="#1E4A9C"
-                android:centerColor="#122E6E"
-                android:endColor="#060F28" />
+                android:centerY="46"
+                android:gradientRadius="68"
+                android:startColor="#3B6FE8"
+                android:centerColor="#0E3080"
+                android:endColor="#060E28" />
         </aapt:attr>
     </path>
+
 </vector>

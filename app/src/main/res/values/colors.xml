@@ -8,6 +8,11 @@
          black, or near white — cannot do. Cobalt primary is the brand mark. -->
     <color name="ic_launcher_background">#0B4FC4</color>
 
+    <!-- Splash screen icon circle background (the disc behind the icon graphic).
+         Cobalt primary: makes the white car+clock pop on both light and dark
+         splash backgrounds. -->
+    <color name="splash_icon_background">#0B4FC4</color>
+
     <!-- Splash ground, light theme. Night Garage light ground
          (docs/DESIGN_SYSTEM_2026.md §2); values-night carries the dark one.
          This was #004D40 — Material Teal 900, from the brand Night Garage

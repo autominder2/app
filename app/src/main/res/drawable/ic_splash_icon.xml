@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AutoMinder · Splash Screen Animated Icon
+    Used by windowSplashScreenAnimatedIcon in Theme.AutoMinder.Splash.
+
+    Splash spec (androidx.core:core-splashscreen):
+    - Must be 24×24dp (or use inset to 1/3 of the 288dp splash circle)
+    - Drawn on top of windowSplashScreenIconBackgroundColor
+    - Keep it simple — only the car + clock mark, no gear (too busy at this scale)
+
+    We use a 108×108 viewport so the shapes match ic_launcher_foreground
+    exactly, and let the SplashScreen library scale it into the 1/3 circle.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ── Clock mark (upper-right) ── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 77,19.5 A 13.5,13.5 0 1 1 76.999,19.5 Z" />
+    <path
+        android:fillColor="#0E3080"
+        android:pathData="M 77,22.5 A 10.5,10.5 0 1 1 76.999,22.5 Z" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 77,33 L 70.5,27.5" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 77,33 L 77,24.5" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 77,33 A 1.5,1.5 0 1 1 76.999,33 Z" />
+
+    <!-- ── Car front silhouette ── -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M 54,49
+          C 44,49 36,51.5 31,55
+          L 28,55
+          C 26.5,55 25.5,56 25.5,57.5
+          L 25.5,60
+          C 25.5,61.5 26.5,62.5 28,62.5
+          L 29,62.5
+          C 29,63.5 28.5,64.5 28.5,65.5
+          L 28.5,72
+          C 28.5,73.5 29.5,74.5 31,74.5
+          L 34,74.5
+          L 34,76
+          C 34,77.5 35.5,79 37,79
+          C 38.5,79 40,77.5 40,76
+          L 40,74.5
+          L 68,74.5
+          L 68,76
+          C 68,77.5 69.5,79 71,79
+          C 72.5,79 74,77.5 74,76
+          L 74,74.5
+          L 77,74.5
+          C 78.5,74.5 79.5,73.5 79.5,72
+          L 79.5,65.5
+          C 79.5,64.5 79,63.5 79,62.5
+          L 80,62.5
+          C 81.5,62.5 82.5,61.5 82.5,60
+          L 82.5,57.5
+          C 82.5,56 81.5,55 80,55
+          L 77,55
+          C 72,51.5 64,49 54,49 Z" />
+
+    <!-- Windshield -->
+    <path
+        android:fillColor="#0E3080"
+        android:pathData="
+          M 54,52.5
+          C 46.5,52.5 40,54.5 36.5,57.5
+          L 36.5,63.5
+          L 71.5,63.5
+          L 71.5,57.5
+          C 68,54.5 61.5,52.5 54,52.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 52.5,52.5 L 52.5,63.5 L 55.5,63.5 L 55.5,52.5 Z" />
+
+    <!-- Wheel arches -->
+    <path android:fillColor="#0E3080" android:pathData="M 37,71.5 A 6.5,6.5 0 1 1 36.999,71.5 Z" />
+    <path android:fillColor="#0E3080" android:pathData="M 71,71.5 A 6.5,6.5 0 1 1 70.999,71.5 Z" />
+    <path android:fillColor="#1A2A50" android:pathData="M 37,71.5 A 5,5 0 1 1 36.999,71.5 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 37,71.5 A 2.2,2.2 0 1 1 36.999,71.5 Z" />
+    <path android:fillColor="#1A2A50" android:pathData="M 71,71.5 A 5,5 0 1 1 70.999,71.5 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 71,71.5 A 2.2,2.2 0 1 1 70.999,71.5 Z" />
+
+    <!-- Headlights -->
+    <path android:fillColor="#C8DAFF" android:pathData="M 30,64 Q 28,65.5 30,67 L 36,67 L 36,64 Z" />
+    <path android:fillColor="#C8DAFF" android:pathData="M 72,64 L 78,64 L 78,67 Q 80,65.5 78,64 Z" />
+
+    <!-- Grille -->
+    <path android:fillColor="#0E3080" android:pathData="M 40,68 L 68,68 L 68,71 L 40,71 Z" />
+    <path android:fillColor="#1E4080" android:pathData="M 42,69 L 50,69 L 50,70 L 42,70 Z" />
+    <path android:fillColor="#1E4080" android:pathData="M 53,69 L 65,69 L 65,70 L 53,70 Z" />
+
+    <!-- Mirrors -->
+    <path android:fillColor="#FFFFFF" android:pathData="M 25.5,58.5 L 23,58.5 Q 21,58.5 21,60 L 21,61 Q 21,62.5 23,62.5 L 25.5,62.5 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M 82.5,58.5 L 85,58.5 Q 87,58.5 87,60 L 87,61 Q 87,62.5 85,62.5 L 82.5,62.5 Z" />
+
+</vector>

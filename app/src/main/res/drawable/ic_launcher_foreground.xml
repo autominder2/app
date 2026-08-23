@@ -1,46 +1,228 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    AutoMinder · Adaptive Icon — Foreground Layer  (108×108dp, safe zone 18–90)
+    Matches the manually-designed icon: front-facing car silhouette, partial
+    gear cog upper-left, clock circle upper-right. All fills #FFFFFF so the
+    background gradient provides all depth/contrast.
+
+    Safe zone = inner 72dp (x:18-90, y:18-90). All key elements are contained
+    inside. The gear outer teeth slightly bleed to ~x14 which is acceptable —
+    teeth are decorative and always clipped by the launcher mask.
+
+    ── Composition layout ────────────────────────────────────────────────────
+       Gear:  centre (28,44), outer r≈24, inner r≈17, 8 teeth
+       Car:   front face fills x:26–82, y:56–88 (bonnet + windscreen + bumper)
+       Clock: centre (77,34), r≈13
+    ──────────────────────────────────────────────────────────────────────────
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- AutoMinder V3 Memory Loop — Unified Continuous Path -->
-    <!-- 1. Orbital Arc (Upper Half) -->
+    <!-- ═══════════════════════════════════════════════════════════════════
+         1. GEAR COG  (upper-left, partially behind car)
+         8-tooth involute gear approximated as a path.
+         Centre (28, 44).  Outer tooth tip r≈24, root r≈18, bore r≈8.
+         ═══════════════════════════════════════════════════════════════════ -->
     <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M 28,20
+          C 30.5,20 32.5,21.5 33,23.5
+          L 34.5,23.8
+          C 35.5,21.2 38.3,19.8 41,20.8
+          C 43.7,21.8 44.9,24.8 43.8,27.5
+          L 44.8,28.5
+          C 47.5,27.5 50.5,28.7 51.5,31.4
+          C 52.5,34.1 51.1,37 48.5,38
+          L 48.2,39.5
+          C 50.2,40 51.7,42 51.7,44.3
+          C 51.7,46.6 50.2,48.6 48.2,49.1
+          L 48.5,50.6
+          C 51.1,51.6 52.5,54.5 51.5,57.2
+          C 50.5,59.9 47.5,61.1 44.8,60.1
+          L 43.8,61.1
+          C 44.9,63.8 43.7,66.8 41,67.8
+          C 38.3,68.8 35.5,67.4 34.5,64.8
+          L 33,65.1
+          C 32.5,67.1 30.5,68.6 28,68.6
+          C 25.5,68.6 23.5,67.1 23,65.1
+          L 21.5,64.8
+          C 20.5,67.4 17.7,68.8 15,67.8
+          C 12.3,66.8 11.1,63.8 12.2,61.1
+          L 11.2,60.1
+          C 8.5,61.1 5.5,59.9 4.5,57.2
+          C 3.5,54.5 4.9,51.6 7.5,50.6
+          L 7.8,49.1
+          C 5.8,48.6 4.3,46.6 4.3,44.3
+          C 4.3,42 5.8,40 7.8,39.5
+          L 7.5,38
+          C 4.9,37 3.5,34.1 4.5,31.4
+          C 5.5,28.7 8.5,27.5 11.2,28.5
+          L 12.2,27.5
+          C 11.1,24.8 12.3,21.8 15,20.8
+          C 17.7,19.8 20.5,21.2 21.5,23.8
+          L 23,23.5
+          C 23.5,21.5 25.5,20 28,20 Z
+          M 28,36
+          C 31.9,36 35,39.1 35,43
+          C 35,46.9 31.9,50 28,50
+          C 24.1,50 21,46.9 21,43
+          C 21,39.1 24.1,36 28,36 Z" />
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         2. CLOCK  (upper-right, fully within safe zone)
+         Centre (77, 33).  Outer circle r=13.5, white filled ring + hands.
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Clock face — outer disc -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 77,19.5 A 13.5,13.5 0 1 1 76.999,19.5 Z" />
+
+    <!-- Clock face — inner cutout (creates ring) -->
+    <path
+        android:fillColor="#0E3080"
+        android:pathData="M 77,22.5 A 10.5,10.5 0 1 1 76.999,22.5 Z" />
+
+    <!-- Clock hand — hour (pointing ~10 o'clock) -->
+    <path
+        android:fillColor="#FFFFFF"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="3.6"
+        android:strokeWidth="2.2"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:fillColor="#00000000"
-        android:pathData="M 28,66 C 26,43 38,25 54,25 C 70,25 82,43 80,66" />
+        android:pathData="M 77,33 L 70.5,27.5" />
 
-    <!-- 2. Car Upper Body (Windshield, Centered B-Pillar Roofline, Rear Quarter) -->
+    <!-- Clock hand — minute (pointing ~12 o'clock) -->
     <path
+        android:fillColor="#FFFFFF"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="3.6"
+        android:strokeWidth="2.2"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:fillColor="#00000000"
-        android:pathData="M 28,66 C 29.5,59.5 35,53.5 43,51.5 C 48.5,50 54,49.5 59.5,50 C 67.5,51.5 74.5,58 80,66" />
+        android:pathData="M 77,33 L 77,24.5" />
 
-    <!-- 3. Grounded Baseline with Integrated Wheel Arch Humps -->
+    <!-- Clock centre dot -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="3.6"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:fillColor="#00000000"
-        android:pathData="M 28,66 L 33,66 C 33,62.5 35.5,60 38.5,60 C 41.5,60 44,62.5 44,66 L 64,66 C 64,62.5 66.5,60 69.5,60 C 72.5,60 75,62.5 75,66 L 80,66" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M 77,33 A 1.5,1.5 0 1 1 76.999,33 Z" />
 
-    <!-- 4. Memory Beacon — High-Contrast Separator Ring -->
-    <path
-        android:fillColor="#08142E"
-        android:pathData="M 54,25 m -5,0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0" />
+    <!-- ═══════════════════════════════════════════════════════════════════
+         3. CAR — FRONT-FACING SILHOUETTE
+         Occupies lower 55% of icon. Width ~56dp centred at x=54.
+         Elements: hood/bonnet top, windshield, A-pillars, roof, side mirror
+         nubs, door panels, lower bumper/valance, wheel arches, wheels.
+         ═══════════════════════════════════════════════════════════════════ -->
 
-    <!-- 5. Memory Beacon — Intelligent Memory Node (WCAG AAA/AA Compliant) -->
+    <!-- Car body — main filled shape (hood + greenhouse + lower body) -->
     <path
-        android:fillColor="#38B2E8"
-        android:pathData="M 54,25 m -3.5,0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0" />
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M 54,49
+          C 44,49 36,51.5 31,55
+          L 28,55
+          C 26.5,55 25.5,56 25.5,57.5
+          L 25.5,60
+          C 25.5,61.5 26.5,62.5 28,62.5
+          L 29,62.5
+          C 29,63.5 28.5,64.5 28.5,65.5
+          L 28.5,72
+          C 28.5,73.5 29.5,74.5 31,74.5
+          L 34,74.5
+          L 34,76
+          C 34,77.5 35.5,79 37,79
+          C 38.5,79 40,77.5 40,76
+          L 40,74.5
+          L 68,74.5
+          L 68,76
+          C 68,77.5 69.5,79 71,79
+          C 72.5,79 74,77.5 74,76
+          L 74,74.5
+          L 77,74.5
+          C 78.5,74.5 79.5,73.5 79.5,72
+          L 79.5,65.5
+          C 79.5,64.5 79,63.5 79,62.5
+          L 80,62.5
+          C 81.5,62.5 82.5,61.5 82.5,60
+          L 82.5,57.5
+          C 82.5,56 81.5,55 80,55
+          L 77,55
+          C 72,51.5 64,49 54,49 Z" />
+
+    <!-- Windshield cutout (dark blue — shows background through) -->
+    <path
+        android:fillColor="#0E3080"
+        android:pathData="
+          M 54,52.5
+          C 46.5,52.5 40,54.5 36.5,57.5
+          L 36.5,63.5
+          L 71.5,63.5
+          L 71.5,57.5
+          C 68,54.5 61.5,52.5 54,52.5 Z" />
+
+    <!-- Centre pillar (B-pillar divider on windshield) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 52.5,52.5 L 52.5,63.5 L 55.5,63.5 L 55.5,52.5 Z" />
+
+    <!-- Left wheel arch recess -->
+    <path
+        android:fillColor="#0E3080"
+        android:pathData="M 37,71.5 A 6.5,6.5 0 1 1 36.999,71.5 Z" />
+
+    <!-- Right wheel arch recess -->
+    <path
+        android:fillColor="#0E3080"
+        android:pathData="M 71,71.5 A 6.5,6.5 0 1 1 70.999,71.5 Z" />
+
+    <!-- Left wheel -->
+    <path
+        android:fillColor="#1A2A50"
+        android:pathData="M 37,71.5 A 5,5 0 1 1 36.999,71.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 37,71.5 A 2.2,2.2 0 1 1 36.999,71.5 Z" />
+
+    <!-- Right wheel -->
+    <path
+        android:fillColor="#1A2A50"
+        android:pathData="M 71,71.5 A 5,5 0 1 1 70.999,71.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 71,71.5 A 2.2,2.2 0 1 1 70.999,71.5 Z" />
+
+    <!-- Headlight left -->
+    <path
+        android:fillColor="#C8DAFF"
+        android:pathData="M 30,64 Q 28,65.5 30,67 L 36,67 L 36,64 Z" />
+
+    <!-- Headlight right -->
+    <path
+        android:fillColor="#C8DAFF"
+        android:pathData="M 72,64 L 78,64 L 78,67 Q 80,65.5 78,64 Z" />
+
+    <!-- Front grille / lower bumper bar -->
+    <path
+        android:fillColor="#0E3080"
+        android:pathData="M 40,68 L 68,68 L 68,71 L 40,71 Z" />
+
+    <!-- Grille slots -->
+    <path
+        android:fillColor="#1E4080"
+        android:pathData="M 42,69 L 50,69 L 50,70 L 42,70 Z" />
+    <path
+        android:fillColor="#1E4080"
+        android:pathData="M 53,69 L 65,69 L 65,70 L 53,70 Z" />
+
+    <!-- Left mirror nub -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 25.5,58.5 L 23,58.5 Q 21,58.5 21,60 L 21,61 Q 21,62.5 23,62.5 L 25.5,62.5 Z" />
+
+    <!-- Right mirror nub -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 82.5,58.5 L 85,58.5 Q 87,58.5 87,60 L 87,61 Q 87,62.5 85,62.5 L 82.5,62.5 Z" />
 
 </vector>

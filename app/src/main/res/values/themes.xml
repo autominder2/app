@@ -3,9 +3,14 @@
     <!-- Base theme for a Compose-only app — no action bar, no XML layouts -->
     <style name="Theme.AutoMinder" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <!-- Splash screen theme (androidx.core:core-splashscreen) -->
+    <!-- Splash screen theme (androidx.core:core-splashscreen)
+         windowSplashScreenAnimatedIcon : the icon drawn in the centre circle.
+         windowSplashScreenIconBackgroundColor : the circle fill behind the icon.
+         postSplashScreenTheme : theme applied once Compose takes over. -->
     <style name="Theme.AutoMinder.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
         <item name="postSplashScreenTheme">@style/Theme.AutoMinder</item>
     </style>
 </resources>

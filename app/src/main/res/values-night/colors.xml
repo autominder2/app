@@ -11,4 +11,8 @@
          MissingDefaultResource — a real crash risk in configurations that
          don't resolve the night qualifier, not a false positive. -->
     <color name="splash_background">#0F1316</color>
+
+    <!-- Dark mode splash icon circle. Slightly lighter cobalt so the cobalt
+         disc is visible against the near-black #0F1316 splash ground. -->
+    <color name="splash_icon_background">#1055CC</color>
 </resources>
