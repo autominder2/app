@@ -1,46 +1,51 @@
-# AutoMinder — Play Store Release Checklist
-Audited 2026-07-03 against the actual codebase. ✅ verified in code · ⚠️ needs your action · ❌ gap.
+# AutoMinder - Play Store Release Checklist
 
-## Build & signing
-- ✅ targetSdk 36 / minSdk 26, Java 17, R8 full (`isMinifyEnabled` + `isShrinkResources`) with proguard-rules.pro
-- ✅ Release signing from local.properties only (KEYSTORE_PATH/…); nothing in source
-- ✅ Auto versionCode (YYMMDDHH) — unique per hour; versionName 1.0.0
-- ✅ Lint gate: `abortOnError` + `warningsAsErrors` on release builds
-- ✅ Locale filters en / es / pt-BR
-- ⚠️ Build the store artifact with `./gradlew bundleRelease` (AAB, not APK) and keep the keystore + passwords backed up offline — losing them loses the app identity
+Audited 2026-08-23 against the actual codebase and current market/release plan.
 
-## Ads (AdMob) & consent
-- ✅ UMP consent flow gates Mobile Ads init (`canRequestAds()` before initialize)
-- ✅ "Ad privacy options" re-prompt exposed in Settings
-- ✅ Release build FAILS if no real AdMob app ID is set (production safety gate task)
-- ✅ Debug uses Google test IDs; `ENABLE_ADS=false` in debug
-- ⚠️ Before first release: set RELEASE_ADMOB_ID + the 4 unit IDs in local.properties/CI, and register the app in the AdMob console with the *final* package `com.autominder.app`
-- ⚠️ In Play Console → App content: declare "Yes, contains ads"
+Legend: VERIFIED = checked in code; ACTION = owner/device/Console work; GAP = release blocker or claim mismatch.
 
-## Subscriptions (Billing 7.1.1)
-- ✅ SUBS + INAPP queried on connect; purchases acknowledged (required within 3 days or auto-refund)
-- ⚠️ Create the subscription products in Play Console with IDs matching SubscriptionManager, activate them, and test with a license-tester account (products only resolve on a Play-signed build)
+## Build & Signing
 
-## Privacy & data safety
-- ✅ Privacy policy hosted: https://com-autominder-app.web.app/privacy — verify it loads and names AdMob, Firebase Analytics, Crashlytics as third parties
-- ✅ Minimal permissions (INTERNET, POST_NOTIFICATIONS, BOOT_COMPLETED, VIBRATE); photo picker avoids media permissions
-- ✅ backup_rules + data_extraction_rules present; cleartext traffic off + network security config
-- ⚠️ Play Console Data Safety form must declare: Analytics (Firebase), Crash logs (Crashlytics), Advertising ID (AdMob), and that vehicle data stays on-device
+- VERIFIED: targetSdk 36 / minSdk 26, Java 17, R8 full release config, release lint gates.
+- VERIFIED: release signing is sourced from local properties / CI inputs only; signing material stays out of source.
+- ACTION: Build the store artifact with `./gradlew bundleRelease` and keep keystore/password backup offline.
 
-## Stability & performance
-- ✅ Crashlytics + Performance Monitoring + Analytics wired
-- ✅ LeakCanary debug-only; Timber logging; profileinstaller present
-- ❌ Baseline Profile: plugin is applied but there is NO producer module (`settings.gradle.kts` includes only `:app`) — no profile is actually generated. Cold-start win still on the table; fine to ship 1.0 without it, queue for 1.1
-- ✅ In-app review (throttled via ReviewHelper) + in-app update helper
+## Ads & Consent
 
-## Store listing (nothing in-code — all yours)
-- ⚠️ 512px icon, feature graphic 1024×500, ≥4 phone screenshots (use the Racing Teal brand system: DESIGN_SYSTEM.md / Figma file)
-- ⚠️ Title ≤30 chars, short description ≤80, full description; content rating questionnaire; target-audience declaration (13+, not child-directed — required because ads)
-- ⚠️ Start with a closed-testing track; Google requires 12 testers/14 days for new personal dev accounts — check whether TikiTaka3D account is affected
+- VERIFIED: UMP consent flow exists and Settings exposes ad privacy options.
+- ACTION: Verify every actual ad request is blocked until UMP `canRequestAds()` is true.
+- ACTION: Set release AdMob app ID and unit IDs in local/CI secrets, then register package `com.autominder.app` in AdMob.
+- ACTION: In Play Console App Content, declare that the app contains ads.
 
-## Pre-submit smoke test (on device, release build)
-1. Fresh install → onboarding → add car → permission → live dashboard
-2. Log service with reminder toggle → reminder appears; log fuel with empty cost
-3. Kill app, reboot device → BootReceiver reschedules; notification fires
-4. Consent form appears in an EEA-locale emulator; ads load after consent
-5. Purchase + cancel a test subscription; Pro gates unlock/relock
+## Billing
+
+- GAP: Play Billing is still 7.1.1. Migrate to 9.1.0 before production submission unless an approved extension path is used.
+- VERIFIED: current code queries SUBS and INAPP products and acknowledges purchases.
+- ACTION: Decide whether v1.0 keeps monthly/yearly/lifetime products or changes catalog; update code, copy, and Play Console together.
+- ACTION: License-test purchase, cancel, pending, already-owned, restore, cached entitlement, reconnect, and entitlement removal on a Play-signed build.
+
+## Privacy & Data Safety
+
+- VERIFIED: minimal explicit permissions, backup rules, data extraction rules, cleartext off, network security config present.
+- ACTION: Data Safety must disclose Firebase Analytics, Crashlytics, Performance Monitoring, AdMob/Advertising ID, Billing, and Android backup behavior.
+- ACTION: Privacy policy must match real SDK behavior and must not imply zero collection while Firebase/AdMob/Billing are present.
+
+## Stability & Performance
+
+- VERIFIED: Crashlytics, Performance Monitoring, Analytics, debug-only LeakCanary, Timber, and profileinstaller are wired.
+- VERIFIED: Baseline Profile producer module is present and consumed by `:app`.
+- ACTION: Record Baseline Profile generation and device performance evidence if it remains part of release confidence.
+
+## Store Listing & Claim Truth
+
+- ACTION: Prepare 512 px icon, 1024 x 500 feature graphic, at least 4 phone screenshots, title <= 30 chars, short description <= 80 chars, content rating, and target audience declaration.
+- GAP: Do not submit copy that claims Fleet Health Score, vehicle health score, cloud sync, PDF export, 7-day trial, guaranteed timing, unsupported prediction, Quote Auditor, OCR, AI, VIN lookup, recalls, diagnostics, or family sharing unless matching tested code and Play product evidence exist.
+- ACTION: Start with closed testing. Confirm whether the TikiTaka3D account is subject to Google Play's 12-tester / 14-day requirement for new personal developer accounts.
+
+## Pre-Submit Smoke Test
+
+1. Fresh install -> onboarding -> add car -> permission -> live dashboard.
+2. Log service with reminder toggle -> reminder appears; log fuel with empty cost.
+3. Kill app, reboot device -> worker reschedules; notification behavior is verified.
+4. EEA consent path -> ads load only after consent permits requests.
+5. Purchase/cancel configured test products -> Pro unlocks/relocks only after Play-confirmed entitlement.

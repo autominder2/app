@@ -1,6 +1,6 @@
 # AutoMinder MVP 1 — Active Release Convergence Plan
 
-Updated: 2026-08-14 (Asia/Karachi)
+Updated: 2026-08-23 (Asia/Karachi)
 
 Status: **ACTIVE — NOT READY**
 
@@ -17,6 +17,24 @@ Objective: ship the smallest trustworthy AutoMinder 1.0 release without data los
 - Play Billing: 7.1.1; official deadline 2026-08-31, extension 2026-11-01
 - Target SDK: 36; compliant with the 2026-08-31 target API requirement
 - Room: schema version 2 with exported schemas 1 and 2
+- Baseline Profile: producer module and app dependency are now present; generation/device evidence is still not established
+
+## Market R&D update - 2026-08-23
+
+Reference: `docs/market-rd-2026-08-23.md`.
+
+Market read: Fuelio, Simply Auto, Drivvo, CARFAX Car Care, and AUTOsist already cover fuel logs, expenses, date/odometer reminders, exports, reports, sync, recall/service history, and fleet dashboards. AutoMinder should not launch by inventing a "health score" or unsupported intelligence layer. The v1.0 advantage is trust: clear maintenance attention, evidence-backed timing, local records, and low-friction service/fuel logging.
+
+Launch promise:
+
+> Know what maintenance needs attention, what is coming up, and what you have already done - without creating an account.
+
+R&D decisions:
+
+- Treat `health score`, `Fleet Health Score`, "knows your driving patterns", cloud-sync, PDF, and trial language as launch blockers unless backed by tested code and Play product evidence.
+- Keep Quote Auditor / Counter Mode as v1.1 validation work, not v1.0 store copy.
+- Preserve monthly/yearly/lifetime billing behavior unless the owner explicitly changes the catalog; do not let old one-time-only docs override current billing code.
+- Position exports as user-entered maintenance records, not certified vehicle truth.
 
 ## Scope rules
 
@@ -112,6 +130,7 @@ Acceptance:
 
 - Remove Pro cloud-backup claims; Android Auto Backup is platform behavior available to all users, not a Pro feature.
 - Remove PDF claims unless PDF export exists and is tested.
+- Remove 7-day-trial claims unless Play Console subscription offers prove the trial for the selected products.
 - Paywall represents loading, available, unavailable, pending, cancelled, and restore states distinctly.
 - Privacy policy and Data Safety disclose Firebase Analytics, Crashlytics, Performance Monitoring, AdMob/Advertising ID, SDK-added ad-services permissions, and Android backup behavior accurately.
 - Store listing contains no health-score, guaranteed timing, fake privacy, unsupported prediction, sub-30-second, battery, or Counter Mode claims.
@@ -191,7 +210,7 @@ Acceptance:
 - Optional encrypted account and cross-device sync
 - VIN lookup, OBD-II, GPS/geofencing, OCR, family sharing
 - Fuel-intelligence expansion and prediction claims
-- Baseline Profile producer module and measured macrobenchmark program
+- Baseline Profile generation evidence and measured macrobenchmark program
 - Manrope migration pending asset/source/license proof and English/es/pt-BR/200% font evidence
 - AdMob v23 migration to a supported major version; v23 is deprecated but not sunset until 2027-06-30
 

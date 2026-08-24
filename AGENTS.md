@@ -1,9 +1,9 @@
 # AutoMinder — AGENTS.md
 # Agent Configuration & Scope Control
-# Updated: 2026-04 | Aligned with PRD v4.0 + CLAUDE.md v4.0
+# Updated: 2026-08 | Aligned with CLAUDE.md v6.1 + active release plan
 
 ## Project Identity
-- App: AutoMinder — car maintenance reminder, fuel intelligence & daily habit app
+- App: AutoMinder — car maintenance reminders, fuel/service records & launch-truth hardening
 - Package: `com.autominder.app` ← LOCKED FOREVER
 - Architecture: Clean Architecture + MVVM + Offline-First + Repository + UDF
 - Platform: Android | minSdk 26 | targetSdk 36 | Java 17
@@ -25,14 +25,14 @@
 | Coil | 3.1.0 | Vehicle photos — AsyncImage (coil3 group) |
 | Kotlinx Serialization | 1.8.0 | Nav type-safe routes require this |
 | AdMob | 23.5.0 | IDs from local.properties only |
-| Billing | 7.1.1 | One-time purchase only (no subscriptions) |
+| Billing | 7.1.1 | CURRENT BLOCKER: migrate to 9.1.0 before Play submission; current code supports monthly/yearly/lifetime unless owner changes catalog |
 | Timber | 5.0.1 | Debug builds only — DebugTree |
 | Turbine | 1.2.0 | Flow unit testing |
 
 ## Current Build Phase
-**Phase**: P6 — Reminder Engine (active)
+**Phase**: Release hardening + mandatory Billing migration (feature-frozen)
 **Last green build**: confirm with `./gradlew compileDebugKotlin`
-**Next milestone**: ReminderCheckWorker fires correctly + notification dedup working
+**Next milestone**: Play Billing 9.1.0 migration, claim-truth cleanup, release-candidate evidence
 
 ## Folder Structure (verified against codebase 2026-04-12)
 ```
@@ -111,13 +111,13 @@ Each agent session has exactly ONE scope. NEVER cross these lines.
 | **Build Agent** | `libs.versions.toml`, `build.gradle.kts` (root + app) |
 
 ## Session Protocol (run in order)
-1. git commit current state (10 seconds — instant rollback if needed)
+1. Inspect `git status`; do not commit, stash, or revert user work unless explicitly asked
 2. Agent pastes CLAUDE.md universal header in full
 3. Agent states exact files it will touch (no scope surprises)
 4. Agent pastes current content of ALL files it will modify
 5. Agent generates code
 6. Run: `./gradlew compileDebugKotlin`
-7. PASS → git commit with descriptive message → proceed
+7. PASS → report changed files and verification; commit only if explicitly asked
 8. FAIL → report FIRST error line only → fix → repeat from step 6
 
 ## Do NOT Touch (Protected Files)
@@ -129,12 +129,14 @@ Each agent session has exactly ONE scope. NEVER cross these lines.
 
 ## StatusCalculator Business Logic (VERIFIED CORRECT)
 ```
-Priority order: OVERDUE > DUE_SOON > SNOOZED > GOOD > DISABLED
-Step 1: if !isEnabled → DISABLED
-Step 2: computeRaw() — date trigger + km trigger → take WORST (min severity)
-Step 3: if rawStatus == OVERDUE → return OVERDUE (snooze CANNOT hide OVERDUE)
-Step 4: if snoozeActive → return SNOOZED
-Step 5: return rawStatus
+Priority order: OVERDUE > DUE_SOON > SNOOZED > OK > COMPLETED > UNKNOWN
+Step 1: if isCompleted → COMPLETED
+Step 2: check overdue by date or odometer BEFORE snooze
+Step 3: if overdue → OVERDUE (snooze CANNOT hide OVERDUE)
+Step 4: if snoozeActive → SNOOZED
+Step 5: if due soon by date or odometer → DUE_SOON
+Step 6: if any future due condition exists → OK
+Step 7: otherwise UNKNOWN
 ```
 
 ## Notification Cooldown Rules (WorkManager)
@@ -143,7 +145,7 @@ OVERDUE:   86_400_000L ms (24 hours) — urgent, daily is correct
 DUE_SOON:  86_400_000L * 3 ms (3 days) — avoids spam
 FUEL RED:  43_200_000L ms (12 hours)
 FUEL AMBER: 86_400_000L ms (24 hours)
-GOOD / SNOOZED / DISABLED: never send
+OK / SNOOZED / COMPLETED / UNKNOWN: never send
 30-day planning: 86_400_000L * 30 ms cooldown (once per window)
 Result.success() always — never retry-storm on partial notification failure
 ```

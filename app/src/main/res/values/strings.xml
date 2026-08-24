@@ -387,7 +387,7 @@
     <string name="settings_about">About</string>
     <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_upgrade_title">Upgrade to Pro</string>
-    <string name="settings_upgrade_subtitle">Unlock Quote Auditor, export &amp; zero ads</string>
+    <string name="settings_upgrade_subtitle">Unlock premium tools and remove ads</string>
     <string name="settings_upgrade_button">Upgrade</string>
     <string name="settings_pro_active">AutoMinder Pro</string>
     <string name="settings_pro_active_subtitle">All premium features unlocked</string>
@@ -439,7 +439,7 @@
     <string name="privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
 
     <!-- Widget -->
-    <string name="widget_description">Shows your fleet health score and next vehicle maintenance reminder</string>
+    <string name="widget_description">Shows maintenance status and the next vehicle reminder</string>
     <string name="widget_next_service">Next service</string>
     <string name="widget_all_caught_up">All caught up!</string>
     <string name="widget_due">Due: %1$s</string>
@@ -499,8 +499,8 @@
 
     <!-- Pro Paywall -->
     <string name="paywall_title">Never overpay for car repairs again</string>
-    <string name="paywall_subtitle">Audit repair quotes, track family vehicles, and protect your car\'s resale value.</string>
-    <string name="paywall_trial_reassurance">7-day free trial • Cancel anytime with 1 tap in Google Play</string>
+    <string name="paywall_subtitle">Track more vehicle detail, review costs, and remove ads.</string>
+    <string name="paywall_trial_reassurance">Manage or cancel anytime in Google Play</string>
     <string name="paywall_feature_quote_auditor">Quote price auditor (Fair price check)</string>
     <string name="paywall_feature_garage">Unlimited vehicles in one garage</string>
     <string name="paywall_feature_passport">Service history export (JSON &amp; CSV)</string>
@@ -544,10 +544,9 @@
 
     <!-- ASO — Play Store Metadata -->
     <string name="aso_short_description">Smart car maintenance reminders, fuel tracking &amp; cost analytics</string>
-    <string name="aso_full_description">AutoMinder keeps your vehicles in top shape with intelligent maintenance reminders, fuel efficiency tracking, and cost analytics. Never miss an oil change, tire rotation, or brake service again.\n\nKey Features:\n• Smart maintenance reminders with dual triggers (date + odometer)\n• Fleet health score — see all your vehicles at a glance\n• Fuel efficiency tracking with trend analysis\n• Service cost analytics and reporting\n• Multiple vehicle support for the whole family\n• Home screen widgets for quick status checks\n• Privacy-first — your data stays on your device\n• Beautiful Material 3 design with dark mode support\n• Export service history as CSV or PDF\n• Notification reminders that respect your time</string>
+    <string name="aso_full_description">AutoMinder helps you track vehicle maintenance, mileage, fuel, and service records without an account.\n\nKey Features:\n• Maintenance reminders with date and odometer triggers\n• Clear overdue, due soon, snoozed, completed, and unknown states\n• Service history with costs, notes, workshops, and mileage\n• Fuel logs with spending and efficiency trends\n• Multiple vehicle support\n• Home screen widget for quick maintenance status\n• Offline-first core tracking\n• CSV service-history sharing\n• Dark mode and Material Design\n• Optional Pro upgrade for premium features and an ad-free experience</string>
 
     <!-- Dashboard enhanced -->
-    <string name="dashboard_fleet_score">Fleet Score</string>
     <string name="dashboard_add_first_vehicle_hint">Most users add their first vehicle in under 30 seconds</string>
 
     <!-- Empty State Teaching -->
@@ -791,7 +790,7 @@
     <string name="onboarding_pillar_reminders">Reminders</string>
     <string name="onboarding_pillar_reminders_desc">Proactive time &amp; mileage countdowns</string>
     <string name="onboarding_pillar_ai">Quote check</string>
-    <string name="onboarding_pillar_ai_desc">Check a repair quote for fair pricing before you pay</string>
+    <string name="onboarding_pillar_ai_desc">Compare a repair quote with your service history before you approve work</string>
     <string name="onboarding_browse_all_makes">Browse all makes</string>
     <string name="onboarding_browse_all_models">Browse all models</string>
     <string name="onboarding_picker_search_makes_hint">Search makes…</string>
@@ -830,7 +829,7 @@
 
     <!-- Widget 2026 Polish -->
     <string name="widget_overdue_tag">Overdue</string>
-    <string name="widget_all_good_label">All good</string>
+    <string name="widget_all_good_label">All clear</string>
 
     <!-- Dashboard Daily Utility Telemetry -->
     <string name="dashboard_daily_telemetry_title">Driving telemetry</string>
@@ -839,14 +838,14 @@
     <string name="dashboard_action_log_odometer">Log odometer</string>
 
     <!-- Maintenance Passport & Service Intelligence -->
-    <string name="service_export_passport_title">Certified Maintenance Passport</string>
-    <string name="service_export_passport_sharing">Share Vehicle Maintenance Passport</string>
-    <string name="service_export_passport_desc">Export a certified record to prove maintenance history for resale</string>
-    <string name="service_passport_header">AUTOMINDER CERTIFIED VEHICLE MAINTENANCE PASSPORT</string>
+    <string name="service_export_passport_title">Maintenance history export</string>
+    <string name="service_export_passport_sharing">Share vehicle maintenance history</string>
+    <string name="service_export_passport_desc">Export a record of logged maintenance for resale</string>
+    <string name="service_passport_header">AUTOMINDER VEHICLE MAINTENANCE HISTORY</string>
     <string name="service_passport_vehicle_details">VEHICLE SPECIFICATIONS</string>
-    <string name="service_passport_summary">MAINTENANCE INVESTMENT SUMMARY</string>
+    <string name="service_passport_summary">MAINTENANCE COST SUMMARY</string>
     <string name="service_passport_records">CHRONOLOGICAL SERVICE RECORDS</string>
-    <string name="service_passport_footer">Generated by AutoMinder — 100%% Verified Local Records</string>
+    <string name="service_passport_footer">Generated by AutoMinder from local records</string>
 
     <!-- Mileage Pace & Steppers -->
     <string name="mileage_step_50">+50</string>

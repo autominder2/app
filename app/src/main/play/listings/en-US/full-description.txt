@@ -1,43 +1,32 @@
-AutoMinder keeps your vehicles in top shape with intelligent maintenance reminders, fuel efficiency tracking, and cost analytics. Never miss an oil change, tire rotation, or brake service again.
+AutoMinder helps you keep track of vehicle maintenance, mileage, fuel, and service records without turning your car into a guessing game.
 
-YOUR CAR'S HEALTH AT A GLANCE
-See your Fleet Health Score the moment you open the app. One number tells you if everything's OK or if something needs attention. No guessing, no digging through menus.
+See what needs attention, what is coming up, and what you have already logged - all from an offline-first app built for everyday drivers.
 
-SMART MAINTENANCE REMINDERS
-Set dual-trigger reminders by date AND odometer — whichever comes first. AutoMinder knows your driving patterns and reminds you at the right time, not on a fixed calendar.
+MAINTENANCE REMINDERS
+Set reminders by date, odometer, or both. AutoMinder shows overdue and upcoming work clearly, including the timing or mileage behind each reminder.
 
-FUEL INTELLIGENCE
-Track every fill-up and watch your fuel efficiency trends over time. AutoMinder learns your car's consumption patterns and shows you when something changes.
+SERVICE HISTORY
+Log oil changes, tire rotations, brake work, inspections, repairs, and custom services. Keep a searchable record of what was done, when it happened, where it was done, and what it cost.
 
-COMPLETE SERVICE HISTORY
-Log every oil change, tire rotation, brake job, and inspection. Export your full history as CSV or PDF — perfect for selling your car or insurance claims.
+FUEL AND COST TRACKING
+Record fill-ups, fuel volume, odometer readings, and spending. Review fuel economy and cost trends based on the entries you add.
 
 MULTIPLE VEHICLES
-Track the whole family's fleet from one dashboard. Each vehicle gets its own health score, reminders, and service history.
+Track maintenance for more than one car from the same app. Each vehicle keeps its own reminders, mileage, fuel entries, and service history.
 
-DESIGNED FOR PRIVACY
-Your data stays on your device. No accounts required. Optional cloud backup for Pro users — encrypted and private.
+PRIVACY-MINDED BY DEFAULT
+No account is required for core tracking. Your vehicle records are stored on your device, with export and backup tools available from inside the app.
 
-KEY FEATURES:
-• Fleet Health Score — instant vehicle status overview
-• Smart dual-trigger reminders (date + odometer)
-• Fuel efficiency tracking with trend analysis
-• Service cost analytics and monthly spending
-• Multiple vehicle support
-• Home screen widgets for quick status checks
-• Export service history as CSV or PDF
-• Beautiful Material Design with dark mode
-• Notification reminders that respect your schedule
-• Offline-first — works without internet
+KEY FEATURES
+- Date and odometer maintenance reminders
+- Overdue, due soon, snoozed, completed, and unknown states
+- Service history with costs, notes, workshops, and odometer readings
+- Fuel log with spending and efficiency trends
+- Multiple vehicle support
+- Home screen widget for quick maintenance status
+- CSV service-history sharing
+- Dark mode and Material Design
+- Offline-first core tracking
+- Optional Pro upgrade for premium features and an ad-free experience
 
-AUTOMINDER PRO:
-• Unlimited vehicles
-• Cost analytics dashboard
-• Fuel efficiency charts
-• Cloud backup & sync
-• PDF export
-• Ad-free experience
-• Premium widgets
-• 7-day free trial
-
-Download AutoMinder today and take control of your car maintenance. Your car will thank you.
+AutoMinder is for drivers who want a clear maintenance record, not another pile of paper receipts.
