@@ -72,11 +72,22 @@ R1 + R2 + T1 + T2 + U1-U4
 
 Goal: establish a recoverable base without hiding or discarding current work.
 
-Acceptance:
+**Status: DONE (2026-08-24).** The WIP present at that date (AGENTS.md,
+PLAY_STORE_CHECKLIST.md, strings.xml, full-description.txt, this exec-plan
+file, and the untracked market-rd doc) was a coherent U1 truth-cleanup pass
+matching the acceptance criteria below — committed as `9de4f72` after
+`compileDebugKotlin` passed, plus removal of the orphaned
+`dashboard_fleet_score` string (violated ui.md's health-score ban).
+`.mcp.json` and `scripts/stitch-proxy.mjs` were already tracked from an
+earlier session and contain no secrets; `HANDOFF_SESSION_2026-08-04.md` is
+gitignored by pattern. Working tree is clean at `9de4f72` — this is the
+named Billing migration base commit for R1.
 
-- Owner decides whether the four Add Service sentence-case edits should be committed.
-- Each untracked file is reviewed separately; `.mcp.json` is never committed without a secret/portability review.
-- The intended Billing migration base commit is named.
+Acceptance (met):
+
+- Owner decided the WIP should be committed, not stashed or discarded.
+- Each untracked file was reviewed separately; `.mcp.json` confirmed secret-free.
+- The intended Billing migration base commit is named: `9de4f72`.
 
 ### R1 — Migrate Play Billing 7.1.1 to 9.1.0
 

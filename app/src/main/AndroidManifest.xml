@@ -118,6 +118,21 @@
                 android:resource="@xml/auto_minder_widget_info" />
         </receiver>
 
-    </application>
+    
+    <!-- Required: set your sentry.io project identifier (DSN) -->
+    <meta-data android:name="io.sentry.dsn" android:value="https://1ac1c7fa90c9dbbc272af2b65c1babc6@o4511965329948672.ingest.us.sentry.io/4511965334732800" />
+
+    <!-- enable automatic breadcrumbs for user interactions (clicks, swipes, scrolls) -->
+    <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
+    <!-- Screenshot attachment disabled: AutoMinder screens can show VINs, plates,
+         and location data, which this app's privacy rules forbid sending to a
+         third-party SaaS (see CLAUDE.md SECURITY & PRIVACY LAW). -->
+    <meta-data android:name="io.sentry.attach-screenshot" android:value="false" />
+    <!-- enable view hierarchy for crashes -->
+    <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
+
+    <!-- enable the performance API by setting a sample-rate, adjust in production env -->
+    <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+</application>
 
 </manifest>

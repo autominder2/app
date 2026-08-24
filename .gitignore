@@ -92,3 +92,6 @@ graphify-out/graph.json
 graphify-out/*/
 graphify-out/*.sig
 graphify-out/manifest.json
+
+# Sentry Config File
+sentry.properties

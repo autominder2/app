@@ -149,16 +149,12 @@ fun DashboardScreen(
                         start = 20.dp,
                         end = 20.dp,
                         top = 16.dp,
-                        // No FAB on this screen any more, and MainActivity's
-                        // Scaffold already hands it innerPadding for the
-                        // navigation bar — so this is breathing room only.
-                        // It was 108.dp to clear a FAB that duplicated the
-                        // inline Quick Log row; measured on a gesture-nav
-                        // device, that left a 128.dp empty band below the
-                        // last card.
-                        bottom = 24.dp
+                        // 88dp: nav bar height (~56dp) + 16dp breathing room above it
+                        // + 16dp internal card padding below QuickLog buttons.
+                        // Prevents the Quick Log row from being clipped under the nav bar.
+                        bottom = 88.dp
                     ),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     // 1. Top Brand Header + Notifications Bell

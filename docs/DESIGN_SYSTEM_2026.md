@@ -10,15 +10,22 @@ Every contrast figure below is computed to WCAG 2.1 relative luminance, not esti
 
 ## 1. The one rule everything else serves
 
-**The accent colour *is* the healthy state.**
+**One colour, one meaning. Never share.**
 
-Cobalt means "this is fine." Amber means "soon." Red means "now." Nothing else
-in the interface is allowed to be a saturated hue. Because the brand colour and
-the good state are the same thing, only amber and red ever interrupt a screen —
-so when something does interrupt, it means something.
+| Colour | Meaning | Slot |
+|--------|---------|------|
+| Cobalt blue `#1557C8` | Brand / action / "tap me" | `primary` |
+| Health green `#167A55` | Healthy / ok / completed | `tertiary` |
+| Caution amber `#9A6700` | Due soon / attention | `secondary` |
+| Critical red `#B42318` | Overdue / act now | `error` |
 
-Cobalt sits at hue 214°, **176° from the caution band** — the maximum possible
-separation. This is why the palette can carry a safety-status product.
+Blue is **not** the healthy state. That was the previous rule; it is retired.
+When blue = action AND blue = healthy, users cannot tell if a cobalt element
+means "tap me" or "you're fine." Separation makes both signals unambiguous.
+
+ISO 2575 (the dashboard warning-light standard drivers already read fluently):
+red stops, amber warns, calm reassures. Green = good is the universal
+convention — traffic lights, health apps, finance dashboards. We adopt it.
 
 **Voice:** calm, precise, effortless. A quiet co-pilot, never an alarm clock.
 Short sentences, no jargon, no exclamation marks.
@@ -47,22 +54,26 @@ after dark. Light is a first-class requirement, not an afterthought.
 | `border/interactive` | `#606F7B` | selectable boundaries | 3.32:1 on surface ✓ |
 | `border/selected` | `#7AB4FF` | selected reinforcement | 8.01:1 on surface ✓ |
 
-### Light (parity required)
+### Light — Midnight Intelligence
 
 | Token | Hex | Role | Contrast |
 |---|---|---|---|
-| `ground` | `#F7F9FC` | app background | — |
-| `surface` | `#FFFFFF` | cards, sheets | — |
-| `surfaceHigh` | `#ECF1F8` | raised / pressed | — |
-| `primary` | `#0B4FC4` | accent **and** healthy state | 6.80:1 on ground |
-| `onPrimary` | `#FFFFFF` | label on a cobalt fill | 7.17:1 |
-| `ink` | `#0E1420` | body and headings | 17.47:1 |
-| `muted` | `#4A5568` | secondary, metadata | 7.14:1 |
-| `caution` | `#7A5300` | due soon | 6.50:1 |
-| `critical` | `#B3261E` | overdue | 6.20:1 |
-| `border/subtle` | `#D5DEE8` | decorative dividers | 1.29:1 — exempt, see below |
-| `border/interactive` | `#77869A` | selectable boundaries | 3.71:1 on surface ✓ |
-| `border/selected` | `#0B4FC4` | selected reinforcement | 7.17:1 on surface ✓ |
+| `CloudWhite` | `#F7F9FC` | app background | — |
+| `SurfaceWhite` | `#FFFFFF` | cards, sheets | — |
+| `SurfaceBlue` | `#EEF4FD` | tonal cards / subtle elevation | — |
+| `BlueTint` | `#DCE9FF` | primaryContainer / selected controls | — |
+| `CobaltBlue` | `#1557C8` | **brand / action** (CTAs, FAB, active nav) | 6.28:1 on CloudWhite ✓ |
+| `MidnightNavy` | `#102A56` | logo, key headings, onPrimaryContainer | — |
+| `HealthGreen` | `#167A55` | **healthy / ok / completed** | 5.52:1 on CloudWhite ✓ |
+| `HealthGreenContainer` | `#DDF5EA` | healthy tonal surface | — |
+| `DueSoon` | `#9A6700` | **due soon / caution** | 6.61:1 on CloudWhite ✓ |
+| `DueSoonContainer` | `#FFF0C7` | caution tonal surface | — |
+| `Overdue` | `#B42318` | **overdue / critical** | 6.25:1 on CloudWhite ✓ |
+| `OverdueContainer` | `#FEE4E2` | critical tonal surface | — |
+| `Ink` | `#101828` | primary text / headings | 18.15:1 on CloudWhite ✓ |
+| `Slate` | `#52627A` | secondary text / metadata | 7.21:1 on CloudWhite ✓ |
+| `OutlineSubtle` | `#D4DDEB` | decorative dividers | 1.29:1 — exempt, see below |
+| `OutlineInteractive` | `#77869A` | selectable boundaries | 3.71:1 on SurfaceWhite ✓ |
 
 ### Laws
 
@@ -93,14 +104,16 @@ after dark. Light is a first-class requirement, not an afterthought.
 ## 3. Status contract
 
 Follows ISO 2575, the dashboard warning-light standard drivers already read
-fluently: red stops, amber warns, calm reassures.
+fluently: red stops, amber warns, green reassures. Blue is reserved for brand
+and action — it never doubles as a health signal.
 
-| Status | Colour | Corner radius | Notification cadence |
-|---|---|---|---|
-| **OVERDUE** | `critical` | **8dp** — sharp reads as urgent | every 24h · cannot be snoozed |
-| **DUE_SOON** | `caution` | **16dp** | every 3 days |
-| **GOOD** | `primary` | **28dp** — soft reads as safe | never |
-| **UNKNOWN** | `muted` | 16dp | never |
+| Status | Token | Hex | Corner radius | Notification cadence |
+|---|---|---|---|---|
+| **OVERDUE** | `error` / `errorContainer` | `#B42318` | **8dp** — sharp = urgent | every 24h · cannot be snoozed |
+| **DUE_SOON** | `secondary` / `secondaryContainer` | `#9A6700` | **16dp** | every 3 days |
+| **HEALTHY / OK** | `tertiary` / `tertiaryContainer` | `#167A55` | **28dp** — soft = safe | never |
+| **UNKNOWN** | `onSurfaceVariant` / `surfaceVariant` | `#52627A` | 16dp | never |
+| **COMPLETED** | `tertiary` / `tertiaryContainer` | `#167A55` | 16dp | never |
 
 **Status is never colour alone.** Every status carries four channels: colour,
 corner radius, a text label, and a leading rule or icon. This survives

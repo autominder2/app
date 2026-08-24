@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.firebase.perf)
     alias(libs.plugins.baselineprofile)
+    alias(libs.plugins.sentry)
 }
 
 val localProps = Properties().apply {
@@ -270,4 +271,14 @@ tasks.matching { it.name.contains("Release") && (it.name.startsWith("assemble") 
             )
         }
     }
+}
+
+
+sentry {
+    org.set("autominder-iz")
+    projectName.set("android")
+
+    // this will upload your source code to Sentry to show it as part of the stack traces
+    // disable if you don't want to expose your sources
+    includeSourceContext.set(true)
 }

@@ -46,6 +46,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 import javax.inject.Provider
+import io.sentry.Sentry
+
 
 val LocalIsProUser = staticCompositionLocalOf { false }
 
@@ -103,6 +105,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        // TODO(sentry-verify): remove this forced test event before release — confirms events reach Sentry.
+        findViewById<android.view.View>(android.R.id.content).viewTreeObserver.addOnGlobalLayoutListener {
+            try {
+                throw Exception("This app uses Sentry! :)")
+            } catch (e: Exception) {
+                Sentry.captureException(e)
+            }
+        }
+
         enableEdgeToEdge()
         handleIntent(intent)
 

@@ -229,10 +229,12 @@ private fun AttentionBanner(
     isOverdue: Boolean,
     modifier: Modifier = Modifier
 ) {
+    // DUE_SOON = secondary slot (amber #9A6700). OVERDUE = error slot (red #B42318).
+    // tertiary = HealthGreen — HEALTHY/OK/COMPLETED only. Never for warnings.
     val bgColor = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-    else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
+    else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
     val tintColor = if (isOverdue) MaterialTheme.colorScheme.error
-    else MaterialTheme.colorScheme.tertiary
+    else MaterialTheme.colorScheme.secondary
 
     Surface(
         modifier = modifier.fillMaxWidth(),
