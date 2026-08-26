@@ -11,10 +11,12 @@
     - Gear bore hole and windshield cutout replaced with solid fill shapes
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
-    android:viewportHeight="108">
+    android:viewportHeight="108"
+    tools:ignore="VectorPath">
 
     <!-- ── Gear cog (upper-left) ── -->
     <path

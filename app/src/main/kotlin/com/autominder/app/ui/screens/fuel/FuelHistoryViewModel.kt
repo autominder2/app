@@ -105,7 +105,8 @@ class FuelHistoryViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val vehicleId: Long = savedStateHandle.toRoute<NavRoutes.FuelHistory>().vehicleId
+    private val vehicleId: Long = savedStateHandle.get<Long>("vehicleId")
+        ?: runCatching { savedStateHandle.toRoute<NavRoutes.FuelHistory>().vehicleId }.getOrDefault(0L)
 
     private val _uiState = MutableStateFlow(FuelHistoryUiState(vehicleId = vehicleId, isLoading = true))
     val uiState: StateFlow<FuelHistoryUiState> = _uiState.asStateFlow()

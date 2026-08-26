@@ -62,6 +62,7 @@ fun VehicleHeroCard(
     modifier: Modifier = Modifier,
     variant: VehicleHeroVariant = VehicleHeroVariant.Compact,
     yearText: String? = null,
+    roleBadgeText: String? = null,
     odometerText: String? = null,
     photoUri: String? = null,
     photoContentDescription: String? = null,
@@ -97,11 +98,11 @@ fun VehicleHeroCard(
         val content: @Composable () -> Unit = {
             when (variant) {
                 VehicleHeroVariant.Compact -> CompactContent(
-                    title, yearText, odometerText, photoUri, photoContentDescription,
+                    title, yearText, roleBadgeText, odometerText, photoUri, photoContentDescription,
                     statusChip, concernText, concernColor, bodyType
                 )
                 VehicleHeroVariant.Expanded -> ExpandedContent(
-                    title, yearText, odometerText, photoUri, photoContentDescription,
+                    title, yearText, roleBadgeText, odometerText, photoUri, photoContentDescription,
                     statusChip, concernText, concernColor, bodyType
                 )
             }
@@ -157,6 +158,7 @@ fun VehicleHeroCard(
 private fun CompactContent(
     title: String,
     yearText: String?,
+    roleBadgeText: String? = null,
     odometerText: String?,
     photoUri: String?,
     photoContentDescription: String?,
@@ -179,17 +181,31 @@ private fun CompactContent(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
-                if (yearText != null) {
+                if (roleBadgeText != null) {
+                    Surface(
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = roleBadgeText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                } else if (yearText != null) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -229,6 +245,7 @@ private fun CompactContent(
 private fun ExpandedContent(
     title: String,
     yearText: String?,
+    roleBadgeText: String? = null,
     odometerText: String?,
     photoUri: String?,
     photoContentDescription: String?,

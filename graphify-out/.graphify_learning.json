@@ -1,0 +1,134 @@
+{
+  "generated_at": "2026-08-25T15:05:22.826213+00:00",
+  "nodes": {
+    "app_src_main_kotlin_com_autominder_app_data_backup_manualbackupmanager_manualbackupmanager": {
+      "code_fingerprint": "3bfc50d61b6f1d975ce19df0b8adb7ff7448753844b3f9d3d901fdd930af8b96",
+      "label": "ManualBackupManager",
+      "last": "2026-08-25T15:05:22.086400+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:05:22.086400+00:00",
+          "outcome": "useful",
+          "q": "What breaks if I add Room composite indexes to ServiceEntity?"
+        }
+      ],
+      "score": 0.999999802,
+      "source_file": "app/src/main/kotlin/com/autominder/app/data/backup/ManualBackupManager.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_kotlin_com_autominder_app_data_local_dao_servicedao_servicedao": {
+      "code_fingerprint": "844ce6e888c9e88a7f7eab2b2cfed7e1c26323457b09238c80ab9fc398c0c217",
+      "label": "ServiceDao",
+      "last": "2026-08-25T15:05:22.086400+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:05:22.086400+00:00",
+          "outcome": "useful",
+          "q": "What breaks if I add Room composite indexes to ServiceEntity?"
+        }
+      ],
+      "score": 0.999999802,
+      "source_file": "app/src/main/kotlin/com/autominder/app/data/local/dao/ServiceDao.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_kotlin_com_autominder_app_data_local_entity_serviceentity_serviceentity": {
+      "code_fingerprint": "a56a5a4850e324a03ba2a179a9481c95bba83e9018013a65d523d2e8d73e5c7b",
+      "label": "ServiceEntity",
+      "last": "2026-08-25T15:05:22.086400+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:05:22.086400+00:00",
+          "outcome": "useful",
+          "q": "What breaks if I add Room composite indexes to ServiceEntity?"
+        }
+      ],
+      "score": 0.999999802,
+      "source_file": "app/src/main/kotlin/com/autominder/app/data/local/entity/ServiceEntity.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_kotlin_com_autominder_app_domain_model_servicestatus_servicestatus": {
+      "code_fingerprint": "df27694dc7dfe9147c21aa7708a9afd66fb739e8a452ffd6cb7683e56e19b166",
+      "label": "ServiceStatus",
+      "last": "2026-08-25T15:01:18.445489+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:01:18.445489+00:00",
+          "outcome": "useful",
+          "q": "Where is vehicle health status computed and do the calculators agree?"
+        }
+      ],
+      "score": 0.99993465,
+      "source_file": "app/src/main/kotlin/com/autominder/app/domain/model/ServiceStatus.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_kotlin_com_autominder_app_domain_usecase_getdashboarddatausecase_getdashboarddatausecase": {
+      "code_fingerprint": "c084b4bab693aa0b7f640ab5922002829d87a43d4e390e64b3f1a341e24a82b5",
+      "label": "GetDashboardDataUseCase",
+      "last": "2026-08-25T15:01:18.445489+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:01:18.445489+00:00",
+          "outcome": "useful",
+          "q": "Where is vehicle health status computed and do the calculators agree?"
+        }
+      ],
+      "score": 0.99993465,
+      "source_file": "app/src/main/kotlin/com/autominder/app/domain/usecase/GetDashboardDataUseCase.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_kotlin_com_autominder_app_domain_usecase_statuscalculator_statuscalculator": {
+      "code_fingerprint": "8db8c7554bee122395f170825af5bc766a6f1ddee4b8acbb59f24206fecea1c0",
+      "label": "StatusCalculator",
+      "last": "2026-08-25T15:01:18.445489+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:01:18.445489+00:00",
+          "outcome": "useful",
+          "q": "Where is vehicle health status computed and do the calculators agree?"
+        }
+      ],
+      "score": 0.99993465,
+      "source_file": "app/src/main/kotlin/com/autominder/app/domain/usecase/StatusCalculator.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_kotlin_com_autominder_app_ui_screens_dashboard_dashboardviewmodel_dashboardviewmodel": {
+      "code_fingerprint": "2d04d721faa78c1d2cc708c592e855ee27978d6f01974c991f5a2ffa62d70954",
+      "label": "DashboardViewModel",
+      "last": "2026-08-25T15:01:18.445489+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:01:18.445489+00:00",
+          "outcome": "useful",
+          "q": "Where is vehicle health status computed and do the calculators agree?"
+        }
+      ],
+      "score": 0.99993465,
+      "source_file": "app/src/main/kotlin/com/autominder/app/ui/screens/dashboard/DashboardViewModel.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_kotlin_com_autominder_app_ui_screens_vehicle_vehiclelistviewmodel_vehiclelistviewmodel": {
+      "code_fingerprint": "75655443d5fd386a9bb2feb38aa13a4c236ebe7b935cb3e43c87f46d69d59ed1",
+      "label": "VehicleListViewModel",
+      "last": "2026-08-25T15:01:18.445489+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-25T15:01:18.445489+00:00",
+          "outcome": "useful",
+          "q": "Where is vehicle health status computed and do the calculators agree?"
+        }
+      ],
+      "score": 0.99993465,
+      "source_file": "app/src/main/kotlin/com/autominder/app/ui/screens/vehicle/VehicleListViewModel.kt",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

@@ -1,5 +1,6 @@
 package com.autominder.app.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -170,6 +171,21 @@ fun ProPaywall(
                 )
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.paywall_trial_reassurance),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+
             Spacer(modifier = Modifier.height(4.dp))
 
             TextButton(onClick = onRestorePurchases) {
@@ -183,6 +199,54 @@ fun ProPaywall(
         }
     }
 }
+
+/**
+ * One row of the free-vs-Pro table.
+ *
+ * [proOnly] must be backed by a real entitlement check in code. Advertising a
+ * capability as Pro-exclusive when a free user already receives it is a refund
+ * generator and a Play misrepresentation risk, so [gateEvidence] records where
+ * the gate lives and `ProPaywallTruthTest` asserts the two stay in sync.
+ */
+internal data class PaywallFeature(
+    @StringRes val labelRes: Int,
+    val proOnly: Boolean,
+    val gateEvidence: String?
+)
+
+/**
+ * The ONLY two entitlement gates that exist in v1.0, verified 2026-08-25:
+ *  - ads removed          -> MainActivity.kt:274  `if (!isProUser) BannerAdView(...)`
+ *  - cost + efficiency    -> VehicleDetailScreen.kt:681 and :765 `ProFeatureGate(...)`
+ *
+ * Everything else is reachable by a free user, so it is listed as available to
+ * both tiers rather than dangled behind the paywall. Do not flip a row to
+ * proOnly without adding the gate first — adding gates is a feature change and
+ * is out of scope during the v1.0 freeze.
+ */
+internal val PAYWALL_FEATURES: List<PaywallFeature> = listOf(
+    PaywallFeature(R.string.paywall_feature_reminders, proOnly = false, gateEvidence = null),
+    PaywallFeature(R.string.paywall_feature_fuel_log, proOnly = false, gateEvidence = null),
+    PaywallFeature(R.string.paywall_feature_garage, proOnly = false, gateEvidence = null),
+    // Reachable free from the dashboard banner (DashboardScreen.kt:220) via an
+    // ungated route (NavGraph.kt:262) — was advertised as Pro-only.
+    PaywallFeature(R.string.paywall_feature_quote_auditor, proOnly = false, gateEvidence = null),
+    // CSV export, free from Records (ServiceHistoryViewModel.kt:99). Never PDF,
+    // nothing certifies it — was advertised as "Certified Vehicle Passport (PDF & CSV)".
+    PaywallFeature(R.string.paywall_feature_passport, proOnly = false, gateEvidence = null),
+    // PredictDueUseCase feeds ungated vehicle detail — was advertised as Pro-only.
+    PaywallFeature(R.string.paywall_feature_predictions, proOnly = false, gateEvidence = null),
+    PaywallFeature(
+        R.string.paywall_feature_cost_analytics,
+        proOnly = true,
+        gateEvidence = "VehicleDetailScreen.kt:681,765"
+    ),
+    PaywallFeature(
+        R.string.paywall_feature_ad_free,
+        proOnly = true,
+        gateEvidence = "MainActivity.kt:274"
+    )
+)
 
 @Composable
 private fun FeatureComparisonTable() {
@@ -214,21 +278,14 @@ private fun FeatureComparisonTable() {
                     modifier = Modifier.weight(0.3f)
                 )
             }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_reminders), free = true, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_fuel_log), free = true, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_quote_auditor), free = false, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            // No vehicle-count gate exists in v1.0 - both tiers are unlimited.
-            FeatureRow(stringResource(R.string.paywall_feature_garage), free = true, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_passport), free = false, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_predictions), free = false, pro = true)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-            FeatureRow(stringResource(R.string.paywall_feature_ad_free), free = false, pro = true)
+            PAYWALL_FEATURES.forEach { feature ->
+                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                FeatureRow(
+                    feature = stringResource(feature.labelRes),
+                    free = !feature.proOnly,
+                    pro = true
+                )
+            }
         }
     }
 }

@@ -22,23 +22,23 @@ fun StatusChip(
         )
         ServiceStatus.DUE_SOON -> Triple(
             R.string.status_due_soon,
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer
         )
         ServiceStatus.SNOOZED -> Triple(
             R.string.status_snoozed,
-            MaterialTheme.colorScheme.secondaryContainer,
-            MaterialTheme.colorScheme.onSecondaryContainer
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.colorScheme.onSurfaceVariant
         )
         ServiceStatus.OK -> Triple(
             R.string.status_ok,
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer
         )
         ServiceStatus.COMPLETED -> Triple(
             R.string.status_completed,
-            MaterialTheme.colorScheme.secondaryContainer,
-            MaterialTheme.colorScheme.onSecondaryContainer
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer
         )
         ServiceStatus.UNKNOWN -> Triple(
             R.string.status_unknown,

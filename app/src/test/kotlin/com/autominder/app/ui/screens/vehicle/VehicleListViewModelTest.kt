@@ -82,7 +82,7 @@ class VehicleListViewModelTest {
         nextDueDate = now + TimeUnit.DAYS.toMillis(90)
     )
 
-    private fun createViewModel() = VehicleListViewModel(vehicleRepo, reminderRepo)
+    private fun createViewModel() = VehicleListViewModel(vehicleRepo, reminderRepo, dispatcher)
 
     @Test
     fun `empty repository produces Empty state`() = runTest {

@@ -46,8 +46,13 @@ data class AddFuelUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
+    val initialLoadFailed: Boolean = false,
     @StringRes val errorRes: Int? = null,
     val errorArgs: List<Any> = emptyList(),
+    // Inline Field Validation Errors
+    @StringRes val volumeErrorRes: Int? = null,
+    @StringRes val odometerErrorRes: Int? = null,
+    @StringRes val costErrorRes: Int? = null,
     // Live Real-Time Telemetry & Economy Preview
     val distanceSinceLastFill: Int? = null,
     val estimatedEfficiency: Double? = null,
@@ -66,8 +71,9 @@ sealed class AddFuelUiEvent {
     data class DateChanged(val dateMillis: Long) : AddFuelUiEvent()
     data class GasStationChanged(val station: String) : AddFuelUiEvent()
     data class NotesChanged(val notes: String) : AddFuelUiEvent()
-    object SaveClicked : AddFuelUiEvent()
-    object RetryClicked : AddFuelUiEvent()
+    data object ErrorDismissed : AddFuelUiEvent()
+    data object SaveClicked : AddFuelUiEvent()
+    data object RetryClicked : AddFuelUiEvent()
 }
 
 @HiltViewModel
@@ -124,13 +130,14 @@ class AddFuelViewModel @Inject constructor(
             is AddFuelUiEvent.DateChanged -> onDateChanged(event.dateMillis)
             is AddFuelUiEvent.GasStationChanged -> onGasStationChanged(event.station)
             is AddFuelUiEvent.NotesChanged -> onNotesChanged(event.notes)
+            is AddFuelUiEvent.ErrorDismissed -> _uiState.update { it.copy(errorRes = null) }
             is AddFuelUiEvent.SaveClicked -> saveFuelEntry()
             is AddFuelUiEvent.RetryClicked -> loadData()
         }
     }
 
     private fun loadData() {
-        _uiState.update { it.copy(isLoading = true, errorRes = null) }
+        _uiState.update { it.copy(isLoading = true, errorRes = null, initialLoadFailed = false) }
         viewModelScope.launch {
             try {
                 combine(
@@ -154,14 +161,15 @@ class AddFuelViewModel @Inject constructor(
                             latestEntry = latestEntry,
                             distanceUnit = unit,
                             odometer = initialOdometer,
-                            isLoading = false
+                            isLoading = false,
+                            initialLoadFailed = false
                         )
                         calculateTelemetry(updated)
                     }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load vehicle/fuel data for AddFuel")
-                _uiState.update { it.copy(isLoading = false, errorRes = R.string.error_load_vehicle_failed) }
+                _uiState.update { it.copy(isLoading = false, initialLoadFailed = true, errorRes = R.string.error_load_vehicle_failed) }
             }
         }
     }
@@ -170,7 +178,7 @@ class AddFuelViewModel @Inject constructor(
         val clean = volume.filter { it.isDigit() || it == '.' }
         savedStateHandle[KEY_VOLUME] = clean
         _uiState.update { current ->
-            val updated = current.copy(volume = clean)
+            val updated = current.copy(volume = clean, volumeErrorRes = null, errorRes = null)
             // Auto-calculate cost if pricePerUnit is populated
             val volDbl = clean.toDoubleOrNull()
             val priceDbl = current.pricePerUnit.toDoubleOrNull()
@@ -189,7 +197,7 @@ class AddFuelViewModel @Inject constructor(
         val clean = cost.filter { it.isDigit() || it == '.' }
         savedStateHandle[KEY_COST] = clean
         _uiState.update { current ->
-            val updated = current.copy(cost = clean)
+            val updated = current.copy(cost = clean, costErrorRes = null, errorRes = null)
             // Auto-calculate volume if pricePerUnit is populated
             val costDbl = clean.toDoubleOrNull()
             val priceDbl = current.pricePerUnit.toDoubleOrNull()
@@ -208,7 +216,7 @@ class AddFuelViewModel @Inject constructor(
         val clean = price.filter { it.isDigit() || it == '.' }
         savedStateHandle[KEY_PRICE] = clean
         _uiState.update { current ->
-            val updated = current.copy(pricePerUnit = clean)
+            val updated = current.copy(pricePerUnit = clean, errorRes = null)
             val priceDbl = clean.toDoubleOrNull()
             val costDbl = current.cost.toDoubleOrNull()
             val volDbl = current.volume.toDoubleOrNull()
@@ -236,33 +244,55 @@ class AddFuelViewModel @Inject constructor(
         val clean = odometer.filter { it.isDigit() }
         savedStateHandle[KEY_ODOMETER] = clean
         _uiState.update { current ->
-            val updated = current.copy(odometer = clean)
+            val updated = current.copy(odometer = clean, odometerErrorRes = null, errorRes = null)
             calculateTelemetry(updated)
         }
     }
 
     private fun onQuickCostTapped(amount: Double) {
-        val formattedCost = if (amount % 1.0 == 0.0) {
-            amount.toInt().toString()
-        } else {
-            String.format(Locale.US, "%.2f", amount)
+        val costStr = if (amount % 1.0 == 0.0) amount.toInt().toString() else String.format(Locale.US, "%.2f", amount)
+        savedStateHandle[KEY_COST] = costStr
+        _uiState.update { current ->
+            val updated = current.copy(cost = costStr, costErrorRes = null, errorRes = null)
+            val priceDbl = current.pricePerUnit.toDoubleOrNull()
+            val calculated = if (priceDbl != null && priceDbl > 0) {
+                val computedVol = String.format(Locale.US, "%.2f", amount / priceDbl)
+                savedStateHandle[KEY_VOLUME] = computedVol
+                updated.copy(volume = computedVol, volumeErrorRes = null)
+            } else {
+                updated
+            }
+            calculateTelemetry(calculated)
         }
-        onCostChanged(formattedCost)
     }
 
     private fun onQuickVolumeTapped(amount: Double) {
-        val formattedVol = if (amount % 1.0 == 0.0) {
-            amount.toInt().toString()
-        } else {
-            String.format(Locale.US, "%.1f", amount)
+        val volStr = if (amount % 1.0 == 0.0) amount.toInt().toString() else String.format(Locale.US, "%.2f", amount)
+        savedStateHandle[KEY_VOLUME] = volStr
+        _uiState.update { current ->
+            val updated = current.copy(volume = volStr, volumeErrorRes = null, errorRes = null)
+            val priceDbl = current.pricePerUnit.toDoubleOrNull()
+            val calculated = if (priceDbl != null && priceDbl > 0) {
+                val computedCost = String.format(Locale.US, "%.2f", amount * priceDbl)
+                savedStateHandle[KEY_COST] = computedCost
+                updated.copy(cost = computedCost, costErrorRes = null)
+            } else {
+                updated
+            }
+            calculateTelemetry(calculated)
         }
-        onVolumeChanged(formattedVol)
     }
 
     private fun onQuickOdometerStepTapped(step: Int) {
-        val currentOdo = _uiState.value.odometer.toIntOrNull() ?: 0
-        val newOdo = (currentOdo + step).toString()
-        onOdometerChanged(newOdo)
+        val currentOdo = _uiState.value.odometer.toIntOrNull()
+            ?: _uiState.value.vehicle?.let { DistanceUtil.kmToDisplay(it.currentOdometer, _uiState.value.distanceUnit) }
+            ?: 0
+        val newOdo = (currentOdo + step).coerceAtLeast(0).toString()
+        savedStateHandle[KEY_ODOMETER] = newOdo
+        _uiState.update { current ->
+            val updated = current.copy(odometer = newOdo, odometerErrorRes = null, errorRes = null)
+            calculateTelemetry(updated)
+        }
     }
 
     private fun onFullTankToggled(isFull: Boolean) {
@@ -326,20 +356,47 @@ class AddFuelViewModel @Inject constructor(
         val costDbl = state.cost.toDoubleOrNull() ?: 0.0
         val odoInt = state.odometer.toIntOrNull() ?: 0
 
+        var hasError = false
+        var volumeErr: Int? = null
+        var odoErr: Int? = null
+        var costErr: Int? = null
+
         if (volumeDbl <= 0) {
-            _uiState.update { it.copy(errorRes = R.string.error_invalid_fuel_amount, errorArgs = emptyList()) }
-            return
+            volumeErr = R.string.error_invalid_fuel_amount
+            hasError = true
         }
         if (odoInt <= 0) {
-            _uiState.update { it.copy(errorRes = R.string.error_invalid_odometer, errorArgs = emptyList()) }
-            return
+            odoErr = R.string.error_invalid_odometer
+            hasError = true
         }
         if (costDbl < 0) {
-            _uiState.update { it.copy(errorRes = R.string.error_cost_negative, errorArgs = emptyList()) }
+            costErr = R.string.error_cost_negative
+            hasError = true
+        }
+
+        if (hasError) {
+            _uiState.update {
+                it.copy(
+                    volumeErrorRes = volumeErr,
+                    odometerErrorRes = odoErr,
+                    costErrorRes = costErr,
+                    errorRes = volumeErr ?: odoErr ?: costErr,
+                    errorArgs = emptyList()
+                )
+            }
             return
         }
 
-        _uiState.update { it.copy(isSaving = true, errorRes = null, errorArgs = emptyList()) }
+        _uiState.update {
+            it.copy(
+                isSaving = true,
+                errorRes = null,
+                volumeErrorRes = null,
+                odometerErrorRes = null,
+                costErrorRes = null,
+                errorArgs = emptyList()
+            )
+        }
 
         viewModelScope.launch {
             try {

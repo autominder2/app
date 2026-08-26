@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process cmd.exe -ArgumentList '/c cd /d D:\\Autominder*gradlew.bat*')",
+      "Bash(cmd.exe /c *gradlew.bat*)",
+      "Bash(git -C D:/Autominder *)",
+      "Bash($LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe *)",
+      "Bash(\"$ADB\" *)",
+      "PowerShell(& \"$env:LOCALAPPDATA\\Android\\Sdk\\platform-tools\\adb.exe\" *)",
+      "PowerShell(& \"$env:LOCALAPPDATA\\Android\\Sdk\\emulator\\emulator.exe\" *)",
+      "Read(//d/Autominder/**)",
+      "Read(//c/Users/Light-Tech/.claude/**)"
+    ],
+    "deny": [
+      "Read(//d/Autominder/**/*.keystore)",
+      "Read(//d/Autominder/**/*.jks)",
+      "Read(//d/Autominder/local.properties)",
+      "Read(//d/Autominder/app/google-services.json)",
+      "Read(//d/Autominder/keystore.properties)"
+    ]
+  }
+}

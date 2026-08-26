@@ -1,13 +1,17 @@
 package com.autominder.app.domain.usecase
 
+import com.autominder.app.core.di.DefaultDispatcher
 import com.autominder.app.domain.model.Reminder
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.model.VehicleOperationalStatus
 import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.domain.repository.IVehicleRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
 /**
@@ -35,10 +39,12 @@ data class DashboardData(
 
 /**
  * Aggregates vehicles and reminders into a high-level dashboard view.
+ * Executes on [defaultDispatcher] to protect Main-thread frame rates.
  */
 class GetDashboardDataUseCase @Inject constructor(
     private val vehicleRepository: IVehicleRepository,
-    private val reminderRepository: IReminderRepository
+    private val reminderRepository: IReminderRepository,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     operator fun invoke(): Flow<DashboardData> {
         return combine(
@@ -94,16 +100,14 @@ class GetDashboardDataUseCase @Inject constructor(
                 it.status == ServiceStatus.OVERDUE || it.status == ServiceStatus.DUE_SOON
             }
 
-            // 4. Sorted list of upcoming/urgent reminders
-            val sortedReminders = remindersWithStatus
-                .sortedByDescending { it.status.severity }
-                .take(5)
+            // 4. Return uncapped sorted list so consumer ViewModels can filter by vehicle without starvation
+            val sortedReminders = remindersWithStatus.sortedByDescending { it.status.severity }
 
             DashboardData(
                 vehiclesWithStatus = vehiclesWithStatus,
                 alertsCount = totalAlerts,
                 upcomingReminders = sortedReminders
             )
-        }
+        }.flowOn(defaultDispatcher)
     }
 }

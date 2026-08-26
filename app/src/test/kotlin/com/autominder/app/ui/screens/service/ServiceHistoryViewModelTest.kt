@@ -61,7 +61,8 @@ class ServiceHistoryViewModelTest {
         serviceRepository = serviceRepo,
         vehicleRepository = vehicleRepo,
         userPreferences = userPrefs,
-        exportServiceHistory = exportUseCase
+        exportServiceHistory = exportUseCase,
+        defaultDispatcher = dispatcher
     )
 
     @Test

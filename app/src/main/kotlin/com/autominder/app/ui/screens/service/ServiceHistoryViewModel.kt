@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autominder.app.R
+import com.autominder.app.core.di.DefaultDispatcher
 import com.autominder.app.data.export.ExportServiceHistoryUseCase
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.model.Service
@@ -13,11 +14,14 @@ import com.autominder.app.domain.model.Vehicle
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.SimpleDateFormat
@@ -92,7 +96,8 @@ class ServiceHistoryViewModel @Inject constructor(
     private val serviceRepository: IServiceRepository,
     private val vehicleRepository: IVehicleRepository,
     private val userPreferences: UserPreferences,
-    private val exportServiceHistory: ExportServiceHistoryUseCase
+    private val exportServiceHistory: ExportServiceHistoryUseCase,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     private val monthYearFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
@@ -266,8 +271,10 @@ class ServiceHistoryViewModel @Inject constructor(
                     exportUri = exportUri,
                     isExporting = isExporting
                 )
-            }.catch { e ->
-                Timber.e(e, "Failed to load service history")
+            }
+                .flowOn(defaultDispatcher)
+                .catch { e ->
+                    Timber.e(e, "Failed to load service history")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorRes = R.string.error_load_records_failed

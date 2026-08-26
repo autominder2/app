@@ -389,17 +389,19 @@ private fun AddServiceContent(
                     )
 
                     // 1-Tap Odometer Delta Adjustments
-                    Row(
+                    LazyRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Quick adjust:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        ODOMETER_QUICK_ADJUSTMENTS.forEach { delta ->
+                        item {
+                            Text(
+                                text = "Quick adjust:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        items(ODOMETER_QUICK_ADJUSTMENTS) { delta ->
                             AssistChip(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
@@ -412,7 +414,9 @@ private fun AddServiceContent(
                                 label = {
                                     Text(
                                         text = if (delta == 0) "Current" else (if (delta > 0) "+$delta" else "$delta"),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = JetBrainsMono)
+                                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = JetBrainsMono),
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 },
                                 shape = CircleShape,
@@ -633,6 +637,7 @@ private fun AddServiceContent(
                         label = { Text(stringResource(R.string.add_service_cost_label)) },
                         placeholder = { Text(stringResource(R.string.add_service_cost_placeholder)) },
                         prefix = { Text(stringResource(R.string.add_service_cost_prefix)) },
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = JetBrainsMono),
                         leadingIcon = {
                             Icon(
                                 Icons.Default.AttachMoney,
@@ -640,11 +645,76 @@ private fun AddServiceContent(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
+                        trailingIcon = {
+                            TextButton(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                    onEvent(AddServiceUiEvent.CostBreakdownToggled(!uiState.isCostBreakdownExpanded))
+                                }
+                            ) {
+                                Text(
+                                    text = if (uiState.isCostBreakdownExpanded) "Simple" else "Itemize",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.medium,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
+
+                    AnimatedVisibility(visible = uiState.isCostBreakdownExpanded) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "Itemized breakdown (auto-calculated):",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = uiState.partsCost,
+                                    onValueChange = { onEvent(AddServiceUiEvent.PartsCostChanged(it)) },
+                                    label = { Text("Parts cost") },
+                                    placeholder = { Text("0.00") },
+                                    prefix = { Text("$") },
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = JetBrainsMono),
+                                    modifier = Modifier.weight(1f),
+                                    shape = MaterialTheme.shapes.small,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true
+                                )
+
+                                OutlinedTextField(
+                                    value = uiState.laborCost,
+                                    onValueChange = { onEvent(AddServiceUiEvent.LaborCostChanged(it)) },
+                                    label = { Text("Labor cost") },
+                                    placeholder = { Text("0.00") },
+                                    prefix = { Text("$") },
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = JetBrainsMono),
+                                    modifier = Modifier.weight(1f),
+                                    shape = MaterialTheme.shapes.small,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    singleLine = true
+                                )
+                            }
+                        }
+                    }
 
                     // Collapsible Workshop & Notes
                     Row(

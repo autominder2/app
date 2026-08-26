@@ -89,8 +89,8 @@ fun VehicleStatusCard(
 
 @Composable
 private fun HealthyBanner(modifier: Modifier = Modifier) {
-    val containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-    val tintColor = MaterialTheme.colorScheme.primary
+    val containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+    val tintColor = MaterialTheme.colorScheme.tertiary
 
     Surface(
         modifier = modifier
@@ -117,7 +117,7 @@ private fun HealthyBanner(modifier: Modifier = Modifier) {
                     Icon(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                        tint = MaterialTheme.colorScheme.onTertiary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -147,13 +147,13 @@ private fun HealthyBanner(modifier: Modifier = Modifier) {
                     Icon(
                         imageVector = Icons.Rounded.AccessTime,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = stringResource(R.string.home_status_updated_now),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
             }
@@ -181,14 +181,14 @@ private fun UpcomingBanner(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
                 modifier = Modifier.size(38.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(22.dp)
                     )
                 }

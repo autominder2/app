@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Locale
 import javax.inject.Inject
 
 data class AddServiceUiState(
@@ -39,6 +40,9 @@ data class AddServiceUiState(
     val odometer: String = "",
     val serviceDate: Long? = System.currentTimeMillis(),
     val cost: String = "",
+    val partsCost: String = "",
+    val laborCost: String = "",
+    val isCostBreakdownExpanded: Boolean = false,
     val shopName: String = "",
     val notes: String = "",
     // "Remind me for the next one" — the log-and-never-forget prompt
@@ -70,6 +74,9 @@ sealed class AddServiceUiEvent {
     data class ServiceDateChanged(val date: Long?) : AddServiceUiEvent()
     data class QuickDateSelected(val daysAgo: Int) : AddServiceUiEvent()
     data class CostChanged(val cost: String) : AddServiceUiEvent()
+    data class PartsCostChanged(val cost: String) : AddServiceUiEvent()
+    data class LaborCostChanged(val cost: String) : AddServiceUiEvent()
+    data class CostBreakdownToggled(val expanded: Boolean) : AddServiceUiEvent()
     data class QuickCostSelected(val amount: String) : AddServiceUiEvent()
     data class ShopNameChanged(val shopName: String) : AddServiceUiEvent()
     data class NotesChanged(val notes: String) : AddServiceUiEvent()
@@ -223,8 +230,29 @@ class AddServiceViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(cost = event.cost)
                 savedStateHandle[KEY_COST] = event.cost
             }
+            is AddServiceUiEvent.PartsCostChanged -> {
+                val parts = event.cost
+                val labor = _uiState.value.laborCost
+                val partsD = parts.toDoubleOrNull() ?: 0.0
+                val laborD = labor.toDoubleOrNull() ?: 0.0
+                val totalStr = if (partsD + laborD > 0) String.format(Locale.US, "%.2f", partsD + laborD).trimEnd('0').trimEnd('.') else ""
+                _uiState.value = _uiState.value.copy(partsCost = parts, cost = totalStr)
+                savedStateHandle[KEY_COST] = totalStr
+            }
+            is AddServiceUiEvent.LaborCostChanged -> {
+                val labor = event.cost
+                val parts = _uiState.value.partsCost
+                val partsD = parts.toDoubleOrNull() ?: 0.0
+                val laborD = labor.toDoubleOrNull() ?: 0.0
+                val totalStr = if (partsD + laborD > 0) String.format(Locale.US, "%.2f", partsD + laborD).trimEnd('0').trimEnd('.') else ""
+                _uiState.value = _uiState.value.copy(laborCost = labor, cost = totalStr)
+                savedStateHandle[KEY_COST] = totalStr
+            }
+            is AddServiceUiEvent.CostBreakdownToggled -> {
+                _uiState.value = _uiState.value.copy(isCostBreakdownExpanded = event.expanded)
+            }
             is AddServiceUiEvent.QuickCostSelected -> {
-                _uiState.value = _uiState.value.copy(cost = event.amount)
+                _uiState.value = _uiState.value.copy(cost = event.amount, partsCost = "", laborCost = "")
                 savedStateHandle[KEY_COST] = event.amount
             }
             is AddServiceUiEvent.ShopNameChanged -> {

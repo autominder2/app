@@ -1,15 +1,26 @@
 package com.autominder.app.ui.screens.vehicle
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,24 +41,30 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -67,37 +84,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.autominder.app.R
-import com.autominder.app.domain.util.DistanceUtil
+import com.autominder.app.domain.usecase.PlannedReminder
 import com.autominder.app.ui.components.DiscardChangesDialog
 import com.autominder.app.ui.components.LocalSnackbarHostState
 import com.autominder.app.ui.components.SaveButton
 import com.autominder.app.ui.components.SaveButtonState
-import com.autominder.app.ui.components.pressScale
 import com.autominder.app.ui.theme.Exo2
 import com.autominder.app.ui.theme.JetBrainsMono
 import com.autominder.app.ui.theme.LocalDistanceUnit
+import java.text.NumberFormat
 
-private val POPULAR_MAKES = listOf(
-    "Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "Hyundai", "Kia",
-    "Volkswagen", "BMW", "Mercedes", "Tesla", "Mazda", "Suzuki", "Jeep"
-)
+private val QUICK_YEARS = listOf("2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2015", "2010", "2005")
+private val GARAGE_ROLES = listOf("Daily Driver", "Family", "Weekend", "Work")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,20 +130,20 @@ fun AddVehicleScreen(
         uiState.model.isNotBlank() ||
         uiState.year.isNotBlank() ||
         uiState.currentOdometer.isNotBlank() ||
-        uiState.plateNumber.isNotBlank() ||
-        uiState.vin.isNotBlank() ||
         uiState.photoUri != null
 
     val onBackRequest: () -> Unit = {
-        if (hasUnsavedChanges && !uiState.isSaved) {
+        if (uiState.currentStep != AddVehicleStep.DISCOVERY) {
+            viewModel.onEvent(AddVehicleUiEvent.PreviousStepClicked)
+        } else if (hasUnsavedChanges && !uiState.isSaved) {
             showDiscardDialog = true
         } else {
             onNavigateBack()
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = hasUnsavedChanges && !uiState.isSaved) {
-        showDiscardDialog = true
+    BackHandler(enabled = true) {
+        onBackRequest()
     }
 
     if (showDiscardDialog) {
@@ -161,7 +176,11 @@ fun AddVehicleScreen(
         if (uiState.isSaved) {
             keyboardController?.hide()
             snackbarHostState.showSnackbar(
-                message = context.getString(R.string.vehicle_saved),
+                message = context.getString(
+                    R.string.add_vehicle_celebration_sub,
+                    uiState.brand,
+                    uiState.model
+                ),
                 duration = SnackbarDuration.Short
             )
             onNavigateBack()
@@ -170,73 +189,186 @@ fun AddVehicleScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.add_vehicle_title),
-                        fontFamily = Exo2,
-                        fontWeight = FontWeight.Bold
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(R.string.add_vehicle_title),
+                            fontFamily = Exo2,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onBackRequest,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back)
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackRequest) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back)
+                )
+                // 3-Step Stepper Progress Bar
+                StepperHeader(currentStep = uiState.currentStep)
+            }
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .navigationBarsPadding()
+                .imePadding()
+        ) {
+            AnimatedContent(
+                targetState = uiState.currentStep,
+                transitionSpec = {
+                    if (targetState.ordinal > initialState.ordinal) {
+                        (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> -width } + fadeOut()
+                        )
+                    } else {
+                        (slideInHorizontally { width -> -width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> width } + fadeOut()
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                label = "stepTransition"
+            ) { step ->
+                when (step) {
+                    AddVehicleStep.DISCOVERY -> {
+                        UniversalDiscoveryStepContent(
+                            uiState = uiState,
+                            onEvent = viewModel::onEvent
+                        )
+                    }
+                    AddVehicleStep.IDENTITY -> {
+                        IdentityStepContent(
+                            uiState = uiState,
+                            onEvent = viewModel::onEvent,
+                            onPickPhoto = {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
+                        )
+                    }
+                    AddVehicleStep.SCHEDULE -> {
+                        ScheduleStepContent(
+                            uiState = uiState,
+                            onEvent = viewModel::onEvent
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepperHeader(currentStep: AddVehicleStep) {
+    val progress by animateFloatAsState(
+        targetValue = when (currentStep) {
+            AddVehicleStep.DISCOVERY -> 0.33f
+            AddVehicleStep.IDENTITY -> 0.66f
+            AddVehicleStep.SCHEDULE -> 1.0f
+        },
+        label = "stepperProgress"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            StepSegmentText(
+                title = stringResource(R.string.add_vehicle_step_1),
+                isActive = currentStep == AddVehicleStep.DISCOVERY,
+                isCompleted = currentStep.ordinal > AddVehicleStep.DISCOVERY.ordinal
+            )
+            StepSegmentText(
+                title = stringResource(R.string.add_vehicle_step_2),
+                isActive = currentStep == AddVehicleStep.IDENTITY,
+                isCompleted = currentStep.ordinal > AddVehicleStep.IDENTITY.ordinal
+            )
+            StepSegmentText(
+                title = stringResource(R.string.add_vehicle_step_3),
+                isActive = currentStep == AddVehicleStep.SCHEDULE,
+                isCompleted = false
             )
         }
-    ) { padding ->
-        AddVehicleForm(
-            modifier = Modifier.padding(padding),
-            uiState = uiState,
-            onEvent = viewModel::onEvent,
-            onPickPhoto = {
-                photoPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-            }
+        Spacer(modifier = Modifier.height(8.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp)),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }
 
 @Composable
-private fun AddVehicleForm(
-    uiState: AddVehicleUiState,
-    onEvent: (AddVehicleUiEvent) -> Unit,
-    onPickPhoto: () -> Unit,
-    modifier: Modifier = Modifier
+private fun StepSegmentText(
+    title: String,
+    isActive: Boolean,
+    isCompleted: Boolean
 ) {
-    var showMore by remember { mutableStateOf(false) }
-    val canSave = uiState.brand.isNotBlank() && uiState.model.isNotBlank()
+    val textColor by animateColorAsState(
+        targetValue = when {
+            isActive -> MaterialTheme.colorScheme.primary
+            isCompleted -> MaterialTheme.colorScheme.onSurface
+            else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        },
+        label = "stepColor"
+    )
+
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+        color = textColor
+    )
+}
+
+/**
+ * Step 1: Universal Search-First Discovery
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun UniversalDiscoveryStepContent(
+    uiState: AddVehicleUiState,
+    onEvent: (AddVehicleUiEvent) -> Unit
+) {
     val haptic = LocalHapticFeedback.current
+    val canProceed = uiState.brand.isNotBlank() && uiState.model.isNotBlank()
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .navigationBarsPadding()
-            .imePadding()
+            .padding(horizontal = 20.dp)
     ) {
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Hero Photo Box with Radial Spotlight Halo
-            VehiclePhotoHero(
-                photoUri = uiState.photoUri,
-                onPickPhoto = onPickPhoto
-            )
-
-            // Warm, concise header
+            // Header Intro
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.add_vehicle_headline),
@@ -250,226 +382,613 @@ private fun AddVehicleForm(
                 )
             }
 
-            // Fast One-Tap Popular Makes Carousel
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 2.dp)
-            ) {
-                items(POPULAR_MAKES) { make ->
-                    val isSelected = uiState.brand.equals(make, ignoreCase = true)
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                            onEvent(AddVehicleUiEvent.BrandChanged(make))
-                        },
-                        label = {
-                            Text(
-                                text = make,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
-                        },
-                        shape = CircleShape,
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                        )
-                    )
-                }
-            }
-
-            // Primary Identity Card (Make & Model)
-            Card(
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    VehicleField(
-                        value = uiState.brand,
-                        onValueChange = { onEvent(AddVehicleUiEvent.BrandChanged(it)) },
-                        label = stringResource(R.string.label_make),
-                        icon = Icons.Default.DirectionsCar
-                    )
-                    VehicleField(
-                        value = uiState.model,
-                        onValueChange = { onEvent(AddVehicleUiEvent.ModelChanged(it)) },
-                        label = stringResource(R.string.label_model),
-                        icon = Icons.AutoMirrored.Filled.Label
-                    )
-                }
-            }
-
-            // Automatic reminders reassurance pill
-            Surface(
+            // Universal Search Field
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = { onEvent(AddVehicleUiEvent.SearchQueryChanged(it)) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.AutoAwesome,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
+                placeholder = {
                     Text(
-                        text = stringResource(R.string.add_vehicle_auto_reminders),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        stringResource(R.string.add_vehicle_search_placeholder),
+                        style = MaterialTheme.typography.bodyMedium
                     )
-                }
-            }
-
-            // Expandable More Details Section
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                        showMore = !showMore
-                    },
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainer
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.add_vehicle_more_details),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
-                    )
+                },
+                leadingIcon = {
                     Icon(
-                        imageVector = if (showMore) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        Icons.Default.Search,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
+                },
+                trailingIcon = {
+                    if (uiState.searchQuery.isNotBlank()) {
+                        IconButton(onClick = { onEvent(AddVehicleUiEvent.SearchQueryChanged("")) }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+
+            // Vehicle Suggestions Deck
+            Text(
+                text = stringResource(R.string.add_vehicle_popular_makes),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                uiState.suggestions.forEach { suggestion ->
+                    val isSelected = uiState.brand.equals(suggestion.make, ignoreCase = true) &&
+                        uiState.model.equals(suggestion.model, ignoreCase = true)
+
+                    OutlinedCard(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onEvent(AddVehicleUiEvent.SuggestionSelected(suggestion))
+                        },
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = if (isSelected) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            }
+                        ),
+                        border = BorderStroke(
+                            width = if (isSelected) 2.dp else 1.dp,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.outlineVariant
+                            }
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.semantics {
+                            contentDescription = "Select ${suggestion.make} ${suggestion.model} vehicle"
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "${suggestion.make} ${suggestion.model}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            )
+                            if (suggestion.badge != null) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    Text(
+                                        text = suggestion.badge,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            AnimatedVisibility(visible = showMore) {
-                Card(
-                    shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+            // Custom Vehicle Fallback
+            OutlinedButton(
+                onClick = { onEvent(AddVehicleUiEvent.CustomEntryToggled(!uiState.isCustomEntry)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.add_vehicle_custom_option))
+            }
+
+            // Manual Entry Fallback Fields
+            AnimatedVisibility(visible = uiState.isCustomEntry) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        // Year quick-picker
+                    OutlinedTextField(
+                        value = uiState.brand,
+                        onValueChange = { onEvent(AddVehicleUiEvent.BrandChanged(it)) },
+                        label = { Text("Make / Brand (e.g. Toyota)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = uiState.model,
+                        onValueChange = { onEvent(AddVehicleUiEvent.ModelChanged(it)) },
+                        label = { Text("Model (e.g. RAV4)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            if (uiState.errorRes != null) {
+                Text(
+                    text = stringResource(uiState.errorRes),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
+        // Bottom CTA
+        Button(
+            onClick = { onEvent(AddVehicleUiEvent.NextStepClicked) },
+            enabled = canProceed,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.add_vehicle_next_step),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+/**
+ * Step 2: Vehicle Identity & Persona
+ */
+@Composable
+private fun IdentityStepContent(
+    uiState: AddVehicleUiState,
+    onEvent: (AddVehicleUiEvent) -> Unit,
+    onPickPhoto: () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Selected Vehicle Header Card
+            ElevatedCard(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
                         Text(
-                            text = stringResource(R.string.label_year),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            text = "${uiState.brand} ${uiState.model}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Vehicle Identity",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items((0..12).toList()) { offset ->
-                                val year = (currentYear - offset).toString()
-                                val isSelected = uiState.year == year
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                                        onEvent(AddVehicleUiEvent.YearChanged(year))
-                                    },
-                                    label = {
-                                        Text(
-                                            text = year,
-                                            style = MaterialTheme.typography.labelMedium.copy(fontFamily = JetBrainsMono),
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                        )
-                                    },
-                                    shape = CircleShape,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    )
-                                )
-                            }
-                        }
-
-                        VehicleField(
-                            value = uiState.currentOdometer,
-                            onValueChange = { onEvent(AddVehicleUiEvent.OdometerChanged(it)) },
-                            label = stringResource(
-                                R.string.label_current_odometer_dynamic,
-                                DistanceUtil.unitLabel(LocalDistanceUnit.current)
-                            ),
-                            icon = Icons.Default.Speed,
-                            keyboardType = KeyboardType.Number
-                        )
-                        VehicleField(
-                            value = uiState.plateNumber,
-                            onValueChange = { onEvent(AddVehicleUiEvent.PlateNumberChanged(it)) },
-                            label = stringResource(R.string.label_plate_number),
-                            icon = Icons.Default.Badge
-                        )
-                        VehicleField(
-                            value = uiState.vin,
-                            onValueChange = { onEvent(AddVehicleUiEvent.VinChanged(it)) },
-                            label = stringResource(R.string.label_vin_optional),
-                            icon = Icons.Default.Numbers
+                    }
+                    IconButton(
+                        onClick = { onEvent(AddVehicleUiEvent.PreviousStepClicked) },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit vehicle make and model",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             }
 
-            uiState.errorRes?.let { errorRes ->
+            // Optional Photo Card
+            VehiclePhotoHero(
+                photoUri = uiState.photoUri,
+                onPickPhoto = onPickPhoto
+            )
+
+            // Year Selector Section
+            Text(
+                text = stringResource(R.string.add_vehicle_year_label),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 4.dp)
+            ) {
+                items(QUICK_YEARS) { year ->
+                    val isSelected = uiState.year == year
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onEvent(AddVehicleUiEvent.YearChanged(year))
+                        },
+                        label = {
+                            Text(
+                                text = year,
+                                fontFamily = JetBrainsMono,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                }
+            }
+
+            // Garage Role Prompt (Optional)
+            Text(
+                text = stringResource(R.string.add_vehicle_role_label),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                GARAGE_ROLES.forEach { role ->
+                    val isSelected = uiState.role == role
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onEvent(AddVehicleUiEvent.RoleChanged(role))
+                        },
+                        label = {
+                            Text(
+                                text = role,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            if (uiState.errorRes != null) {
                 Text(
-                    text = stringResource(errorRes, *uiState.errorArgs.toTypedArray()),
+                    text = stringResource(uiState.errorRes),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // Sticky Bottom Save Button Container
-        Surface(
-            color = MaterialTheme.colorScheme.background,
-            modifier = Modifier.fillMaxWidth()
+        // Action Buttons Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
+            OutlinedButton(
+                onClick = { onEvent(AddVehicleUiEvent.PreviousStepClicked) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .weight(0.35f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp)
             ) {
-                SaveButton(
-                    state = when {
-                        uiState.isSaved -> SaveButtonState.Success
-                        uiState.isLoading -> SaveButtonState.Saving
-                        else -> SaveButtonState.Idle
-                    },
-                    text = stringResource(R.string.add_vehicle_cta),
-                    onClick = { onEvent(AddVehicleUiEvent.SaveClicked) },
-                    enabled = canSave,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
+                Text("Back")
+            }
+            Button(
+                onClick = { onEvent(AddVehicleUiEvent.NextStepClicked) },
+                modifier = Modifier
+                    .weight(0.65f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.add_vehicle_next_step),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
+    }
+}
+
+/**
+ * Step 3: Odometer & Confidence-First Maintenance Plan
+ */
+@Composable
+private fun ScheduleStepContent(
+    uiState: AddVehicleUiState,
+    onEvent: (AddVehicleUiEvent) -> Unit
+) {
+    val distanceUnit = LocalDistanceUnit.current
+    val haptic = LocalHapticFeedback.current
+    var showAdvanced by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Odometer Header
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.add_vehicle_odometer_headline),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(R.string.add_vehicle_odometer_subhead),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Odometer Input Field
+            OutlinedTextField(
+                value = uiState.currentOdometer,
+                onValueChange = { onEvent(AddVehicleUiEvent.OdometerChanged(it)) },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("0", fontFamily = JetBrainsMono) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Speed,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                suffix = {
+                    Text(
+                        text = distanceUnit,
+                        fontFamily = JetBrainsMono,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true
+            )
+
+            // Quick Adjust Steppers
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(-500, 500, 1000).forEach { delta ->
+                    val label = if (delta > 0) "+$delta" else "$delta"
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onEvent(AddVehicleUiEvent.OdometerAdjusted(delta))
+                        },
+                        label = {
+                            Text(
+                                text = "$label $distanceUnit",
+                                fontFamily = JetBrainsMono,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Starting Maintenance Plan Preview Deck
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.add_vehicle_schedule_preview_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.add_vehicle_schedule_preview_sub),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // Pre-seeded planned reminders
+                    uiState.previewReminders.take(5).forEach { reminder ->
+                        PlannedReminderPreviewRow(reminder = reminder)
+                    }
+                }
+            }
+
+            // Expandable Accordion for License Plate & VIN
+            OutlinedCard(
+                onClick = { showAdvanced = !showAdvanced },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.add_vehicle_advanced_accordion),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Icon(
+                        imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = showAdvanced) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.plateNumber,
+                        onValueChange = { onEvent(AddVehicleUiEvent.PlateNumberChanged(it)) },
+                        label = { Text("License plate") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = uiState.vin,
+                        onValueChange = { onEvent(AddVehicleUiEvent.VinChanged(it)) },
+                        label = { Text("VIN (17 characters)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            if (uiState.errorRes != null) {
+                Text(
+                    text = stringResource(uiState.errorRes),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
+        // Action Buttons Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = { onEvent(AddVehicleUiEvent.PreviousStepClicked) },
+                modifier = Modifier
+                    .weight(0.35f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Back")
+            }
+            SaveButton(
+                state = when {
+                    uiState.isLoading -> SaveButtonState.Saving
+                    uiState.isSaved -> SaveButtonState.Success
+                    else -> SaveButtonState.Idle
+                },
+                onClick = { onEvent(AddVehicleUiEvent.SaveClicked) },
+                text = stringResource(R.string.add_vehicle_save_cta),
+                modifier = Modifier
+                    .weight(0.65f)
+                    .height(52.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlannedReminderPreviewRow(reminder: PlannedReminder) {
+    val distanceUnit = LocalDistanceUnit.current
+    val formattedOdo = reminder.nextDueOdometer?.let {
+        NumberFormat.getIntegerInstance().format(it)
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            )
+            Text(
+                text = reminder.serviceType.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        Text(
+            text = if (formattedOdo != null) "Due @ $formattedOdo $distanceUnit" else "Due in ${reminder.intervalDays} days",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = JetBrainsMono,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -478,62 +997,55 @@ private fun VehiclePhotoHero(
     photoUri: String?,
     onPickPhoto: () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val haptic = LocalHapticFeedback.current
-
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp)
-            .clip(RoundedCornerShape(24.dp))
+            .height(140.dp)
+            .clip(RoundedCornerShape(20.dp))
             .background(
-                Brush.radialGradient(
+                brush = Brush.verticalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                        MaterialTheme.colorScheme.surfaceContainerLow
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        MaterialTheme.colorScheme.surfaceContainerHigh
                     )
                 )
             )
-            .pressScale(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) {
-                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                onPickPhoto()
-            },
+            .clickable(onClick = onPickPhoto),
         contentAlignment = Alignment.Center
     ) {
         if (photoUri != null) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalPlatformContext.current)
+                model = ImageRequest.Builder(context)
                     .data(photoUri)
                     .crossfade(true)
                     .build(),
-                contentDescription = stringResource(R.string.cd_vehicle_photo),
+                contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            Surface(
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(12.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                    .padding(12.dp)
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        stringResource(R.string.action_change_photo),
-                        style = MaterialTheme.typography.labelMedium
+                        text = stringResource(R.string.action_change_photo),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -542,57 +1054,26 @@ private fun VehiclePhotoHero(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Surface(
-                    modifier = Modifier.size(52.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.AddAPhoto,
-                            contentDescription = stringResource(R.string.cd_add_photo),
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Icon(
+                        Icons.Default.AddAPhoto,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
                 Text(
-                    text = stringResource(R.string.action_add_photo),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Add vehicle photo (Optional)",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
-}
-
-@Composable
-private fun VehicleField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    icon: ImageVector,
-    keyboardType: KeyboardType = KeyboardType.Text
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-        },
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        singleLine = true
-    )
 }

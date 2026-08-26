@@ -2,6 +2,7 @@ package com.autominder.app.ui.screens.vehicle
 
 import android.net.Uri
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,69 +11,63 @@ import com.autominder.app.R
 import com.autominder.app.core.util.AnalyticsEvents
 import com.autominder.app.core.util.AnalyticsHelper
 import com.autominder.app.core.util.AnalyticsParams
+import com.autominder.app.data.export.ExportServiceHistoryUseCase
+import com.autominder.app.domain.model.FuelEntry
 import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.model.Reminder
+import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.Vehicle
+import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.repository.IMileageLogRepository
 import com.autominder.app.domain.repository.IReminderRepository
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.repository.IVehicleRepository
-import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.usecase.CalculateEfficiencyUseCase
-import com.autominder.app.data.export.ExportServiceHistoryUseCase
 import com.autominder.app.domain.usecase.DuePrediction
-import com.autominder.app.domain.usecase.OdometerPoint
 import com.autominder.app.domain.usecase.PredictDueUseCase
 import com.autominder.app.domain.usecase.StatusCalculator
+import com.autominder.app.domain.usecase.cockpit.CalculateConfidenceUseCase
+import com.autominder.app.domain.usecase.cockpit.CalculateDrivingPatternUseCase
+import com.autominder.app.domain.usecase.cockpit.CalculateOwnershipCostUseCase
+import com.autominder.app.domain.usecase.cockpit.DrivingPattern
+import com.autominder.app.domain.usecase.cockpit.MonthlySpend
+import com.autominder.app.domain.usecase.cockpit.OwnershipCostSummary
+import com.autominder.app.domain.usecase.cockpit.TypeSpend
+import com.autominder.app.domain.usecase.cockpit.VehicleConfidence
 import com.autominder.app.ui.navigation.NavRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.Calendar
-import java.util.Locale
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
+import java.util.Calendar
 import javax.inject.Inject
 
-data class MonthlySpend(val label: String, val cents: Int)
+typealias TypeSpend = com.autominder.app.domain.usecase.cockpit.TypeSpend
+typealias MonthlySpend = com.autominder.app.domain.usecase.cockpit.MonthlySpend
 
-/**
- * Spend bucket for the cost-by-type donut. Carries the raw identity instead
- * of a pre-baked display string so the chart can localize at render time:
- * [customLabel] wins (user-entered, display-safe), else [serviceType] is
- * mapped via ServiceType.localizedLabel(), and [isOther] marks the rollup
- * bucket for everything past the top five.
- */
-data class TypeSpend(
-    val serviceType: com.autominder.app.domain.model.ServiceType? = null,
-    val customLabel: String? = null,
-    val isOther: Boolean = false,
-    val cents: Int
-)
-
+@Immutable
 data class VehicleDetailUiState(
     val vehicle: Vehicle? = null,
     val reminders: List<Reminder> = emptyList(),
     val reminderStatuses: Map<Long, ServiceStatus> = emptyMap(),
     val reminderPredictions: Map<Long, DuePrediction> = emptyMap(),
-    val totalCostCents: Int = 0,
-    val yearCostCents: Int = 0,
+    val confidence: VehicleConfidence = VehicleConfidence(),
+    val drivingPattern: DrivingPattern = DrivingPattern(),
+    val costSummary: OwnershipCostSummary = OwnershipCostSummary(),
+    val recentServices: List<Service> = emptyList(),
     val averageEfficiency: Double = 0.0,
-    val monthlySpending: List<MonthlySpend> = emptyList(),
-    val costByType: List<TypeSpend> = emptyList(),
     val efficiencySeries: List<Double> = emptyList(),
-    val costPerKmCents: Double? = null,
     val isLoading: Boolean = false,
     @StringRes val errorRes: Int? = null,
     val errorArgs: List<Any> = emptyList(),
@@ -81,9 +76,9 @@ data class VehicleDetailUiState(
 )
 
 sealed class VehicleDetailUiEvent {
-    object ArchiveClicked : VehicleDetailUiEvent()
-    object ExportClicked : VehicleDetailUiEvent()
-    object ExportConsumed : VehicleDetailUiEvent()
+    data object ArchiveClicked : VehicleDetailUiEvent()
+    data object ExportClicked : VehicleDetailUiEvent()
+    data object ExportConsumed : VehicleDetailUiEvent()
     data class MarkReminderComplete(val reminderId: Long) : VehicleDetailUiEvent()
     data class SnoozeReminder(val reminderId: Long) : VehicleDetailUiEvent()
     data class UpdateOdometer(val odometerKm: Int) : VehicleDetailUiEvent()
@@ -99,6 +94,9 @@ class VehicleDetailViewModel @Inject constructor(
     private val exportServiceHistory: ExportServiceHistoryUseCase,
     private val calculateEfficiency: CalculateEfficiencyUseCase,
     private val predictDue: PredictDueUseCase,
+    private val calculateConfidence: CalculateConfidenceUseCase,
+    private val calculateDrivingPattern: CalculateDrivingPatternUseCase,
+    private val calculateOwnershipCost: CalculateOwnershipCostUseCase,
     private val analyticsHelper: AnalyticsHelper,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -133,62 +131,76 @@ class VehicleDetailViewModel @Inject constructor(
             mileageLogRepository.getLogsForVehicle(vehicleId),
             _actionState
         ) { args ->
-            val vehicle = args[0] as? com.autominder.app.domain.model.Vehicle
+            val vehicle = args[0] as? Vehicle
             @Suppress("UNCHECKED_CAST")
-            val reminders = args[1] as List<com.autominder.app.domain.model.Reminder>
+            val reminders = args[1] as List<Reminder>
             val totalCost = args[2] as Int
             val yearCost = args[3] as Int
             @Suppress("UNCHECKED_CAST")
-            val fuelEntries = args[4] as List<com.autominder.app.domain.model.FuelEntry>
+            val fuelEntries = args[4] as List<FuelEntry>
             @Suppress("UNCHECKED_CAST")
-            val services = args[5] as List<com.autominder.app.domain.model.Service>
+            val services = args[5] as List<Service>
             @Suppress("UNCHECKED_CAST")
             val mileageLogs = args[6] as List<MileageLogEntry>
             val action = args[7] as ActionState
 
-        if (action.isArchived) {
-            VehicleDetailUiState(isArchived = true)
-        } else if (vehicle != null) {
-            val now = System.currentTimeMillis()
-            val statuses = reminders.associate { r ->
-                r.id to StatusCalculator.calculate(
-                    nowMillis = now,
-                    currentOdometer = vehicle.currentOdometer,
-                    dueDateMillis = r.nextDueDate,
-                    dueOdometer = r.nextDueOdometer,
-                    snoozeUntilMillis = r.snoozeUntil,
-                    isCompleted = r.isCompleted
+            if (action.isArchived) {
+                VehicleDetailUiState(isArchived = true)
+            } else if (vehicle != null) {
+                val now = System.currentTimeMillis()
+                val statuses = reminders.associate { r ->
+                    r.id to StatusCalculator.calculate(
+                        nowMillis = now,
+                        currentOdometer = vehicle.currentOdometer,
+                        dueDateMillis = r.nextDueDate,
+                        dueOdometer = r.nextDueOdometer,
+                        snoozeUntilMillis = r.snoozeUntil,
+                        isCompleted = r.isCompleted
+                    )
+                }
+
+                val drivingPattern = calculateDrivingPattern.execute(mileageLogs, fuelEntries)
+                val predictions = reminders.associate { r ->
+                    r.id to predictDue.predict(r, vehicle.currentOdometer, drivingPattern.dailyKmRate, now)
+                }
+
+                val confidence = calculateConfidence.execute(
+                    vehicle = vehicle,
+                    reminders = reminders,
+                    statuses = statuses,
+                    mileageLogs = mileageLogs,
+                    services = services,
+                    nowMillis = now
                 )
+
+                val costSummary = calculateOwnershipCost.execute(
+                    totalCostCents = totalCost,
+                    yearCostCents = yearCost,
+                    services = services,
+                    fuelEntries = fuelEntries,
+                    currentOdometer = vehicle.currentOdometer,
+                    nowMillis = now
+                )
+
+                VehicleDetailUiState(
+                    vehicle = vehicle,
+                    reminders = reminders,
+                    reminderStatuses = statuses,
+                    reminderPredictions = predictions,
+                    confidence = confidence,
+                    drivingPattern = drivingPattern,
+                    costSummary = costSummary,
+                    recentServices = services.sortedByDescending { it.serviceDate }.take(5),
+                    averageEfficiency = calculateEfficiency.calculateAverage(fuelEntries),
+                    efficiencySeries = computeEfficiencySeries(fuelEntries),
+                    errorRes = action.errorRes,
+                    errorArgs = action.errorArgs,
+                    exportUri = action.exportUri
+                )
+            } else {
+                VehicleDetailUiState(errorRes = R.string.error_vehicle_not_found)
             }
-            // Learn the driving rate from every dated odometer observation the
-            // vehicle has — mileage logs and fuel fill-ups both count.
-            val odometerPoints =
-                mileageLogs.map { OdometerPoint(it.odometer, it.loggedAt) } +
-                fuelEntries.map { OdometerPoint(it.odometer, it.date.time) }
-            val dailyRate = predictDue.dailyKmRate(odometerPoints)
-            val predictions = reminders.associate { r ->
-                r.id to predictDue.predict(r, vehicle.currentOdometer, dailyRate, now)
-            }
-            VehicleDetailUiState(
-                vehicle = vehicle,
-                reminders = reminders,
-                reminderStatuses = statuses,
-                reminderPredictions = predictions,
-                totalCostCents = totalCost,
-                yearCostCents = yearCost,
-                averageEfficiency = calculateEfficiency.calculateAverage(fuelEntries),
-                monthlySpending = computeMonthlySpending(services, now),
-                costByType = computeCostByType(services),
-                efficiencySeries = computeEfficiencySeries(fuelEntries),
-                costPerKmCents = computeCostPerKm(totalCost, services, fuelEntries, vehicle.currentOdometer),
-                errorRes = action.errorRes,
-                errorArgs = action.errorArgs,
-                exportUri = action.exportUri
-            )
-        } else {
-            VehicleDetailUiState(errorRes = R.string.error_vehicle_not_found)
         }
-    }
     }
         .catch { e ->
             Timber.e(e, "Failed to load vehicle")
@@ -200,53 +212,8 @@ class VehicleDetailViewModel @Inject constructor(
             initialValue = VehicleDetailUiState(isLoading = true)
         )
 
-    /** Spending per calendar month for the last 6 months, oldest first. */
-    private fun computeMonthlySpending(
-        services: List<com.autominder.app.domain.model.Service>,
-        now: Long
-    ): List<MonthlySpend> {
-        val monthFormat = SimpleDateFormat("MMM", Locale.getDefault())
-        return (5 downTo 0).map { monthsBack ->
-            val cal = Calendar.getInstance().apply {
-                timeInMillis = now
-                add(Calendar.MONTH, -monthsBack)
-            }
-            val month = cal.get(Calendar.MONTH)
-            val year = cal.get(Calendar.YEAR)
-            val cents = services.filter { s ->
-                val sCal = Calendar.getInstance().apply { timeInMillis = s.serviceDate }
-                sCal.get(Calendar.MONTH) == month && sCal.get(Calendar.YEAR) == year
-            }.sumOf { it.costCents ?: 0 }
-            MonthlySpend(label = monthFormat.format(cal.time), cents = cents)
-        }
-    }
-
-    /** All-time spend per service type, largest first, top 5 + Other. */
-    private fun computeCostByType(
-        services: List<com.autominder.app.domain.model.Service>
-    ): List<TypeSpend> {
-        val byType = services
-            .filter { (it.costCents ?: 0) > 0 }
-            // Stable, locale-independent grouping key: user label or enum name
-            .groupBy { it.customLabel ?: it.serviceType.name }
-            .map { (_, group) ->
-                val first = group.first()
-                TypeSpend(
-                    serviceType = if (first.customLabel == null) first.serviceType else null,
-                    customLabel = first.customLabel,
-                    cents = group.sumOf { it.costCents ?: 0 }
-                )
-            }
-            .sortedByDescending { it.cents }
-        if (byType.size <= 5) return byType
-        val top = byType.take(5)
-        val otherCents = byType.drop(5).sumOf { it.cents }
-        return top + TypeSpend(isOther = true, cents = otherCents)
-    }
-
-    /** Chronological km/L per fill-up (needs 2+ entries per point). */
     private fun computeEfficiencySeries(
-        fuelEntries: List<com.autominder.app.domain.model.FuelEntry>
+        fuelEntries: List<FuelEntry>
     ): List<Double> {
         val sorted = fuelEntries.sortedBy { it.odometer }
         return sorted.mapIndexedNotNull { index, entry ->
@@ -254,23 +221,6 @@ class VehicleDetailViewModel @Inject constructor(
             val eff = calculateEfficiency.calculate(entry, previous)
             if (eff > 0) eff else null
         }
-    }
-
-    /** Total cost divided by tracked distance (earliest record to now). */
-    private fun computeCostPerKm(
-        totalCostCents: Int,
-        services: List<com.autominder.app.domain.model.Service>,
-        fuelEntries: List<com.autominder.app.domain.model.FuelEntry>,
-        currentOdometer: Int
-    ): Double? {
-        if (totalCostCents <= 0) return null
-        val earliest = (services.map { it.odometerAtService } + fuelEntries.map { it.odometer })
-            .filter { it > 0 }
-            .minOrNull() ?: return null
-        val distance = currentOdometer - earliest
-        // Under 100 km of history the ratio is meaningless noise
-        if (distance < 100) return null
-        return totalCostCents.toDouble() / distance
     }
 
     fun onEvent(event: VehicleDetailUiEvent) {

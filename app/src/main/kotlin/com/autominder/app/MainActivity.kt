@@ -66,6 +66,14 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var updateHelper: Provider<UpdateHelper>
 
+    companion object {
+        const val EXTRA_WIDGET_ACTION = "extra_widget_action"
+        const val ACTION_ADD_FUEL = "action_add_fuel"
+        const val ACTION_ADD_SERVICE = "action_add_service"
+        const val ACTION_LOG_MILEAGE = "action_log_mileage"
+        const val ACTION_ADD_VEHICLE = "action_add_vehicle"
+    }
+
     /** vehicleId to openMileageSheet — notification deep-link payload. */
     private val _deepLinkEvents = kotlinx.coroutines.channels.Channel<VehicleDeepLink>(
         capacity = kotlinx.coroutines.channels.Channel.BUFFERED
@@ -77,6 +85,15 @@ class MainActivity : ComponentActivity() {
         val requestId: Long
     )
 
+    private data class WidgetDeepLink(
+        val action: String,
+        val vehicleId: Long?
+    )
+
+    private val _widgetDeepLinkEvents = kotlinx.coroutines.channels.Channel<WidgetDeepLink>(
+        capacity = kotlinx.coroutines.channels.Channel.BUFFERED
+    )
+
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -84,6 +101,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: android.content.Intent?) {
+        val widgetAction = intent?.getStringExtra(EXTRA_WIDGET_ACTION)
+        if (widgetAction != null) {
+            val vId = intent.getLongExtra(NotificationHelper.EXTRA_VEHICLE_ID, -1L).takeIf { it > 0L }
+            _widgetDeepLinkEvents.trySend(WidgetDeepLink(widgetAction, vId))
+            intent.removeExtra(EXTRA_WIDGET_ACTION)
+            intent.removeExtra(NotificationHelper.EXTRA_VEHICLE_ID)
+            return
+        }
+
         val vehicleId = intent?.getLongExtra(NotificationHelper.EXTRA_VEHICLE_ID, -1L) ?: -1L
         if (vehicleId > 0L) {
             val openMileage = intent?.getBooleanExtra(
@@ -105,14 +131,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        // TODO(sentry-verify): remove this forced test event before release — confirms events reach Sentry.
-        findViewById<android.view.View>(android.R.id.content).viewTreeObserver.addOnGlobalLayoutListener {
-            try {
-                throw Exception("This app uses Sentry! :)")
-            } catch (e: Exception) {
-                Sentry.captureException(e)
-            }
-        }
 
         enableEdgeToEdge()
         handleIntent(intent)
@@ -201,6 +219,28 @@ class MainActivity : ComponentActivity() {
                                 if (isVehicleDetailOnTop && currentDestinationId != null) {
                                     popUpTo(currentDestinationId) { inclusive = true }
                                 }
+                            }
+                        }
+                    }
+                }
+
+                // Widget Quick Action deep links (+ Fuel, + Service, + Mileage)
+                LaunchedEffect(hasSeenOnboarding) {
+                    if (hasSeenOnboarding) {
+                        _widgetDeepLinkEvents.receiveAsFlow().collect { widgetLink ->
+                            val vId = widgetLink.vehicleId ?: 1L
+                            when (widgetLink.action) {
+                                ACTION_ADD_FUEL -> navController.navigate(NavRoutes.AddFuel(vId))
+                                ACTION_ADD_SERVICE -> navController.navigate(NavRoutes.AddService(vId))
+                                ACTION_LOG_MILEAGE -> navController.navigate(
+                                    NavRoutes.VehicleDetail(
+                                        vehicleId = vId,
+                                        openMileageSheet = true,
+                                        mileageRequestId = 0L
+                                    )
+                                )
+                                ACTION_ADD_VEHICLE -> navController.navigate(NavRoutes.AddVehicle)
+                                else -> navController.navigate(NavRoutes.Dashboard)
                             }
                         }
                     }

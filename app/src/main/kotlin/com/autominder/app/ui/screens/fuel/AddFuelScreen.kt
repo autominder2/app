@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -52,6 +54,9 @@ import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -103,6 +108,7 @@ fun AddFuelScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -145,8 +151,12 @@ fun AddFuelScreen(
     }
 
     LaunchedEffect(uiState.errorRes) {
-        if (uiState.errorRes != null) {
+        val err = uiState.errorRes
+        if (err != null && !uiState.initialLoadFailed) {
             haptic.performHapticFeedback(HapticFeedbackType.Reject)
+            val msg = context.getString(err, *uiState.errorArgs.toTypedArray())
+            snackbarHostState.showSnackbar(message = msg, duration = SnackbarDuration.Short)
+            viewModel.onEvent(AddFuelUiEvent.ErrorDismissed)
         }
     }
 
@@ -154,6 +164,7 @@ fun AddFuelScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             MediumTopAppBar(
                 title = {
@@ -220,7 +231,7 @@ fun AddFuelScreen(
         ) {
             when {
                 uiState.isLoading -> ListSkeleton(rows = 5)
-                uiState.errorRes != null && !uiState.isSaving -> ErrorState(
+                uiState.initialLoadFailed && uiState.errorRes != null -> ErrorState(
                     message = stringResource(uiState.errorRes!!, *uiState.errorArgs.toTypedArray()),
                     onRetry = { viewModel.onEvent(AddFuelUiEvent.RetryClicked) }
                 )
@@ -416,6 +427,8 @@ private fun AddFuelBentoContent(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
+                        isError = uiState.costErrorRes != null,
+                        supportingText = uiState.costErrorRes?.let { { Text(stringResource(it)) } },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
@@ -434,11 +447,12 @@ private fun AddFuelBentoContent(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        FlowRow(
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            listOf(20.0, 30.0, 50.0, 75.0, 100.0).forEach { presetCost ->
+                            items(listOf(20.0, 30.0, 50.0, 75.0, 100.0)) { presetCost ->
                                 val label = "$${presetCost.toInt()}"
                                 FilterChip(
                                     selected = uiState.cost == presetCost.toInt().toString(),
@@ -450,7 +464,9 @@ private fun AddFuelBentoContent(
                                         Text(
                                             text = label,
                                             style = MaterialTheme.typography.labelMedium.copy(fontFamily = JetBrainsMono),
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     },
                                     shape = RoundedCornerShape(8.dp),
@@ -478,6 +494,8 @@ private fun AddFuelBentoContent(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
+                        isError = uiState.volumeErrorRes != null,
+                        supportingText = uiState.volumeErrorRes?.let { { Text(stringResource(it)) } },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
@@ -496,11 +514,12 @@ private fun AddFuelBentoContent(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        FlowRow(
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            listOf(10.0, 20.0, 35.0, 50.0, 60.0).forEach { presetVol ->
+                            items(listOf(10.0, 20.0, 35.0, 50.0, 60.0)) { presetVol ->
                                 val label = "${presetVol.toInt()} L"
                                 FilterChip(
                                     selected = uiState.volume == presetVol.toInt().toString(),
@@ -512,7 +531,9 @@ private fun AddFuelBentoContent(
                                         Text(
                                             text = label,
                                             style = MaterialTheme.typography.labelMedium.copy(fontFamily = JetBrainsMono),
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
                                         )
                                     },
                                     shape = RoundedCornerShape(8.dp),
@@ -604,6 +625,8 @@ private fun AddFuelBentoContent(
                         value = uiState.odometer,
                         onValueChange = { onEvent(AddFuelUiEvent.OdometerChanged(it)) },
                         label = { Text(stringResource(R.string.label_current_odometer_dynamic, unitLabel)) },
+                        isError = uiState.odometerErrorRes != null,
+                        supportingText = uiState.odometerErrorRes?.let { { Text(stringResource(it)) } },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
@@ -615,11 +638,12 @@ private fun AddFuelBentoContent(
                     )
 
                     // Quick Step Delta Pills
-                    FlowRow(
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        listOf(50, 100, 250, 500).forEach { step ->
+                        items(listOf(50, 100, 250, 500)) { step ->
                             FilterChip(
                                 selected = false,
                                 onClick = {
@@ -630,7 +654,9 @@ private fun AddFuelBentoContent(
                                     Text(
                                         text = "+$step $unitLabel",
                                         style = MaterialTheme.typography.labelSmall.copy(fontFamily = JetBrainsMono),
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 },
                                 shape = RoundedCornerShape(8.dp),

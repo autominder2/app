@@ -1,6 +1,5 @@
 package com.autominder.app.ui.screens.quote
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,9 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -28,6 +27,7 @@ import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.FormatQuote
@@ -61,11 +61,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -84,6 +89,7 @@ import com.autominder.app.ui.components.ErrorState
 import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.theme.Exo2
 import com.autominder.app.ui.theme.JetBrainsMono
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -108,6 +114,8 @@ fun QuoteAuditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(uiState.savedSuccessMessage) {
         uiState.savedSuccessMessage?.let { msg ->
@@ -136,7 +144,10 @@ fun QuoteAuditorScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                        onNavigateBack()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.cd_back)
@@ -146,7 +157,10 @@ fun QuoteAuditorScreen(
                 actions = {
                     if (uiState.items.isNotEmpty()) {
                         TextButton(
-                            onClick = { viewModel.onEvent(QuoteAuditorUiEvent.ResetQuote) }
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                viewModel.onEvent(QuoteAuditorUiEvent.ResetQuote)
+                            }
                         ) {
                             Text(stringResource(R.string.quote_auditor_clear_all))
                         }
@@ -171,7 +185,10 @@ fun QuoteAuditorScreen(
                             .padding(16.dp)
                     ) {
                         Button(
-                            onClick = { viewModel.onEvent(QuoteAuditorUiEvent.SaveApprovedServices) },
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                                viewModel.onEvent(QuoteAuditorUiEvent.SaveApprovedServices)
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
@@ -216,6 +233,9 @@ fun QuoteAuditorScreen(
                     onAddItem = { type, price -> viewModel.onEvent(QuoteAuditorUiEvent.AddItem(type, price)) },
                     onRemoveItem = { viewModel.onEvent(QuoteAuditorUiEvent.RemoveItem(it)) },
                     onUpdatePrice = { id, price -> viewModel.onEvent(QuoteAuditorUiEvent.UpdateItemPrice(id, price)) },
+                    onShowSnackbar = { msg ->
+                        scope.launch { snackbarHostState.showSnackbar(msg) }
+                    },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -230,6 +250,7 @@ private fun QuoteAuditorContent(
     onAddItem: (ServiceType, Int) -> Unit,
     onRemoveItem: (String) -> Unit,
     onUpdatePrice: (String, Int) -> Unit,
+    onShowSnackbar: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
@@ -265,6 +286,7 @@ private fun QuoteAuditorContent(
                 item(key = "talking_points") {
                     MechanicTalkingPointsCard(
                         points = uiState.auditResult.mechanicTalkingPoints,
+                        onShowSnackbar = onShowSnackbar,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
@@ -309,7 +331,9 @@ private fun QuoteAuditorContent(
                     )
                     Text(
                         text = stringResource(R.string.quote_auditor_items_count, uiState.items.size),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = JetBrainsMono
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -341,18 +365,22 @@ private fun VehicleSelectorRow(
     onSelectVehicle: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    val haptic = LocalHapticFeedback.current
+
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        vehicles.forEach { vehicle ->
+        items(vehicles, key = { it.id }) { vehicle ->
             val isSelected = vehicle.id == selectedVehicleId
             FilterChip(
                 selected = isSelected,
-                onClick = { onSelectVehicle(vehicle.id) },
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onSelectVehicle(vehicle.id)
+                },
                 label = {
                     Text(
                         text = com.autominder.app.domain.util.VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year),
@@ -441,11 +469,12 @@ private fun HeroVerdictBentoCard(
                 if (result.potentialSavingsCents > 0) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF1B5E20).copy(alpha = 0.15f)
+                        color = Color(0xFF2E7D32).copy(alpha = 0.15f)
                     ) {
                         Text(
                             text = "Save $savingsFormatted",
                             style = MaterialTheme.typography.labelMedium.copy(
+                                fontFamily = JetBrainsMono,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF2E7D32)
                             ),
@@ -563,8 +592,13 @@ private fun VerdictCountPill(
 @Composable
 private fun MechanicTalkingPointsCard(
     points: List<String>,
+    onShowSnackbar: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
+    val copiedToast = stringResource(R.string.quote_auditor_copied_toast)
+
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -577,22 +611,54 @@ private fun MechanicTalkingPointsCard(
                 .fillMaxWidth()
                 .padding(18.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.FormatQuote,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.quote_auditor_talking_points_title),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = Exo2,
-                        fontWeight = FontWeight.Bold
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.FormatQuote,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
                     )
-                )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.quote_auditor_talking_points_title),
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = Exo2,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+
+                TextButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        val textToCopy = points.mapIndexed { idx, pt -> "${idx + 1}. $pt" }.joinToString("\n")
+                        clipboardManager.setText(AnnotatedString(textToCopy))
+                        onShowSnackbar(copiedToast)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ContentCopy,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.quote_auditor_copy_script),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
             }
+
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.quote_auditor_talking_points_subtitle),
@@ -617,6 +683,7 @@ private fun MechanicTalkingPointsCard(
                             Text(
                                 text = "${index + 1}",
                                 style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = JetBrainsMono,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -642,6 +709,7 @@ private fun QuickAddChipsSection(
     modifier: Modifier = Modifier
 ) {
     val existingTypes = currentItems.map { it.serviceType }.toSet()
+    val haptic = LocalHapticFeedback.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -652,20 +720,20 @@ private fun QuickAddChipsSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            commonQuickAddTypes.forEach { (type, defaultPrice) ->
+            items(commonQuickAddTypes, key = { it.first.name }) { (type, defaultPrice) ->
                 val isAdded = existingTypes.contains(type)
                 FilterChip(
                     selected = isAdded,
                     onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
                         if (!isAdded) onAddItem(type, defaultPrice)
                     },
-                    label = { Text(type.label) },
+                    label = { Text(type.label, maxLines = 1, softWrap = false) },
                     leadingIcon = {
                         Icon(
                             imageVector = if (isAdded) Icons.Filled.CheckCircle else Icons.Filled.Add,
@@ -692,6 +760,7 @@ private fun QuoteLineItemCard(
     var priceText by remember(item.priceCents) {
         mutableStateOf(if (item.priceCents > 0) (item.priceCents / 100).toString() else "")
     }
+    val haptic = LocalHapticFeedback.current
 
     val statusColor = when (verdict?.status) {
         QuoteVerdictStatus.LEGITIMATE_DUE -> Color(0xFF2E7D32)
@@ -763,7 +832,10 @@ private fun QuoteLineItemCard(
                     }
                 }
 
-                IconButton(onClick = onRemove) {
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onRemove()
+                }) {
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(R.string.cd_delete_item),
@@ -790,6 +862,10 @@ private fun QuoteLineItemCard(
                     },
                     label = { Text(stringResource(R.string.quote_auditor_item_price_hint)) },
                     prefix = { Text("$") },
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = JetBrainsMono,
+                        fontWeight = FontWeight.SemiBold
+                    ),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Done
@@ -861,3 +937,4 @@ private fun QuoteLineItemCard(
         }
     }
 }
+

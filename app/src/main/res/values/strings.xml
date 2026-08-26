@@ -429,11 +429,34 @@
 
     <!-- Add Vehicle form -->
     <string name="action_change_photo">Change</string>
-    <string name="add_vehicle_headline">What are you driving?</string>
-    <string name="add_vehicle_subhead">Just the make and model — you can add the rest anytime.</string>
+    <string name="add_vehicle_headline">What car do you drive?</string>
+    <string name="add_vehicle_subhead">Search by model or make — we\'ll handle the maintenance schedule.</string>
     <string name="add_vehicle_auto_reminders">We\'ll set up your maintenance reminders automatically.</string>
     <string name="add_vehicle_more_details">Add more details (optional)</string>
     <string name="add_vehicle_cta">Add vehicle</string>
+    <string name="add_vehicle_step_1">1. Find vehicle</string>
+    <string name="add_vehicle_step_2">2. Year &amp; role</string>
+    <string name="add_vehicle_step_3">3. Maintenance plan</string>
+    <string name="add_vehicle_search_placeholder">Search make or model (e.g. RAV4, Civic, Model Y, F-150)…</string>
+    <string name="add_vehicle_popular_makes">Common &amp; popular vehicles</string>
+    <string name="add_vehicle_select_model">Select model</string>
+    <string name="add_vehicle_custom_option">Add custom vehicle</string>
+    <string name="add_vehicle_custom_make_prompt">Enter custom vehicle details</string>
+    <string name="add_vehicle_year_label">Model year</string>
+    <string name="add_vehicle_role_label">How do you use this vehicle? (Optional)</string>
+    <string name="add_vehicle_role_daily">Daily Driver</string>
+    <string name="add_vehicle_role_family">Family</string>
+    <string name="add_vehicle_role_weekend">Weekend</string>
+    <string name="add_vehicle_role_work">Work</string>
+    <string name="add_vehicle_odometer_headline">Current odometer reading</string>
+    <string name="add_vehicle_odometer_subhead">Used to establish your baseline maintenance countdowns.</string>
+    <string name="add_vehicle_schedule_preview_title">Your starting maintenance plan</string>
+    <string name="add_vehicle_schedule_preview_sub">Estimated starting plan based on vehicle model and common service intervals. Always confirm with your owner\'s manual.</string>
+    <string name="add_vehicle_next_step">Continue</string>
+    <string name="add_vehicle_save_cta">Save to Garage</string>
+    <string name="add_vehicle_advanced_accordion">License plate &amp; VIN (Optional)</string>
+    <string name="add_vehicle_celebration_title">Your garage is ready!</string>
+    <string name="add_vehicle_celebration_sub">%1$s %2$s remembered.</string>
 
     <!-- Additional -->
     <string name="privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
@@ -459,6 +482,69 @@
     <!-- Vehicle Detail — reminder setup (shown when nothing is tracked yet) -->
     <string name="vehicle_reminders_setup_title">Start tracking maintenance</string>
     <string name="vehicle_reminders_setup_subtitle">Add a reminder and AutoMinder will tell you when this vehicle is due.</string>
+
+    <!-- Vehicle Bento Cockpit & Confidence System -->
+    <!-- Maintenance status card. No score, no verdict, no percentage: every
+         string below restates a row the owner entered. See the KDoc on
+         VehicleConfidenceEngine for why the 0-100 score was removed. -->
+    <string name="vehicle_confidence_title">Maintenance status</string>
+    <string name="vehicle_confidence_state_setup">Not tracked yet</string>
+    <string name="vehicle_confidence_state_ok">Up to date</string>
+    <string name="vehicle_confidence_state_due_soon">Coming up</string>
+    <string name="vehicle_confidence_state_overdue">Past due</string>
+    <string name="vehicle_confidence_headline_setup">Start tracking this vehicle</string>
+    <string name="vehicle_confidence_headline_ok">Nothing needs doing right now</string>
+    <string name="vehicle_confidence_headline_due_soon">Service coming up</string>
+    <string name="vehicle_confidence_headline_overdue">Maintenance needs attention</string>
+    <string name="vehicle_confidence_summary_setup">Add a reminder or log a service and AutoMinder will start tracking what is due.</string>
+    <string name="vehicle_confidence_summary_ok">Every reminder you set is still inside its interval.</string>
+    <plurals name="vehicle_confidence_summary_due_soon">
+        <item quantity="one">%1$d item is approaching its interval.</item>
+        <item quantity="other">%1$d items are approaching their intervals.</item>
+    </plurals>
+    <plurals name="vehicle_confidence_summary_overdue">
+        <item quantity="one">%1$d item is past its interval.</item>
+        <item quantity="other">%1$d items are past their intervals.</item>
+    </plurals>
+    <string name="vehicle_confidence_next">Next: %1$s</string>
+    <string name="vehicle_confidence_tap_to_explain">What this is based on</string>
+    <string name="vehicle_confidence_sheet_title">What this is based on</string>
+    <string name="vehicle_confidence_sheet_sub">AutoMinder reports only what you have recorded. It does not inspect, connect to, or diagnose your vehicle.</string>
+    <string name="vehicle_confidence_factors_title">What AutoMinder can see</string>
+    <plurals name="vehicle_confidence_signal_schedule">
+        <item quantity="one">%1$d reminder set</item>
+        <item quantity="other">%1$d reminders set</item>
+    </plurals>
+    <string name="vehicle_confidence_signal_no_schedule">No reminders set</string>
+    <string name="vehicle_confidence_signal_no_schedule_detail">Reminders are how AutoMinder knows what is due.</string>
+    <plurals name="vehicle_confidence_signal_records">
+        <item quantity="one">%1$d service record on file</item>
+        <item quantity="other">%1$d service records on file</item>
+    </plurals>
+    <string name="vehicle_confidence_signal_no_records">No service history logged</string>
+    <string name="vehicle_confidence_signal_no_records_detail">Past services are what future intervals are measured from.</string>
+    <plurals name="vehicle_confidence_signal_odometer_recent">
+        <item quantity="one">Odometer updated %1$d day ago</item>
+        <item quantity="other">Odometer updated %1$d days ago</item>
+    </plurals>
+    <plurals name="vehicle_confidence_signal_odometer_stale">
+        <item quantity="one">Odometer last updated %1$d day ago</item>
+        <item quantity="other">Odometer last updated %1$d days ago</item>
+    </plurals>
+    <string name="vehicle_confidence_signal_odometer_stale_detail">Due dates drift when mileage is out of date.</string>
+    <string name="vehicle_confidence_signal_nothing_overdue">Nothing is past its interval</string>
+    <string name="vehicle_confidence_signal_overdue_item">Past due: %1$s</string>
+    <string name="vehicle_confidence_signal_due_soon_item">Coming up: %1$s</string>
+    <string name="vehicle_bento_wear_trajectory">Driving Pace</string>
+    <string name="vehicle_bento_wear_pace">~%1$.1f %2$s / day</string>
+    <string name="vehicle_bento_wear_sub">Calculated from recent logs</string>
+    <string name="vehicle_bento_cost_title">Cost Intelligence</string>
+    <string name="vehicle_bento_cost_total">Total spend</string>
+    <string name="vehicle_bento_recent_services">Recent Service Records</string>
+    <string name="vehicle_bento_no_recent_services">No service entries logged yet</string>
+    <string name="vehicle_bento_passport_title">Certified Vehicle Passport</string>
+    <string name="vehicle_bento_passport_sub">Export tamper-proof ownership record for resale value and mechanic proof.</string>
+    <string name="vehicle_bento_passport_cta">Export Vehicle Passport</string>
 
     <!-- Fuel Intelligence -->
     <string name="fuel_history_title">Fuel history</string>
@@ -498,22 +584,26 @@
     <string name="cd_select_date">Select date</string>
 
     <!-- Pro Paywall -->
-    <string name="paywall_title">Never overpay for car repairs again</string>
-    <string name="paywall_subtitle">Track more vehicle detail, review costs, and remove ads.</string>
+    <string name="paywall_title">Own your car with confidence</string>
+    <string name="paywall_subtitle">A smarter way to protect your vehicle\'s history, value, and future maintenance.</string>
     <string name="paywall_trial_reassurance">Manage or cancel anytime in Google Play</string>
-    <string name="paywall_feature_quote_auditor">Quote price auditor (Fair price check)</string>
-    <string name="paywall_feature_garage">Unlimited vehicles in one garage</string>
-    <string name="paywall_feature_passport">Service history export (JSON &amp; CSV)</string>
-    <string name="paywall_feature_predictions">Predictive wear &amp; due date alerts</string>
+    <string name="paywall_feature_quote_auditor">Repair quote check (Fair price guide)</string>
+    <string name="paywall_feature_garage">Unlimited family &amp; project vehicles</string>
+    <string name="paywall_feature_passport">Service history export (CSV)</string>
+    <string name="paywall_feature_predictions">Next-service projections from your mileage</string>
+    <string name="paywall_feature_cost_analytics">Complete ownership cost &amp; efficiency intelligence</string>
+    <string name="paywall_trust_google_play">Google Play Secured</string>
+    <string name="paywall_trust_offline">100% Offline &amp; Private</string>
+    <string name="paywall_trust_cancel">Cancel anytime in Play Store</string>
     <!-- Prices are product-details-driven (Play formattedPrice), never
          hardcoded — see ProPaywall.kt. %1$s is the localized price string. -->
-    <string name="paywall_yearly_best_value">Best value</string>
+    <string name="paywall_yearly_best_value">Save 37% · Best value</string>
     <string name="paywall_price_loading">Loading price…</string>
     <string name="paywall_restore">Restore purchases</string>
     <string name="paywall_plan_monthly">Monthly</string>
     <string name="paywall_plan_yearly">Yearly</string>
     <string name="paywall_plan_lifetime">Lifetime</string>
-    <string name="paywall_plan_lifetime_subtitle">Pay once, own forever</string>
+    <string name="paywall_plan_lifetime_subtitle">Founder Edition · Pay once, own forever</string>
     <string name="paywall_continue">Continue</string>
     <string name="paywall_price_unavailable">Unavailable</string>
     <string name="cd_paywall_included">Included</string>
@@ -778,6 +868,8 @@
     <string name="quote_verdict_wait_desc">Not urgently due based on vehicle mileage.</string>
     <string name="quick_action_audit_quote">Audit repair quote</string>
     <string name="quick_action_audit_quote_desc">Check estimate against vehicle history</string>
+    <string name="quote_auditor_copy_script">Copy questions</string>
+    <string name="quote_auditor_copied_toast">Questions copied to clipboard</string>
     <!-- Accessibility & Content Descriptions -->
     <string name="cd_back">Back</string>
     <string name="cd_delete_item">Delete line item</string>
@@ -818,7 +910,7 @@
     <string name="settings_backup_export_subtitle">Save a complete JSON snapshot of all vehicles, services, and fuel history</string>
     <string name="settings_backup_import_title">Restore from backup</string>
     <string name="settings_backup_import_subtitle">Restore or migrate vehicle records from a JSON backup file</string>
-    <string name="settings_backup_description">100%% offline data sovereignty. Your data stays in your control — export or import anytime without cloud dependency.</string>
+    <string name="settings_backup_description" formatted="false">100% offline data sovereignty. Your data stays in your control — export or import anytime without cloud dependency.</string>
     <string name="settings_backup_import_confirm_title">Restore vehicle records?</string>
     <string name="settings_backup_import_confirm_message">This will import all vehicles, service records, reminders, and fuel logs from your backup file into the app.</string>
     <string name="settings_backup_import_confirm_action">Restore backup</string>
@@ -932,6 +1024,18 @@
     <string name="cost_not_recorded">Not recorded</string>
     <string name="mileage_not_added">Mileage not added</string>
     <string name="service_no_history_recorded">No service history recorded</string>
+
+    <!-- Garage & Fleet Command Center Strings -->
+    <string name="garage_hero_title">Your Garage</string>
+    <string name="garage_all_healthy">All %1$d vehicles healthy &amp; ready</string>
+    <string name="garage_attention_needed">%1$d of %2$d vehicles need attention</string>
+    <string name="role_daily_driver">Daily Driver</string>
+    <string name="role_primary">Primary</string>
+    <string name="role_family">Family</string>
+    <string name="role_weekend">Weekend</string>
+    <string name="role_work">Work</string>
+    <string name="next_service_format">Next: %1$s</string>
+    <string name="view_vehicle_action">View vehicle</string>
 </resources>
 
 

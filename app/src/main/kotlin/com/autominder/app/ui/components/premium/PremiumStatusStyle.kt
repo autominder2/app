@@ -44,7 +44,7 @@ object PremiumStatusStyle {
     @Composable
     fun containerColor(status: ServiceStatus): Color = when (status) {
         ServiceStatus.OVERDUE -> MaterialTheme.colorScheme.errorContainer
-        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.tertiaryContainer
+        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.secondaryContainer
         ServiceStatus.SNOOZED -> MaterialTheme.colorScheme.surfaceVariant
         else -> MaterialTheme.colorScheme.surfaceContainer
     }
@@ -52,7 +52,7 @@ object PremiumStatusStyle {
     @Composable
     fun contentColor(status: ServiceStatus): Color = when (status) {
         ServiceStatus.OVERDUE -> MaterialTheme.colorScheme.onErrorContainer
-        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.onTertiaryContainer
+        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.onSecondaryContainer
         ServiceStatus.SNOOZED -> MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurface
     }
@@ -64,7 +64,7 @@ object PremiumStatusStyle {
     @Composable
     fun railColor(status: ServiceStatus): Color? = when (status) {
         ServiceStatus.OVERDUE -> MaterialTheme.colorScheme.error
-        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.tertiary
+        ServiceStatus.DUE_SOON -> MaterialTheme.colorScheme.secondary
         else -> null
     }
 

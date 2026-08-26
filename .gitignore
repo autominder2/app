@@ -47,6 +47,8 @@ test_out.txt
 findings.txt
 gate_full_log.txt
 gate_summary.txt
+*_gate.txt
+.tmp.driveupload/
 
 # ─── Agent / social media / non-project files ──────────────────────────────
 .gradle-user-home/
@@ -57,6 +59,9 @@ gate_summary.txt
 !.claude/skills/
 !.claude/agents/
 !.claude/rules/
+# Shared project settings (durable permission patterns, deny rules for signing
+# material). settings.local.json stays ignored — that one is personal.
+!.claude/settings.json
 competitor_*.md
 *_reels_*.md
 ~$*
@@ -92,6 +97,18 @@ graphify-out/graph.json
 graphify-out/*/
 graphify-out/*.sig
 graphify-out/manifest.json
+
+# ...but DO track the work memory. The graph is regenerable in ~50s of local
+# tree-sitter parsing with no API cost; these are not. They are accumulated
+# answers that cost real tokens to produce, and `graphify reflect` distills them
+# into LESSONS.md (preferred sources / known dead ends / corrections) that every
+# future session reads for ~250 tokens instead of re-deriving. Small markdown,
+# no blob churn. Commit them so the knowledge survives a clone and reaches
+# Antigravity too.
+!graphify-out/memory/
+!graphify-out/memory/**
+!graphify-out/reflections/
+!graphify-out/reflections/**
 
 # Sentry Config File
 sentry.properties

@@ -1,34 +1,50 @@
 package com.autominder.app.ui.screens.vehicle
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.R
@@ -42,6 +58,7 @@ import com.autominder.app.ui.components.ListSkeleton
 import com.autominder.app.ui.components.premium.VehicleHeroCard
 import com.autominder.app.ui.components.premium.VehicleHeroVariant
 import com.autominder.app.ui.theme.LocalDistanceUnit
+import com.autominder.app.ui.util.DateFormatUtil
 import com.autominder.app.ui.util.DistanceFormat
 import com.autominder.app.ui.util.localizedLabel
 
@@ -61,7 +78,7 @@ fun VehicleListScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.vehicle_list_title),
+                        text = stringResource(R.string.garage_hero_title),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -94,8 +111,8 @@ fun VehicleListScreen(
             when (val state = uiState) {
                 is VehicleListUiState.Loading -> ListSkeleton()
                 is VehicleListUiState.Empty -> EmptyState(
-                    title = stringResource(R.string.vehicle_list_empty_title),
-                    subtitle = stringResource(R.string.vehicle_list_empty_subtitle),
+                    title = stringResource(R.string.dashboard_empty_title),
+                    subtitle = stringResource(R.string.dashboard_empty_subtitle),
                     onAction = onNavigateToAddVehicle,
                     actionLabel = stringResource(R.string.action_add_vehicle)
                 )
@@ -104,8 +121,7 @@ fun VehicleListScreen(
                     onRetry = { viewModel.retry() }
                 )
                 is VehicleListUiState.Success -> VehicleListContent(
-                    items = state.items,
-                    attentionCount = state.attentionCount,
+                    state = state,
                     onVehicleClick = onNavigateToVehicleDetail
                 )
             }
@@ -115,19 +131,29 @@ fun VehicleListScreen(
 
 @Composable
 private fun VehicleListContent(
-    items: List<VehicleListItem>,
-    attentionCount: Int,
+    state: VehicleListUiState.Success,
     onVehicleClick: (Long) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item(key = "verdict") {
-            VerdictSentence(attentionCount = attentionCount)
+        // 1. Fleet Health Command Summary Hero Card
+        item(key = "fleet_summary_hero") {
+            FleetHeroSummaryCard(
+                totalVehicles = state.totalVehiclesCount,
+                healthyCount = state.healthyCount,
+                attentionCount = state.attentionCount,
+                urgentVehicleName = state.fleetUrgentVehicleName,
+                urgentReminderLabel = state.fleetUrgentReminderLabel,
+                urgentVehicleId = state.fleetUrgentVehicleId,
+                onUrgentClick = { state.fleetUrgentVehicleId?.let(onVehicleClick) }
+            )
         }
-        itemsIndexed(items, key = { _, item -> item.vehicle.id }) { index, item ->
+
+        // 2. Individual Vehicle Command Cards
+        itemsIndexed(state.items, key = { _, item -> item.vehicle.id }) { index, item ->
             VehicleListRow(
                 item = item,
                 isHero = index == 0,
@@ -138,28 +164,130 @@ private fun VehicleListContent(
     }
 }
 
-/** The single plain-language verdict for this screen — reuses the exact
- *  same aggregate copy Dashboard uses for the identical underlying
- *  overdue+due-soon count, so the two screens never disagree in tone. */
 @Composable
-private fun VerdictSentence(attentionCount: Int, modifier: Modifier = Modifier) {
-    val text = if (attentionCount == 0) {
-        stringResource(R.string.dashboard_all_clear_supporting)
-    } else {
-        pluralStringResource(R.plurals.dashboard_attention_headline, attentionCount, attentionCount)
+private fun FleetHeroSummaryCard(
+    totalVehicles: Int,
+    healthyCount: Int,
+    attentionCount: Int,
+    urgentVehicleName: String?,
+    urgentReminderLabel: String?,
+    urgentVehicleId: Long?,
+    onUrgentClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isStrictlyHealthy = attentionCount == 0 && healthyCount == totalVehicles && totalVehicles > 0
+    val hasNoAttention = attentionCount == 0
+
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (hasNoAttention) {
+                MaterialTheme.colorScheme.surfaceContainer
+            } else {
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
+            }
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = when {
+                            isStrictlyHealthy -> stringResource(R.string.garage_all_healthy, totalVehicles)
+                            hasNoAttention -> "$healthyCount of $totalVehicles vehicles up to date"
+                            else -> stringResource(R.string.garage_attention_needed, attentionCount, totalVehicles)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = when {
+                            isStrictlyHealthy -> "All systems checked & up to date"
+                            hasNoAttention -> "Add reminders to track remaining vehicles"
+                            else -> "Scheduled maintenance requires attention"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                // Fleet Health Badge Pill
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = if (hasNoAttention) Color(0xFFE6F4EA) else Color(0xFFFEE4E2)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (hasNoAttention) Icons.Default.CheckCircle else Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = if (hasNoAttention) Color(0xFF167A55) else Color(0xFFB42318),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = when {
+                                isStrictlyHealthy -> "All Good"
+                                hasNoAttention -> "Up to Date"
+                                else -> "$attentionCount Alert"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (hasNoAttention) Color(0xFF167A55) else Color(0xFFB42318)
+                        )
+                    }
+                }
+            }
+
+            // Urgent action teaser banner if attention is required
+            if (!hasNoAttention && urgentVehicleName != null && urgentReminderLabel != null) {
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable(enabled = urgentVehicleId != null, onClick = onUrgentClick)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Next Critical: $urgentVehicleName · $urgentReminderLabel",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFB42318),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "Resolve →",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
     }
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleMedium,
-        color = if (attentionCount == 0) {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 4.dp)
-    )
 }
 
 @Composable
@@ -173,13 +301,7 @@ private fun VehicleListRow(
     val distanceUnit = LocalDistanceUnit.current
     val title = VehicleDisplayNameFormatter.format(vehicle.make, vehicle.model, vehicle.year)
     val yearText = vehicle.year.takeIf { it > 0 }?.toString()
-    // A blank odometer field is stored as 0 (AddVehicleViewModel:
-    // `toIntOrNull() ?: 0`), so 0 means "never entered" in practice — the
-    // column is non-null Int and cannot distinguish it from a typed 0.
-    // Showing "0 km" as if it were a real reading is the dishonest option;
-    // showing "Mileage not added" is right in the overwhelmingly common
-    // case and is trivially corrected by the user. A nullable column would
-    // make this exact, but that is a schema migration and its own branch.
+
     val hasMileage = vehicle.currentOdometer > 0
     val formattedOdometer = remember(vehicle.currentOdometer, distanceUnit) {
         DistanceFormat.grouped(DistanceUtil.kmToDisplay(vehicle.currentOdometer, distanceUnit))
@@ -187,33 +309,44 @@ private fun VehicleListRow(
     val odometerText = if (hasMileage) {
         "$formattedOdometer ${DistanceUtil.unitLabel(distanceUnit)}"
     } else {
-        stringResource(R.string.vehicle_list_mileage_not_added)
+        stringResource(R.string.mileage_not_added)
     }
+
     val photoDescription = stringResource(R.string.cd_vehicle_photo_description, vehicle.make, vehicle.model)
     val statusLabel = stringResource(item.status.labelRes())
     val bodyType = remember(vehicle.make, vehicle.model) {
         com.autominder.app.domain.util.VehicleBodyTypeResolver.resolve(vehicle.make, vehicle.model)
     }
 
+    // Predictive milestone teaser: "Next: Oil service in ~8,000 km (~Feb 2027)"
     val concernText = when {
-        // Truthful no-data state: absent reminders are not "all good".
-        item.status == ServiceStatus.UNKNOWN ->
-            stringResource(R.string.vehicle_list_no_reminders)
-        else -> item.topConcern?.let { reminder ->
-            val concernLabel = reminder.customLabel?.takeIf { it.isNotBlank() }
-                ?: reminder.serviceType.localizedLabel()
+        item.topConcern != null -> {
+            val concernLabel = item.topConcern.customLabel?.takeIf { it.isNotBlank() }
+                ?: item.topConcern.serviceType.localizedLabel()
             when (item.status) {
                 ServiceStatus.OVERDUE -> stringResource(R.string.vehicle_list_concern_overdue, concernLabel)
                 ServiceStatus.DUE_SOON -> stringResource(R.string.vehicle_list_concern_due_soon, concernLabel)
                 else -> null
             }
         }
+        item.nextServiceLabel != null -> {
+            val distText = if (item.nextServiceRemainingKm != null && item.nextServiceRemainingKm > 0) {
+                "in ~${DistanceFormat.grouped(item.nextServiceRemainingKm)} ${DistanceUtil.unitLabel(distanceUnit)}"
+            } else null
+            val dateText = item.nextServiceDueDate?.let { DateFormatUtil.formatDate(it) }
+
+            val detail = listOfNotNull(distText, dateText).joinToString(" · ")
+            if (detail.isNotBlank()) {
+                "Next: ${item.nextServiceLabel} ($detail)"
+            } else {
+                "Next: ${item.nextServiceLabel}"
+            }
+        }
+        item.status == ServiceStatus.UNKNOWN -> stringResource(R.string.vehicle_list_no_reminders)
+        else -> null
     }
 
-    // Each row announces as one coherent unit for TalkBack (a list of many
-    // cards benefits from one swipe per vehicle, unlike the single Detail
-    // hero which stays unmerged for granular exploration).
-    val mergedDescription = listOfNotNull(title, yearText, odometerText, statusLabel, concernText)
+    val mergedDescription = listOfNotNull(title, item.roleLabel, yearText, odometerText, statusLabel, concernText)
         .joinToString(". ")
 
     VehicleHeroCard(
@@ -221,6 +354,7 @@ private fun VehicleListRow(
         modifier = modifier,
         variant = if (isHero) VehicleHeroVariant.Expanded else VehicleHeroVariant.Compact,
         yearText = yearText,
+        roleBadgeText = item.roleLabel,
         odometerText = odometerText,
         photoUri = vehicle.photoUri,
         photoContentDescription = photoDescription,

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DirectionsCar
 import androidx.compose.material.icons.rounded.LocalGasStation
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,15 +99,7 @@ fun DashboardScreen(
     ) {
         when (val state = uiState) {
             is DashboardUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 3.dp
-                    )
-                }
+                com.autominder.app.ui.components.DashboardSkeleton()
             }
             is DashboardUiState.Empty -> {
                 EmptyState(
@@ -139,7 +132,7 @@ fun DashboardScreen(
                 }
             }
             is DashboardUiState.Success -> {
-                val activeVehicleWithStatus = state.selectedVehicle ?: state.vehicles.first()
+                val activeVehicleWithStatus = state.selectedVehicle
                 val activeVehicle = activeVehicleWithStatus.vehicle
                 val distanceUnit = state.distanceUnit
 
@@ -220,6 +213,13 @@ fun DashboardScreen(
                             // existed and VehicleDetail already reached them —
                             // only the dashboard was unwired.
                             onLogMileage = { onNavigateToMileageLog(activeVehicle.id) }
+                        )
+                    }
+
+                    // 6.5. QUOTE AUDITOR CTA Card
+                    item(key = "quote_auditor_banner") {
+                        QuoteAuditorBanner(
+                            onClick = { onNavigateToQuoteAuditor(activeVehicle.id) }
                         )
                     }
 
@@ -503,3 +503,65 @@ private fun VehicleSwitcherRow(
         }
     }
 }
+
+@Composable
+private fun QuoteAuditorBanner(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
+
+    Surface(
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            onClick()
+        },
+        interactionSource = interactionSource,
+        modifier = modifier
+            .fillMaxWidth()
+            .pressScale(interactionSource),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.Security,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.quick_action_audit_quote),
+                    fontFamily = Exo2,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stringResource(R.string.quick_action_audit_quote_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+

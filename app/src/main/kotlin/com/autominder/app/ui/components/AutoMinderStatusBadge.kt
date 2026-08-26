@@ -44,20 +44,20 @@ fun AutoMinderStatusBadge(
         VehicleOperationalStatus.HEALTHY -> StatusBadgeConfig(
             labelRes = R.string.state_all_clear,
             icon = Icons.Rounded.CheckCircle,
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-            contentColor = MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.tertiary
         )
         VehicleOperationalStatus.UPCOMING -> StatusBadgeConfig(
             labelRes = R.string.state_coming_up,
             icon = Icons.Rounded.Schedule,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
         VehicleOperationalStatus.DUE_SOON -> StatusBadgeConfig(
             labelRes = R.string.state_due_soon,
             icon = Icons.Rounded.WarningAmber,
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.secondary
         )
         VehicleOperationalStatus.OVERDUE -> StatusBadgeConfig(
             labelRes = R.string.state_overdue,
@@ -68,8 +68,8 @@ fun AutoMinderStatusBadge(
         VehicleOperationalStatus.SETUP_INCOMPLETE -> StatusBadgeConfig(
             labelRes = R.string.state_setup_incomplete,
             icon = Icons.Rounded.Speed,
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-            contentColor = MaterialTheme.colorScheme.tertiary
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 
@@ -117,26 +117,26 @@ fun AutoMinderServiceStatusBadge(
         ServiceStatus.DUE_SOON -> StatusBadgeConfig(
             labelRes = R.string.status_due_soon,
             icon = Icons.Rounded.WarningAmber,
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.secondary
         )
         ServiceStatus.SNOOZED -> StatusBadgeConfig(
             labelRes = R.string.status_snoozed,
             icon = Icons.Rounded.Schedule,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
         ServiceStatus.OK -> StatusBadgeConfig(
             labelRes = R.string.state_all_clear,
             icon = Icons.Rounded.CheckCircle,
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-            contentColor = MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.tertiary
         )
         ServiceStatus.COMPLETED -> StatusBadgeConfig(
             labelRes = R.string.status_completed,
             icon = Icons.Rounded.CheckCircle,
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+            contentColor = MaterialTheme.colorScheme.tertiary
         )
         ServiceStatus.UNKNOWN -> StatusBadgeConfig(
             labelRes = R.string.status_unknown,

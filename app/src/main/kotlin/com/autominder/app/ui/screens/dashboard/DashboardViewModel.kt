@@ -4,60 +4,43 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.autominder.app.R
+import com.autominder.app.core.di.DefaultDispatcher
 import com.autominder.app.core.util.AppInfo
 import com.autominder.app.core.util.ReviewHelper
 import com.autominder.app.data.local.preferences.UserPreferences
-import com.autominder.app.domain.model.FuelEntry
-import com.autominder.app.domain.model.MileageLogEntry
 import com.autominder.app.domain.model.Service
 import com.autominder.app.domain.model.ServiceStatus
 import com.autominder.app.domain.model.ServiceType
+import com.autominder.app.domain.model.VehicleOperationalStatus
 import com.autominder.app.domain.repository.IFuelRepository
 import com.autominder.app.domain.repository.IMileageLogRepository
 import com.autominder.app.domain.repository.IServiceRepository
 import com.autominder.app.domain.usecase.CalculateEfficiencyUseCase
-import com.autominder.app.domain.usecase.DataConfidence
 import com.autominder.app.domain.usecase.GetDashboardDataUseCase
 import com.autominder.app.domain.usecase.PrioritizedReminder
 import com.autominder.app.domain.usecase.ReminderExplanation
 import com.autominder.app.domain.usecase.ReminderPriorityEngine
 import com.autominder.app.domain.usecase.ReminderWithStatus
 import com.autominder.app.domain.usecase.VehicleWithStatus
-import com.autominder.app.domain.model.VehicleOperationalStatus
 import com.autominder.app.domain.util.VehicleDisplayNameFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.Calendar
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
-
-data class RemindersDelayedState(val lastCheckedAt: Long?)
-
-fun evaluateReminderStaleness(
-    lastSuccessfulCheckAt: Long?,
-    firstInstallTimeMillis: Long,
-    nowMillis: Long = System.currentTimeMillis()
-): RemindersDelayedState? {
-    val thirtySixHours = 36L * 60 * 60 * 1000
-    if (lastSuccessfulCheckAt != null) {
-        if (nowMillis - lastSuccessfulCheckAt > thirtySixHours && nowMillis >= lastSuccessfulCheckAt) {
-            return RemindersDelayedState(lastSuccessfulCheckAt)
-        }
-    } else {
-        if (nowMillis - firstInstallTimeMillis > thirtySixHours) {
-            return RemindersDelayedState(null)
-        }
-    }
-    return null
-}
 
 data class HomeActivityItem(
     val id: String,
@@ -67,9 +50,34 @@ data class HomeActivityItem(
     val itemType: ActivityType
 ) {
     enum class ActivityType {
-        SERVICE,
-        FUEL,
-        MILEAGE
+        SERVICE, FUEL, MILEAGE
+    }
+}
+
+data class RemindersDelayedState(
+    val lastCheckedAt: Long?
+)
+
+private const val STALENESS_THRESHOLD_MS = 36L * 60 * 60 * 1000 // 36 hours
+
+fun evaluateReminderStaleness(
+    lastSuccessfulCheckAt: Long?,
+    firstInstallTimeMillis: Long,
+    nowMillis: Long = System.currentTimeMillis()
+): RemindersDelayedState? {
+    if (lastSuccessfulCheckAt != null) {
+        val elapsed = nowMillis - lastSuccessfulCheckAt
+        return if (elapsed > STALENESS_THRESHOLD_MS) {
+            RemindersDelayedState(lastCheckedAt = lastSuccessfulCheckAt)
+        } else {
+            null
+        }
+    }
+    val elapsedSinceInstall = nowMillis - firstInstallTimeMillis
+    return if (elapsedSinceInstall > STALENESS_THRESHOLD_MS) {
+        RemindersDelayedState(lastCheckedAt = null)
+    } else {
+        null
     }
 }
 
@@ -80,13 +88,13 @@ sealed interface DashboardUiState {
         val vehicles: List<VehicleWithStatus>,
         val alertsCount: Int,
         val attentionReminders: List<ReminderWithStatus>,
-        val primaryCostPerDistanceCents: Double?,
+        val primaryCostPerDistanceCents: Int?,
         val primaryAvgEfficiency: Double?,
-        val distanceUnit: String = "km",
-        val lastSuccessfulCheckAt: Long? = null,
-        val selectedVehicleId: Long? = null,
-        val selectedVehicle: VehicleWithStatus? = null,
-        val vehicleStatus: VehicleOperationalStatus = VehicleOperationalStatus.HEALTHY,
+        val distanceUnit: String,
+        val lastSuccessfulCheckAt: Long?,
+        val selectedVehicleId: Long,
+        val selectedVehicle: VehicleWithStatus,
+        val vehicleStatus: VehicleOperationalStatus,
         val upcomingReminders: List<ReminderWithStatus> = emptyList(),
         val prioritizedReminders: List<PrioritizedReminder> = emptyList(),
         val nextCheck: PrioritizedReminder? = null,
@@ -105,100 +113,118 @@ class DashboardViewModel @Inject constructor(
     private val reminderPriorityEngine: ReminderPriorityEngine,
     private val reviewHelper: ReviewHelper,
     private val userPreferences: UserPreferences,
-    private val appInfo: AppInfo
+    private val appInfo: AppInfo,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
+    private val retryTrigger = MutableStateFlow(0)
     private val selectedVehicleIdFlow = MutableStateFlow<Long?>(null)
-    private val latestServicesMap = mutableMapOf<ServiceType, Service>()
+    
+    // Vehicle-scoped latest services cache to strictly prevent cross-vehicle contamination
+    private val latestServicesMap = ConcurrentHashMap<Pair<Long, ServiceType>, Service>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<DashboardUiState> = combine(
-        getDashboardDataUseCase(),
-        userPreferences.distanceUnit,
-        userPreferences.lastSuccessfulCheckAt,
-        selectedVehicleIdFlow
-    ) { data, distanceUnit, lastCheck, selectedId ->
-        DataWithPrefs(data, distanceUnit, lastCheck, selectedId)
-    }.flatMapLatest { (data, distanceUnit, lastCheck, selectedId) ->
-        if (data.vehiclesWithStatus.isEmpty()) {
-            flowOf(DashboardUiState.Empty)
-        } else {
-            val activeVehicle = if (selectedId != null) {
-                data.vehiclesWithStatus.find { it.vehicle.id == selectedId } ?: data.vehiclesWithStatus.first()
-            } else {
-                data.vehiclesWithStatus.first()
-            }
-            val activeVehicleId = activeVehicle.vehicle.id
-
+    val uiState: StateFlow<DashboardUiState> = retryTrigger
+        .flatMapLatest {
             combine(
-                fuelRepository.getFuelEntriesForVehicle(activeVehicleId),
-                serviceRepository.getServicesForVehicle(activeVehicleId),
-                mileageLogRepository.getLogsForVehicle(activeVehicleId)
-            ) { fuels, services, mileageLogs ->
-                // Cache latest services for explainability
-                services.forEach { s ->
-                    if (!latestServicesMap.containsKey(s.serviceType) || (latestServicesMap[s.serviceType]?.serviceDate ?: 0) < s.serviceDate) {
-                        latestServicesMap[s.serviceType] = s
+                getDashboardDataUseCase(),
+                userPreferences.distanceUnit,
+                userPreferences.lastSuccessfulCheckAt,
+                selectedVehicleIdFlow
+            ) { data, distanceUnit, lastCheck, selectedId ->
+                DataWithPrefs(data, distanceUnit, lastCheck, selectedId)
+            }.flatMapLatest { (data, distanceUnit, lastCheck, selectedId) ->
+                if (data.vehiclesWithStatus.isEmpty()) {
+                    flowOf(DashboardUiState.Empty)
+                } else {
+                    val activeVehicle = if (selectedId != null) {
+                        data.vehiclesWithStatus.find { it.vehicle.id == selectedId } ?: data.vehiclesWithStatus.first()
+                    } else {
+                        data.vehiclesWithStatus.first()
+                    }
+                    val activeVehicleId = activeVehicle.vehicle.id
+
+                    combine(
+                        fuelRepository.getFuelEntriesForVehicle(activeVehicleId),
+                        serviceRepository.getServicesForVehicle(activeVehicleId),
+                        mileageLogRepository.getLogsForVehicle(activeVehicleId)
+                    ) { fuels, services, mileageLogs ->
+                        // Cache latest services scoped to active vehicle
+                        val vehicleServices = services
+                            .groupBy { it.serviceType }
+                            .mapValues { (_, list) -> list.maxBy { it.serviceDate } }
+
+                        vehicleServices.forEach { (type, service) ->
+                            latestServicesMap[Pair(activeVehicleId, type)] = service
+                        }
+
+                        val avgEfficiency = if (fuels.size >= 2) {
+                            calculateEfficiency.calculateAverage(fuels)
+                        } else null
+
+                        // Uncapped reminders filtered for this active vehicle
+                        val vehicleReminders = data.upcomingReminders.filter { it.reminder.vehicleId == activeVehicleId }
+
+                        // Rank with domain priority engine using vehicle-scoped services
+                        val prioritized = reminderPriorityEngine.rankReminders(
+                            items = vehicleReminders,
+                            lastServices = vehicleServices
+                        )
+
+                        val vehicleStatus = computeOperationalStatus(
+                            activeVehicle = activeVehicle,
+                            reminders = vehicleReminders
+                        )
+
+                        val nextCheck = prioritized.firstOrNull { it.remainingKm != null && it.remainingKm > 0 }
+
+                        val recentActivity = buildRecentActivity(
+                            vehicleName = VehicleDisplayNameFormatter.format(activeVehicle.vehicle.make, activeVehicle.vehicle.model),
+                            services = services,
+                            fuels = fuels,
+                            mileageLogs = mileageLogs,
+                            distanceUnit = distanceUnit
+                        )
+
+                        DashboardUiState.Success(
+                            vehicles = data.vehiclesWithStatus,
+                            alertsCount = data.alertsCount,
+                            attentionReminders = vehicleReminders.filter { it.status == ServiceStatus.OVERDUE || it.status == ServiceStatus.DUE_SOON },
+                            primaryCostPerDistanceCents = null,
+                            primaryAvgEfficiency = avgEfficiency,
+                            distanceUnit = distanceUnit,
+                            lastSuccessfulCheckAt = lastCheck,
+                            selectedVehicleId = activeVehicleId,
+                            selectedVehicle = activeVehicle,
+                            vehicleStatus = vehicleStatus,
+                            upcomingReminders = vehicleReminders.take(3),
+                            prioritizedReminders = prioritized.take(3),
+                            nextCheck = nextCheck,
+                            recentActivity = recentActivity
+                        )
                     }
                 }
-
-                val avgEfficiency = if (fuels.size >= 2) {
-                    calculateEfficiency.calculateAverage(fuels)
-                } else null
-
-                val vehicleReminders = data.upcomingReminders.filter { it.reminder.vehicleId == activeVehicleId }
-
-                // Rank with domain priority engine
-                val prioritized = reminderPriorityEngine.rankReminders(
-                    items = vehicleReminders,
-                    lastServices = latestServicesMap
-                )
-
-                val vehicleStatus = computeOperationalStatus(
-                    activeVehicle = activeVehicle,
-                    reminders = vehicleReminders
-                )
-
-                val nextCheck = prioritized.firstOrNull { it.remainingKm != null && it.remainingKm > 0 }
-
-                val recentActivity = buildRecentActivity(
-                    vehicleName = VehicleDisplayNameFormatter.format(activeVehicle.vehicle.make, activeVehicle.vehicle.model),
-                    services = services,
-                    fuels = fuels,
-                    mileageLogs = mileageLogs,
-                    distanceUnit = distanceUnit
-                )
-
-                DashboardUiState.Success(
-                    vehicles = data.vehiclesWithStatus,
-                    alertsCount = data.alertsCount,
-                    attentionReminders = vehicleReminders.filter { it.status == ServiceStatus.OVERDUE || it.status == ServiceStatus.DUE_SOON },
-                    primaryCostPerDistanceCents = null,
-                    primaryAvgEfficiency = avgEfficiency,
-                    distanceUnit = distanceUnit,
-                    lastSuccessfulCheckAt = lastCheck,
-                    selectedVehicleId = activeVehicleId,
-                    selectedVehicle = activeVehicle,
-                    vehicleStatus = vehicleStatus,
-                    upcomingReminders = vehicleReminders.take(3),
-                    prioritizedReminders = prioritized.take(3),
-                    nextCheck = nextCheck,
-                    recentActivity = recentActivity
-                )
             }
+                .flowOn(defaultDispatcher)
+                .catch { e ->
+                    Timber.e(e, "Error loading dashboard state")
+                    emit(DashboardUiState.Error(R.string.error_load_records_failed))
+                }
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DashboardUiState.Loading
-    )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = DashboardUiState.Loading
+        )
 
     fun selectVehicle(vehicleId: Long) {
         selectedVehicleIdFlow.value = vehicleId
     }
 
     fun explainReminder(prioritizedItem: PrioritizedReminder): ReminderExplanation {
-        val lastService = latestServicesMap[prioritizedItem.reminderWithStatus.reminder.serviceType]
+        val vehicleId = prioritizedItem.reminderWithStatus.reminder.vehicleId
+        val serviceType = prioritizedItem.reminderWithStatus.reminder.serviceType
+        val lastService = latestServicesMap[Pair(vehicleId, serviceType)]
         return reminderPriorityEngine.buildExplanation(
             item = prioritizedItem.reminderWithStatus,
             lastService = lastService
@@ -228,8 +254,8 @@ class DashboardViewModel @Inject constructor(
     private fun buildRecentActivity(
         vehicleName: String,
         services: List<Service>,
-        fuels: List<FuelEntry>,
-        mileageLogs: List<MileageLogEntry>,
+        fuels: List<com.autominder.app.domain.model.FuelEntry>,
+        mileageLogs: List<com.autominder.app.domain.model.MileageLogEntry>,
         distanceUnit: String
     ): List<HomeActivityItem> {
         val items = mutableListOf<HomeActivityItem>()
@@ -282,7 +308,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun retry() {
-        // Triggers re-flow
+        retryTrigger.value++
     }
 
     companion object {

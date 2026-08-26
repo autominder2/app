@@ -137,13 +137,14 @@ class SubscriptionManager @Inject constructor(
             )
             .build()
 
-        billingClient?.queryProductDetailsAsync(subsParams) { subsResult, subsDetails ->
+        billingClient?.queryProductDetailsAsync(subsParams) { subsResult, queryResult ->
             val subs = if (subsResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                logMissingProducts(listOf(PRODUCT_MONTHLY, PRODUCT_YEARLY), subsDetails)
-                subsDetails
+                val list = queryResult.productDetailsList
+                logMissingProducts(listOf(PRODUCT_MONTHLY, PRODUCT_YEARLY), list)
+                list
             } else {
                 Timber.w("Subs product query failed (${subsResult.responseCode}): ${subsResult.debugMessage}")
-                emptyList()
+                emptyList<ProductDetails>()
             }
 
             val inAppParams = QueryProductDetailsParams.newBuilder()
@@ -157,13 +158,14 @@ class SubscriptionManager @Inject constructor(
                 )
                 .build()
 
-            billingClient?.queryProductDetailsAsync(inAppParams) { inAppResult, inAppDetails ->
+            billingClient?.queryProductDetailsAsync(inAppParams) { inAppResult, inAppQueryResult ->
                 val inApp = if (inAppResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                    logMissingProducts(listOf(PRODUCT_LIFETIME), inAppDetails)
-                    inAppDetails
+                    val list = inAppQueryResult.productDetailsList
+                    logMissingProducts(listOf(PRODUCT_LIFETIME), list)
+                    list
                 } else {
                     Timber.w("In-app product query failed (${inAppResult.responseCode}): ${inAppResult.debugMessage}")
-                    emptyList()
+                    emptyList<ProductDetails>()
                 }
 
                 val merged = subs + inApp

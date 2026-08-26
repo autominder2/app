@@ -91,7 +91,8 @@ class DashboardViewModelTest {
         reminderPriorityEngine = reminderPriorityEngine,
         reviewHelper = reviewHelper,
         userPreferences = userPrefs,
-        appInfo = appInfo
+        appInfo = appInfo,
+        defaultDispatcher = dispatcher
     )
 
     @Test
