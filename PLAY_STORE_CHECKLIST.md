@@ -138,3 +138,88 @@ rejection asking for credentials that do not exist.
 - Pre-launch report (Console-generated; needs an upload first).
 - Store listing assets: 512px icon, 1024x500 feature graphic, >=4 phone
   screenshots, title <=30 chars, short description <=80 chars, content rating.
+
+---
+
+## Release Candidate evidence — 2026-08-27
+
+Built on `release/1.0.0`. Every line below is a command's own output, not a
+summary of one.
+
+### Artifacts
+
+| Item | Value |
+|---|---|
+| Command | `clean assembleRelease bundleRelease` |
+| Result | BUILD SUCCESSFUL in 18m 40s |
+| APK | 9,895,745 bytes |
+| AAB | 15,686,251 bytes, `jar verified` |
+| versionCode / versionName | `27000001` / `1.0.0` |
+| minSdk / compileSdk | 26 / 36 |
+| R8 `missing_rules.txt` | absent — rules were complete |
+| `lintVitalRelease` | passed (`warningsAsErrors = true`) |
+| `mapping.txt` | present, 100,748,816 bytes |
+
+### Backup verified in the MINIFIED RELEASE build
+
+The debug run proved the fix; this proves R8 did not undo it. R8 kept
+`AutoMinderBackupAgent` under its original name, so the manifest reference
+still resolves:
+
+    com.autominder.app.data.backup.AutoMinderBackupAgent ->
+    com.autominder.app.data.backup.AutoMinderBackupAgent:
+
+Confirmed in the shipped binary manifest via `aapt2 dump xmltree`:
+
+    android:allowBackup=true
+    android:backupAgent="com.autominder.app.data.backup.AutoMinderBackupAgent"
+    android:fullBackupOnly=true
+
+`bmgr backupnow` against the release APK moved **146,432 bytes**. Before the
+`fullBackupOnly` fix the same command produced no progress lines at all and
+restored nothing. Backup -> `pm clear` -> restore -> launch leaves an empty
+crash buffer and no entry mentioning `com.autominder`.
+
+Not verifiable for the release build on this AVD: per-file inspection of the
+restore. `run-as` needs a debuggable build and `adb root` is refused on a
+production image (`adbd cannot run as root in production builds`). The
+file-level exclusion was proven on the debug build, where both DataStore files
+were byte-identical before backup and only `user_preferences` came back.
+
+### Permissions actually shipped — 14, not 4
+
+The source manifest declares 4. Play reviews the merged manifest. Every one of
+the added 10 is attributable to a library via the manifest merger report, so
+none is stray, but three carry Data Safety consequences.
+
+| Permission | Injected by | Note |
+|---|---|---|
+| INTERNET, POST_NOTIFICATIONS, RECEIVE_BOOT_COMPLETED, VIBRATE | ours | VIBRATE is required by `NotificationHelper.kt:56` `enableVibration(true)` |
+| ACCESS_NETWORK_STATE | play-services-ads-lite, measurement | SDK requirement |
+| FOREGROUND_SERVICE | androidx.work 2.10.0 | WorkManager |
+| WAKE_LOCK | play-services-measurement | Firebase Analytics |
+| com.android.vending.BILLING | billing 9.1.0 | required |
+| DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION | androidx.core 1.15.0 | internal signature permission |
+| **AD_ID** | ads-lite, measurement-api | **Data Safety: advertising ID collected AND shared. Answer YES.** |
+| ACCESS_ADSERVICES_AD_ID / _ATTRIBUTION / _TOPICS | ads-lite, measurement-api | Privacy Sandbox |
+| BIND_GET_INSTALL_REFERRER_SERVICE | measurement-impl | install attribution |
+
+Removing AD_ID via `tools:node="remove"` is possible but disables personalized
+ads and Analytics attribution, so it is a monetization decision, not cleanup.
+
+### Repository detox
+
+| Check | Result |
+|---|---|
+| TODO / FIXME / HACK / XXX in main sources | **0** |
+| `println` / `android.util.Log.x` / `printStackTrace` | **0** (the one `android.util.Log` import is for priority constants in `CrashlyticsTree`) |
+| Mock / fake / dummy data in production | **0** (all matches are Compose `placeholder =` parameters) |
+| Unused resources | none — `lintVitalRelease` passes with `warningsAsErrors = true` |
+| Lint baseline | 5 entries: 4 widget attributes correctly gated above minSdk, 1 Compose API advisory |
+| Dead code | 1 candidate: `FormField` in `ui/components/FormAnimations.kt`, zero references. `docs/exec-plans/mobbin-design-blueprint-2026.md:631` says KEEP, so left in place pending a design call. |
+
+### Still not verified
+
+Billing on hardware (all four lifecycle scenarios); TalkBack and 2.0x font
+sweeps; process-death restoration; `terms.html` deployment; AdMob UMP consent
+form; OSS licences screen; pre-launch report (needs an upload first).
