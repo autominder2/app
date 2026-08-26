@@ -15,6 +15,8 @@ import com.autominder.app.data.backup.BackupRestoreSummary
 import com.autominder.app.data.backup.ManualBackupManager
 import com.autominder.app.data.local.preferences.UserPreferences
 import com.autominder.app.domain.usecase.DeleteAllDataUseCase
+import com.autominder.app.domain.usecase.GarageSummary
+import com.autominder.app.domain.usecase.GetGarageSummaryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -92,8 +94,24 @@ class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val subscriptionManager: SubscriptionManager,
     private val manualBackupManager: ManualBackupManager,
-    private val deleteAllData: DeleteAllDataUseCase
+    private val deleteAllData: DeleteAllDataUseCase,
+    getGarageSummary: GetGarageSummaryUseCase
 ) : ViewModel() {
+
+    /**
+     * Counts of what the user owns, for the card at the top of Settings.
+     *
+     * Kept as its own StateFlow rather than folded into [uiState]: it is driven
+     * by three Room flows and changes for entirely different reasons than the
+     * preference values, so combining them would rebuild the whole settings
+     * state every time a service record is added.
+     */
+    val garageSummary: StateFlow<GarageSummary> = getGarageSummary()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = GarageSummary()
+        )
 
     val isProUser: StateFlow<Boolean> = subscriptionManager.isProUser
     val productDetails: StateFlow<List<ProductDetails>> = subscriptionManager.productDetails

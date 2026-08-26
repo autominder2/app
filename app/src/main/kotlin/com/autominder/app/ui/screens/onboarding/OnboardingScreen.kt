@@ -2,7 +2,6 @@ package com.autominder.app.ui.screens.onboarding
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -726,13 +726,32 @@ private fun PlanStep(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
-                    Text(
-                        text = stringResource(R.string.onboarding_plan_add_mileage_action),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { onAdjustPlan() }
-                    )
+                    // A TextButton, not a clickable Text.
+                    //
+                    // This was `Text(..., Modifier.clickable { })` on labelSmall
+                    // type. A bare `clickable` adds no size floor and no
+                    // accessibility role, so the tap target collapsed to the
+                    // height of the glyphs. A uiautomator dump of the release
+                    // build on a 1440x3120 device found a 39dp clickable node on
+                    // this screen with nothing announced to TalkBack;
+                    // .claude/rules/ui.md requires targets >= 48dp and
+                    // meaningful semantics.
+                    //
+                    // TextButton supplies Role.Button and the ripple for free,
+                    // and matches how every other action in this file is built.
+                    // heightIn pushes past Material's 40dp button default to the
+                    // 48dp the rules ask for.
+                    TextButton(
+                        onClick = onAdjustPlan,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.onboarding_plan_add_mileage_action),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

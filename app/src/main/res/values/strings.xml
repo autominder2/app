@@ -305,7 +305,7 @@
 
     <!-- Service type labels (UI-layer localization of domain ServiceType) -->
     <string name="service_type_oil_change">Oil change</string>
-    <string name="service_type_tire_rotation">Tyre rotation</string>
+    <string name="service_type_tire_rotation">Tire rotation</string>
     <string name="service_type_brake_service">Brake service</string>
     <string name="service_type_battery">Battery</string>
     <string name="service_type_air_filter">Air filter</string>
@@ -593,7 +593,15 @@
     <string name="paywall_feature_predictions">Next-service projections from your mileage</string>
     <string name="paywall_feature_cost_analytics">Complete ownership cost &amp; efficiency intelligence</string>
     <string name="paywall_trust_google_play">Google Play Secured</string>
-    <string name="paywall_trust_offline">100% Offline &amp; Private</string>
+    <!-- Was "100% Offline &amp; Private". Third and worst location for that
+         claim: a trust badge at the point of payment. It is false — the app
+         sends anonymized diagnostics (Crashlytics, Sentry, Performance
+         Monitoring), usage events (Analytics) and an advertising ID (AdMob).
+         Using an untrue privacy claim to close a sale is the version of this
+         mistake that actually costs money in a refund dispute.
+         What IS true, and is the thing buyers care about, is that their vehicle
+         records never leave the device. -->
+    <string name="paywall_trust_offline">Records stay on your device</string>
     <string name="paywall_trust_cancel">Cancel anytime in Play Store</string>
     <!-- Prices are product-details-driven (Play formattedPrice), never
          hardcoded — see ProPaywall.kt. %1$s is the localized price string. -->
@@ -696,6 +704,41 @@
     <string name="vehicle_detail_cost_per_km">≈ %1$s per %2$s of ownership</string>
 
     <!-- Settings sections -->
+    <string name="settings_section_garage">Your garage</string>
+    <string name="settings_garage_empty_title">Nothing in your garage yet</string>
+    <string name="settings_garage_empty_subtitle">Add a vehicle and it will show up here.</string>
+    <!-- Display labels: the count is rendered separately in the mono face, so
+         these must NOT repeat it. The counted plurals below are what TalkBack
+         speaks, so the number is still announced exactly once. -->
+    <plurals name="settings_garage_vehicles_noun">
+        <item quantity="one">vehicle</item>
+        <item quantity="other">vehicles</item>
+    </plurals>
+    <plurals name="settings_garage_services_noun">
+        <item quantity="one">service record</item>
+        <item quantity="other">service records</item>
+    </plurals>
+    <plurals name="settings_garage_reminders_noun">
+        <item quantity="one">active reminder</item>
+        <item quantity="other">active reminders</item>
+    </plurals>
+    <plurals name="settings_garage_vehicles">
+        <item quantity="one">%1$d vehicle</item>
+        <item quantity="other">%1$d vehicles</item>
+    </plurals>
+    <plurals name="settings_garage_services">
+        <item quantity="one">%1$d service record</item>
+        <item quantity="other">%1$d service records</item>
+    </plurals>
+    <plurals name="settings_garage_reminders">
+        <item quantity="one">%1$d active reminder</item>
+        <item quantity="other">%1$d active reminders</item>
+    </plurals>
+    <!-- The trust anchor for the Settings screen. Deliberately states the limit
+         as well as the promise: overclaiming here is what made the old
+         "100% offline" line unusable. -->
+    <string name="settings_privacy_note_title">Your records stay on this device</string>
+    <string name="settings_privacy_note_body">No account, no sign-in, no cloud copy of your vehicle data. Anonymized crash and usage diagnostics, and ads in the free version, are covered in the privacy policy.</string>
     <string name="settings_section_preferences">Preferences</string>
     <string name="settings_section_about">About &amp; Legal</string>
     <string name="settings_ad_privacy">Ad privacy options</string>
@@ -942,7 +985,13 @@
     <string name="settings_backup_export_subtitle">Save a complete JSON snapshot of all vehicles, services, and fuel history</string>
     <string name="settings_backup_import_title">Restore from backup</string>
     <string name="settings_backup_import_subtitle">Restore or migrate vehicle records from a JSON backup file</string>
-    <string name="settings_backup_description" formatted="false">100% offline data sovereignty. Your data stays in your control — export or import anytime without cloud dependency.</string>
+    <!-- Was "100% offline data sovereignty. Your data stays in your control..."
+         That was not true: the app sends anonymized diagnostics (Crashlytics,
+         Sentry, Performance Monitoring), usage events (Analytics) and an
+         advertising ID (AdMob). What IS true is the part that matters to the
+         user - their records never leave the device and are theirs to export.
+         Claim that, precisely, and let the privacy policy carry the rest. -->
+    <string name="settings_backup_description">Your vehicles, service history and fuel logs live on this device only — we never receive them. Export a copy or import one whenever you like, no account required.</string>
     <string name="settings_backup_import_confirm_title">Restore vehicle records?</string>
     <string name="settings_backup_import_confirm_message">This will import all vehicles, service records, reminders, and fuel logs from your backup file into the app.</string>
     <string name="settings_backup_import_confirm_action">Restore backup</string>

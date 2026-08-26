@@ -75,12 +75,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import com.autominder.app.domain.usecase.GarageSummary
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -110,6 +113,7 @@ fun SettingsScreen(
     val isProUser by viewModel.isProUser.collectAsStateWithLifecycle()
     val purchaseState by viewModel.purchaseState.collectAsStateWithLifecycle()
     val restoreState by viewModel.restoreState.collectAsStateWithLifecycle()
+    val garageSummary by viewModel.garageSummary.collectAsStateWithLifecycle()
     val monthlyPrice by viewModel.monthlyPriceText.collectAsStateWithLifecycle()
     val yearlyPrice by viewModel.yearlyPriceText.collectAsStateWithLifecycle()
     val lifetimePrice by viewModel.lifetimePriceText.collectAsStateWithLifecycle()
@@ -299,6 +303,17 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // ─── YOUR GARAGE ────────────────────────────────────────────────
+            //
+            // Settings used to open with the Pro upsell — the first thing the
+            // user saw on the screen they go to for control was a sell. This
+            // card goes above it so the screen leads with what they own.
+            //
+            // Every number here is a row count of the user's own data. Nothing
+            // is derived or scored, so the card cannot tell them something
+            // untrue about their garage.
+            GarageSummaryCard(summary = garageSummary)
+
             // Pro Status Banner
             if (!isProUser) {
                 val proInteractionSource = remember { MutableInteractionSource() }
@@ -1187,6 +1202,152 @@ fun SettingsScreen(
                 viewModel.restorePurchases()
                 showPaywall = false
             }
+        )
+    }
+}
+
+
+/**
+ * Ownership header for the Settings screen: plain counts of the user's own
+ * records, plus the privacy statement that the rest of the screen depends on.
+ *
+ * The privacy note states the LIMIT as well as the promise. An earlier version
+ * of this screen carried "100% offline data sovereignty", which was false —
+ * the app sends anonymized diagnostics and an advertising ID. Overclaiming here
+ * is worse than saying nothing, because Settings is exactly where a user goes
+ * to check whether they are being told the truth.
+ */
+@Composable
+private fun GarageSummaryCard(summary: GarageSummary) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.settings_section_garage).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.semantics { heading() }
+            )
+
+            if (summary.isEmpty) {
+                // Truthful empty state — invite, do not report a zero.
+                Text(
+                    text = stringResource(R.string.settings_garage_empty_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(R.string.settings_garage_empty_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    GarageStat(
+                        value = summary.vehicleCount,
+                        noun = pluralStringResource(
+                            R.plurals.settings_garage_vehicles_noun,
+                            summary.vehicleCount
+                        ),
+                        spoken = pluralStringResource(
+                            R.plurals.settings_garage_vehicles,
+                            summary.vehicleCount,
+                            summary.vehicleCount
+                        )
+                    )
+                    GarageStat(
+                        value = summary.serviceCount,
+                        noun = pluralStringResource(
+                            R.plurals.settings_garage_services_noun,
+                            summary.serviceCount
+                        ),
+                        spoken = pluralStringResource(
+                            R.plurals.settings_garage_services,
+                            summary.serviceCount,
+                            summary.serviceCount
+                        )
+                    )
+                    GarageStat(
+                        value = summary.reminderCount,
+                        noun = pluralStringResource(
+                            R.plurals.settings_garage_reminders_noun,
+                            summary.reminderCount
+                        ),
+                        spoken = pluralStringResource(
+                            R.plurals.settings_garage_reminders,
+                            summary.reminderCount,
+                            summary.reminderCount
+                        )
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+
+            Text(
+                text = stringResource(R.string.settings_privacy_note_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = stringResource(R.string.settings_privacy_note_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * One count: the figure in the mono face, the noun beneath it.
+ *
+ * `.claude/rules/ui.md` requires every numeric vehicle datum to be set in
+ * JetBrains Mono, hence the face override on [value].
+ *
+ * [noun] deliberately does NOT repeat the number. The first version of this
+ * rendered "1" above "1 vehicle", which only became obviously wrong once it was
+ * on a device. [spoken] carries the counted phrase instead, and the whole column
+ * merges into a single semantics node so TalkBack announces "1 vehicle" once
+ * rather than reading the digit and the label separately.
+ */
+@Composable
+private fun GarageStat(value: Int, noun: String, spoken: String) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier.semantics(mergeDescendants = true) {
+            contentDescription = spoken
+        }
+    ) {
+        Text(
+            text = value.toString(),
+            style = MaterialTheme.typography.headlineSmall.copy(fontFamily = JetBrainsMono),
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = noun,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
