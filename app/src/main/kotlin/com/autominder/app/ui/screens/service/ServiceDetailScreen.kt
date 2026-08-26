@@ -96,6 +96,9 @@ fun ServiceDetailScreen(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    // Needed here, not just inside the content composable: the shared receipt is
+    // built from the same record and must agree with what the screen displays.
+    val distanceUnit = LocalDistanceUnit.current
 
     LaunchedEffect(uiState.isDeleted) {
         if (uiState.isDeleted) {
@@ -167,7 +170,7 @@ fun ServiceDetailScreen(
                     if (service != null) {
                         IconButton(onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                            shareServiceReceipt(context, service, vehicle)
+                            shareServiceReceipt(context, service, vehicle, distanceUnit)
                         }) {
                             Icon(
                                 Icons.Default.Share,
@@ -216,7 +219,7 @@ fun ServiceDetailScreen(
                     service = uiState.service!!,
                     vehicle = uiState.vehicle,
                     onShareClick = {
-                        shareServiceReceipt(context, uiState.service!!, uiState.vehicle)
+                        shareServiceReceipt(context, uiState.service!!, uiState.vehicle, distanceUnit)
                     }
                 )
             }
@@ -641,7 +644,22 @@ private fun serviceIconFor(type: ServiceType): ImageVector = when (type) {
 /**
  * Share formatted service receipt summary via Android Intent Sharesheet
  */
-private fun shareServiceReceipt(context: Context, service: Service, vehicle: Vehicle?) {
+/**
+ * Builds the shareable service receipt.
+ *
+ * [distanceUnit] is required rather than defaulted. Odometer values are stored
+ * in km and converted only at UI boundaries, so a receipt that skips the
+ * conversion reports a different number than the screen it was shared from —
+ * and this text leaves the device, to a buyer or a mechanic. It previously
+ * hardcoded "km" and the raw stored value, so a user on miles saw
+ * "52,270 mi" on screen and sent "84,120 km".
+ */
+private fun shareServiceReceipt(
+    context: Context,
+    service: Service,
+    vehicle: Vehicle?,
+    distanceUnit: String
+) {
     val serviceName = if (service.serviceType == ServiceType.CUSTOM) {
         service.customLabel ?: context.getString(R.string.service_detail_custom_service)
     } else {
@@ -652,8 +670,10 @@ private fun shareServiceReceipt(context: Context, service: Service, vehicle: Veh
     } ?: context.getString(R.string.label_unknown_vehicle)
 
     val dateFormatted = DateFormatUtil.formatDate(service.serviceDate)
-    val distanceUnit = "km"
-    val odometerFormatted = DistanceFormat.grouped(service.odometerAtService)
+    val unitLabel = DistanceUtil.unitLabel(distanceUnit)
+    val odometerFormatted = DistanceFormat.grouped(
+        DistanceUtil.kmToDisplay(service.odometerAtService, distanceUnit)
+    )
     val costFormatted = if (service.costCents != null && service.costCents > 0) {
         NumberFormat.getCurrencyInstance(Locale.getDefault()).format(service.costCents / 100.0)
     } else {
@@ -672,7 +692,7 @@ private fun shareServiceReceipt(context: Context, service: Service, vehicle: Veh
         vehicleName,
         dateFormatted,
         odometerFormatted,
-        distanceUnit,
+        unitLabel,
         costFormatted,
         shopFormatted,
         notesFormatted

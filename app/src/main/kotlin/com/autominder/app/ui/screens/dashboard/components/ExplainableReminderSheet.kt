@@ -149,8 +149,10 @@ fun ExplainableReminderSheet(
 
                 // Last recorded service
                 val lastServiceStr = if (explanation.lastServiceOdometer != null && explanation.lastServiceDate != null) {
-                    val lastKm = DistanceUtil.kmToDisplay(explanation.lastServiceOdometer, distanceUnit)
-                    "${DistanceFormat.grouped(lastKm)} ${DistanceUtil.unitLabel(distanceUnit)} • ${DateFormatUtil.formatDate(explanation.lastServiceDate)}"
+                    // Named *Display, not *Km: it has already been converted, and a
+                    // km-suffixed name on a converted value is how the unit bugs start.
+                    val lastServiceDisplay = DistanceUtil.kmToDisplay(explanation.lastServiceOdometer, distanceUnit)
+                    "${DistanceFormat.grouped(lastServiceDisplay)} ${DistanceUtil.unitLabel(distanceUnit)} • ${DateFormatUtil.formatDate(explanation.lastServiceDate)}"
                 } else {
                     stringResource(R.string.why_reminder_no_previous_service)
                 }

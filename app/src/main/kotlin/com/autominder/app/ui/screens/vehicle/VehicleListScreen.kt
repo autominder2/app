@@ -318,7 +318,11 @@ private fun VehicleListRow(
         com.autominder.app.domain.util.VehicleBodyTypeResolver.resolve(vehicle.make, vehicle.model)
     }
 
-    // Predictive milestone teaser: "Next: Oil service in ~8,000 km (~Feb 2027)"
+    // Predictive milestone teaser: "Next: Oil service in ~8,000 km (~Feb 2027)",
+    // rendered in whichever unit the user chose. nextServiceRemainingKm is a
+    // difference of two stored odometer values, so it is km and must be
+    // converted before it can carry the unit label — it previously was not,
+    // which printed the km figure with "mi" attached: a 61% overstatement.
     val concernText = when {
         item.topConcern != null -> {
             val concernLabel = item.topConcern.customLabel?.takeIf { it.isNotBlank() }
@@ -331,7 +335,7 @@ private fun VehicleListRow(
         }
         item.nextServiceLabel != null -> {
             val distText = if (item.nextServiceRemainingKm != null && item.nextServiceRemainingKm > 0) {
-                "in ~${DistanceFormat.grouped(item.nextServiceRemainingKm)} ${DistanceUtil.unitLabel(distanceUnit)}"
+                "in ~${DistanceFormat.grouped(DistanceUtil.kmToDisplay(item.nextServiceRemainingKm, distanceUnit))} ${DistanceUtil.unitLabel(distanceUnit)}"
             } else null
             val dateText = item.nextServiceDueDate?.let { DateFormatUtil.formatDate(it) }
 
