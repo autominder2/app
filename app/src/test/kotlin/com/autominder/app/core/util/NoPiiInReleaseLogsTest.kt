@@ -99,6 +99,35 @@ class NoPiiInReleaseLogsTest {
     }
 
     @Test
+    fun `sentry never ships screen contents off the device`() {
+        // Timber is not the only egress. Sentry can attach a screenshot and a
+        // serialised view tree to an error report, both of which carry whatever
+        // is on screen — and AutoMinder screens carry VINs, plates and notes.
+        //
+        // These two settings arrive as `true` in Sentry's own manifest template.
+        // Someone disabled the screenshot with an explicit comment about VINs
+        // and then left attach-view-hierarchy enabled two lines below it, so
+        // this is a demonstrated failure mode, not a hypothetical one. The
+        // published privacy policy now states that screen contents are not
+        // transmitted, which makes both of these load-bearing.
+        val manifest = File("src/main/AndroidManifest.xml")
+        require(manifest.exists()) { "AndroidManifest.xml not found at ${manifest.absolutePath}" }
+        val text = manifest.readText()
+
+        listOf("io.sentry.attach-screenshot", "io.sentry.attach-view-hierarchy").forEach { key ->
+            val value = Regex(
+                """<meta-data\s+android:name="$key"\s+android:value="([^"]*)""""
+            ).find(text)?.groupValues?.get(1)
+
+            assertTrue(
+                "$key must be declared and false. Screen contents must never reach a " +
+                    "third-party service, and the privacy policy states they do not.",
+                value == "false"
+            )
+        }
+    }
+
+    @Test
     fun `the release log tree still discards debug and verbose`() {
         // The test above only checks INFO and up. That is sound *because*
         // CrashlyticsTree filters below it — if that filter is ever removed,

@@ -128,11 +128,22 @@
          and location data, which this app's privacy rules forbid sending to a
          third-party SaaS (see CLAUDE.md SECURITY & PRIVACY LAW). -->
     <meta-data android:name="io.sentry.attach-screenshot" android:value="false" />
-    <!-- enable view hierarchy for crashes -->
-    <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
+    <!-- Disabled for the SAME reason as attach-screenshot above: it serialises
+         the on-screen view tree and ships it to a third-party SaaS. That
+         reasoning was applied to screenshots and not carried the two lines down
+         to here. AutoMinder screens carry VINs, plates and free-text notes, and
+         CLAUDE.md's SECURITY & PRIVACY LAW forbids sending any of it off-device.
+         The published privacy policy now states that screen contents are not
+         transmitted, so this must stay false for that statement to be true. -->
+    <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="false" />
 
-    <!-- enable the performance API by setting a sample-rate, adjust in production env -->
-    <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+    <!-- Was 1.0 — every session fully traced — still carrying the Sentry
+         template's own unheeded "adjust in production env" note. At 1.0 a
+         released app spends user battery and mobile data on telemetry for
+         100% of sessions and exhausts a Sentry quota almost immediately.
+         0.2 keeps a statistically useful sample. Raise it temporarily when
+         chasing a specific regression. -->
+    <meta-data android:name="io.sentry.traces.sample-rate" android:value="0.2" />
 </application>
 
 </manifest>
