@@ -114,3 +114,9 @@ graphify-out/manifest.json
 
 # Sentry Config File
 sentry.properties
+
+# Session build/verify logs (regenerable, never review material)
+final_verify.txt
+*_build.txt
+*_build2.txt
+*_verify.txt
