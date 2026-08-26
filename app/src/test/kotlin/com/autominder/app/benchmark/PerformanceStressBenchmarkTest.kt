@@ -28,12 +28,28 @@ import java.util.Date
 import kotlin.system.measureTimeMillis
 
 /**
- * 2026 Production Stress & High-Throughput Performance Benchmark Suite.
+ * High-volume correctness checks for the core computational engines —
+ * efficiency math, pace learning, status calculation and backup serialization —
+ * at 1,000+ records.
  *
- * Verifies that AutoMinder's core computational engines (Efficiency math,
- * predictive pace learning, status calculation, and JSON backup serialization)
- * handle 1,000+ simulated records with zero memory leaks, zero divide-by-zero crashes,
- * and high-speed execution (< 100ms per 1,000 items).
+ * These are NOT benchmarks, despite the class name, and the timing assertions
+ * are a coarse regression tripwire rather than a performance measurement. Two
+ * things were previously claimed here and are not true, so they have been
+ * removed rather than left to mislead:
+ *
+ *  - "zero memory leaks": nothing in this class measures allocation or
+ *    retention. A leak would pass every assertion below.
+ *  - "< 100ms per 1,000 items": every assertion in this file actually allows
+ *    500ms. The individual test names claimed 30ms and 50ms while asserting
+ *    500ms — off by up to 16x. Names now match the assertions.
+ *
+ * A wall-clock assertion inside a JVM unit test is environment-sensitive by
+ * construction: `CalculateEfficiencyUseCase ...` failed on 2026-08-26 purely
+ * because an Android emulator was saturating the CPU on the same machine, and
+ * passed immediately once it was shut down. The threshold is deliberately loose
+ * so it catches an algorithmic regression (an accidental O(n^2), a per-item
+ * allocation storm) without failing on a loaded CI runner. Real timing work
+ * belongs in the macrobenchmark module, on a device.
  */
 class PerformanceStressBenchmarkTest {
 
@@ -44,7 +60,7 @@ class PerformanceStressBenchmarkTest {
     }
 
     @Test
-    fun `CalculateEfficiencyUseCase processes 1,000 sequential fuel entries under 50ms`() {
+    fun `CalculateEfficiencyUseCase processes 1,000 sequential fuel entries without an algorithmic regression`() {
         val calculateEfficiency = CalculateEfficiencyUseCase()
         val entries = (1..1000).map { i ->
             FuelEntry(
@@ -67,7 +83,7 @@ class PerformanceStressBenchmarkTest {
     }
 
     @Test
-    fun `PredictDueUseCase processes 1,000 odometer pace observations under 50ms`() {
+    fun `PredictDueUseCase processes 1,000 odometer pace observations without an algorithmic regression`() {
         val predictDue = PredictDueUseCase()
         val points = (1..1000).map { i ->
             com.autominder.app.domain.usecase.OdometerPoint(
@@ -100,7 +116,7 @@ class PerformanceStressBenchmarkTest {
     }
 
     @Test
-    fun `StatusCalculator evaluates 1,000 reminders under 30ms`() {
+    fun `StatusCalculator evaluates 1,000 reminders without an algorithmic regression`() {
         val now = System.currentTimeMillis()
         val elapsed = measureTimeMillis {
             for (i in 1..1000) {
@@ -121,7 +137,7 @@ class PerformanceStressBenchmarkTest {
     }
 
     @Test
-    fun `AutoMinderBackupData serializes and parses 1,000 complex entities under 150ms`() {
+    fun `AutoMinderBackupData serializes and parses 1,000 complex entities without an algorithmic regression`() {
         val vehicles = (1..10).map { i ->
             VehicleBackupDto(
                 id = i.toLong(),
