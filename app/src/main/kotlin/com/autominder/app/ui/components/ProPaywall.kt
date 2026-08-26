@@ -84,6 +84,23 @@ fun ProPaywall(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.cd_close),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = null,
@@ -147,11 +164,47 @@ fun ProPaywall(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val continueEnabled = when (selectedPlan) {
-                PaywallPlan.MONTHLY -> monthlyPrice != null
-                PaywallPlan.YEARLY -> yearlyPrice != null
-                PaywallPlan.LIFETIME -> lifetimePrice != null
+            // Trust row above CTA
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🔒 " + stringResource(R.string.paywall_trust_google_play),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "•",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "🛡️ " + stringResource(R.string.paywall_trust_offline),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val selectedPrice = when (selectedPlan) {
+                PaywallPlan.MONTHLY -> monthlyPrice
+                PaywallPlan.YEARLY -> yearlyPrice
+                PaywallPlan.LIFETIME -> lifetimePrice
+            }
+            val continueEnabled = selectedPrice != null
+
+            val ctaLabel = when {
+                selectedPrice == null -> stringResource(R.string.paywall_cta_loading)
+                selectedPlan == PaywallPlan.LIFETIME ->
+                    stringResource(R.string.paywall_cta_lifetime, selectedPrice)
+                else -> stringResource(R.string.paywall_cta_subscribe, selectedPrice)
+            }
+
             Button(
                 onClick = {
                     when (selectedPlan) {
@@ -166,25 +219,32 @@ fun ProPaywall(
                     .height(52.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.paywall_continue),
+                    text = ctaLabel,
                     fontWeight = FontWeight.Bold
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.paywall_trial_reassurance),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+            // Renewal terms, stated per plan. Lifetime is a one-off purchase and
+            // must not be described as renewing — claiming it does would be as
+            // untrue as hiding that the subscriptions do.
+            val renewalText = when {
+                selectedPrice == null -> stringResource(R.string.paywall_price_pending_note)
+                selectedPlan == PaywallPlan.LIFETIME ->
+                    stringResource(R.string.paywall_renewal_lifetime, selectedPrice)
+                selectedPlan == PaywallPlan.YEARLY ->
+                    stringResource(R.string.paywall_renewal_yearly, selectedPrice)
+                else -> stringResource(R.string.paywall_renewal_monthly, selectedPrice)
             }
+
+            Text(
+                text = renewalText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(4.dp))
 

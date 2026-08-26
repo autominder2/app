@@ -1,6 +1,6 @@
 # AutoMinder — AGENTS.md
 # Agent Configuration & Scope Control
-# Updated: 2026-08 | Aligned with CLAUDE.md v6.1 + active release plan
+# Updated: 2026-08 | Aligned with CLAUDE.md v6.1 + 13-Layer Production Standard
 
 ## Project Identity
 - App: AutoMinder — car maintenance reminders, fuel/service records & launch-truth hardening
@@ -25,21 +25,22 @@
 | Coil | 3.1.0 | Vehicle photos — AsyncImage (coil3 group) |
 | Kotlinx Serialization | 1.8.0 | Nav type-safe routes require this |
 | AdMob | 23.5.0 | IDs from local.properties only |
-| Billing | 7.1.1 | CURRENT BLOCKER: migrate to 9.1.0 before Play submission; current code supports monthly/yearly/lifetime unless owner changes catalog |
+| Billing | 9.1.0 | Google Play Billing 9.x active |
 | Timber | 5.0.1 | Debug builds only — DebugTree |
 | Turbine | 1.2.0 | Flow unit testing |
 
 ## Current Build Phase
-**Phase**: Release hardening + mandatory Billing migration (feature-frozen)
-**Last green build**: confirm with `./gradlew compileDebugKotlin`
-**Next milestone**: Play Billing 9.1.0 migration, claim-truth cleanup, release-candidate evidence
+**Phase**: Release hardening & Play Store readiness (feature-frozen)
+**Last green build**: `gradlew.bat compileDebugKotlin testDebugUnitTest lintDebug`
+**Next milestone**: Paywall exit & trust hardening, billing state machine, release-candidate evidence
 
-## Folder Structure (verified against codebase 2026-04-12)
+## Folder Structure (verified against codebase 2026-08)
 ```
 app/src/main/kotlin/com/autominder/app/
 ├── AutoMinderApp.kt              ← @HiltAndroidApp — never touch
 ├── MainActivity.kt               ← Single Activity host — never touch
 ├── ads/                          ← AdManager.kt, BannerAdView.kt
+├── billing/                      ← SubscriptionManager.kt (Billing 9.x)
 ├── core/di/                      ← DatabaseModule, NetworkModule, WorkerModule
 ├── data/
 │   ├── local/
@@ -50,9 +51,11 @@ app/src/main/kotlin/com/autominder/app/
 │   ├── mapper/                   ← Entity ↔ Domain model mappers
 │   └── repository/               ← *RepositoryImpl (data layer implementations)
 ├── domain/
+│   ├── intelligence/             ← VehicleConfidenceEngine.kt
 │   ├── model/                    ← Vehicle, Reminder, FuelEntry, MileageLogEntry, Service, ServiceStatus, ServiceType
 │   ├── repository/               ← I*Repository interfaces (contracts)
 │   ├── usecase/                  ← StatusCalculator, GetDashboardData, CreateDefaultReminders, ExportServiceHistory, CalculateEfficiency
+│   │   └── cockpit/              ← CalculateConfidenceUseCase, CalculateDrivingPatternUseCase, CalculateOwnershipCostUseCase
 │   ├── util/                     ← Domain utilities
 │   └── validation/               ← Input validation rules
 ├── ui/
@@ -69,7 +72,7 @@ app/src/main/kotlin/com/autominder/app/
 │       ├── service/              ← AddServiceScreen.kt, AddServiceViewModel.kt, ServiceDetailScreen.kt, ServiceDetailViewModel.kt, ServiceHistoryScreen.kt, ServiceHistoryViewModel.kt
 │       ├── settings/             ← SettingsScreen.kt, SettingsViewModel.kt
 │       └── vehicle/              ← AddVehicleScreen.kt, AddVehicleViewModel.kt, EditVehicleScreen.kt, EditVehicleViewModel.kt, VehicleDetailScreen.kt, VehicleDetailViewModel.kt, VehicleListScreen.kt, VehicleListViewModel.kt
-├── widget/                       ← AutoMinderWidget.kt (Glance)
+├── widget/                       ← AutoMinderWidget.kt, WidgetDataProvider.kt (Glance)
 ├── worker/
 │   ├── ReminderCheckWorker.kt    ← Daily maintenance reminder checks
 │   ├── WorkScheduler.kt          ← Worker enqueue logic

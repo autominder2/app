@@ -60,4 +60,17 @@ interface VehicleDao {
 
     @Query("SELECT COUNT(*) FROM vehicles WHERE isArchived = 0")
     suspend fun getActiveVehicleCount(): Int
+
+    /**
+     * Erases every vehicle, and with it every reminder, service, mileage log and
+     * fuel entry: all four child tables declare
+     * `ForeignKey(onDelete = CASCADE)` on `vehicleId`, so this single statement
+     * empties the database. Archived vehicles are included - "delete everything"
+     * has to mean everything, or the promise is false.
+     *
+     * Only [com.autominder.app.domain.usecase.DeleteAllDataUseCase] should call
+     * this. There is no undo.
+     */
+    @Query("DELETE FROM vehicles")
+    suspend fun deleteAllVehicles()
 }

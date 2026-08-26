@@ -27,4 +27,10 @@ interface IVehicleRepository {
     suspend fun archiveVehicle(id: Long)
     suspend fun deleteVehicle(vehicle: Vehicle)
     suspend fun updateOdometer(id: Long, odometer: Int)
+
+    /**
+     * Erases every vehicle and, by cascade, every record attached to one.
+     * Irreversible. Call through `DeleteAllDataUseCase`, never directly.
+     */
+    suspend fun deleteAllVehicles()
 }

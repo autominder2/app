@@ -32,6 +32,18 @@ object NotificationHelper {
     private const val DIGEST_CHANNEL_NAME = "Weekly Summary"
     private const val DIGEST_NOTIFICATION_ID = -1000
 
+    /**
+     * Dismisses every notification this app has posted.
+     *
+     * Called when the user erases their data. Without it, a reminder for a
+     * vehicle that no longer exists stays in the shade, and tapping it opens a
+     * detail screen for a deleted row.
+     */
+    fun cancelAll(context: Context) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.cancelAll()
+    }
+
     fun createChannel(context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(

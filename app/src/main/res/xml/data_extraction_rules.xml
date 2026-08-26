@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 12+ backup + device-to-device transfer config.
      User records (Room DB, DataStore) must survive phone upgrades —
-     data loss is the #1 churn driver in this category. No secrets are
-     stored locally, so nothing needs excluding. -->
+     data loss is the #1 churn driver in this category.
+
+     The entitlement cache is excluded from BOTH passes. Device transfer
+     matters as much as cloud backup here: it copies the same file to a second
+     physical device, which would hand out a second Pro entitlement from one
+     purchase. See backup_rules.xml for the full reasoning. -->
 <data-extraction-rules>
     <!-- The -wal/-shm exclusions pair with AutoMinderBackupAgent, which
          checkpoints the write-ahead log into autominder.db before either of
@@ -13,6 +17,7 @@
         <include domain="sharedpref" path="." />
         <exclude domain="database" path="autominder.db-wal" />
         <exclude domain="database" path="autominder.db-shm" />
+        <exclude domain="file" path="datastore/entitlement_cache.preferences_pb" />
     </cloud-backup>
     <device-transfer>
         <include domain="database" path="." />
@@ -20,5 +25,6 @@
         <include domain="sharedpref" path="." />
         <exclude domain="database" path="autominder.db-wal" />
         <exclude domain="database" path="autominder.db-shm" />
+        <exclude domain="file" path="datastore/entitlement_cache.preferences_pb" />
     </device-transfer>
 </data-extraction-rules>

@@ -1,6 +1,4 @@
 import java.util.Properties
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 plugins {
     alias(libs.plugins.android.application)
@@ -21,10 +19,35 @@ val localProps = Properties().apply {
     if (f.exists()) load(f.inputStream())
 }
 
-// Expertise: Auto-incrementing version code based on timestamp (YYMMDDHH)
-// ensures unique codes for every build without manual intervention.
-val timestampVersionCode: Int = LocalDateTime.now()
-    .format(DateTimeFormatter.ofPattern("yyMMddHH")).toInt()
+/**
+ * versionCode is an explicit integer, checked in, bumped by hand per release.
+ *
+ * It used to be `LocalDateTime.now().format("yyMMddHH").toInt()`, whose comment
+ * claimed it "ensures unique codes for every build". It did not, and all three
+ * defects fire at submission time rather than during development:
+ *
+ *  1. Hour granularity — two builds in the same hour get the SAME code, so Play
+ *     rejects the second as a duplicate. Shipping a fix 20 minutes later was
+ *     blocked outright.
+ *  2. Non-reproducible — the AAB tested was never the AAB uploaded, and no
+ *     release could be rebuilt byte-identically afterwards.
+ *  3. `LocalDateTime` is local time, not UTC — a timezone move or a DST
+ *     rollback can emit a LOWER code than an earlier build, which Play refuses.
+ *
+ * The 27_000_000 floor is deliberate, not arbitrary. Play requires versionCode
+ * to increase forever, and it is unknown whether a timestamp-era build was
+ * already pushed to a track. The largest code the old yyMMddHH scheme could
+ * emit in 2026 is 26123123 (yy=26, Dec 31, 23:00), so anything above 27_000_000
+ * is guaranteed to outrank every build that scheme could have produced —
+ * making this change safe without having to reconstruct the upload history.
+ * Play's own ceiling is 2_100_000_000, so the headroom costs nothing.
+ *
+ * To bump: increment by 1 per uploaded build. Keep versionName semantic.
+ *   1.0.0 -> 27_000_001   (first submission)
+ *   1.0.1 -> 27_000_002
+ *   1.1.0 -> 27_000_003
+ */
+val appVersionCode = 27_000_001
 
 android {
     namespace  = "com.autominder.app"
@@ -34,7 +57,7 @@ android {
         applicationId          = "com.autominder.app"
         minSdk                 = 26
         targetSdk              = 36
-        versionCode            = timestampVersionCode
+        versionCode            = appVersionCode
         versionName            = "1.0.0"
         testInstrumentationRunner = "com.autominder.app.AutoMinderTestRunner"
 
@@ -55,13 +78,25 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = localProps.getProperty("KEYSTORE_PATH") ?: ""
+            // Env vars first so CI supplies these from protected secrets and
+            // never needs a local.properties on the runner.
+            val keystorePath = System.getenv("KEYSTORE_PATH")
+                ?: localProps.getProperty("KEYSTORE_PATH")
+                ?: ""
             if (keystorePath.isNotEmpty()) {
                 storeFile     = file(keystorePath)
-                storePassword = localProps.getProperty("KEYSTORE_STORE_PASSWORD")
-                keyAlias      = localProps.getProperty("KEYSTORE_KEY_ALIAS")
-                keyPassword   = localProps.getProperty("KEYSTORE_KEY_PASSWORD")
+                storePassword = System.getenv("KEYSTORE_STORE_PASSWORD")
+                    ?: localProps.getProperty("KEYSTORE_STORE_PASSWORD")
+                keyAlias      = System.getenv("KEYSTORE_KEY_ALIAS")
+                ?: localProps.getProperty("KEYSTORE_KEY_ALIAS")
+                keyPassword   = System.getenv("KEYSTORE_KEY_PASSWORD")
+                    ?: localProps.getProperty("KEYSTORE_KEY_PASSWORD")
             }
+            // Deliberately NOT throwing here. This block is evaluated during
+            // configuration for every build, debug included, so a throw would
+            // make the project unbuildable on any machine without signing
+            // material. The loud failure lives on the release tasks below,
+            // where it is actually relevant. See gradle/RELEASE_INPUTS below.
         }
     }
 
@@ -108,6 +143,63 @@ android {
             )
         }
     }
+
+    // ── Release input validation ───────────────────────────────────────────
+    //
+    // Both of the following used to degrade silently, which is the worst
+    // possible behaviour for a release artifact:
+    //
+    //   * An absent KEYSTORE_PATH left `storeFile` unset while `signingConfig`
+    //     was still assigned to the release build type, so `assembleRelease`
+    //     emitted an UNSIGNED artifact rather than refusing.
+    //   * Absent ad-unit ids fell through to the literal string "PLACEHOLDER",
+    //     which compiles, ships, and then serves no ads in production.
+    //
+    // CLAUDE.md requires missing signing input to fail loudly. These checks run
+    // in `doFirst`, so they fire only when a release artifact is actually being
+    // produced — never during configuration, and never for a debug build.
+    val requireReleaseInputs = {
+        val keystorePath = System.getenv("KEYSTORE_PATH")
+            ?: localProps.getProperty("KEYSTORE_PATH")
+            ?: ""
+        check(keystorePath.isNotEmpty()) {
+            "Release signing is not configured. Set KEYSTORE_PATH (plus " +
+                "KEYSTORE_STORE_PASSWORD, KEYSTORE_KEY_ALIAS, KEYSTORE_KEY_PASSWORD) " +
+                "in an untracked local.properties, or as environment variables in CI. " +
+                "Refusing to emit an unsigned release artifact."
+        }
+        check(file(keystorePath).exists()) {
+            "KEYSTORE_PATH points at a file that does not exist. Refusing to " +
+                "emit an unsigned release artifact. (Path not echoed: signing " +
+                "material must never appear in build logs.)"
+        }
+
+        val adKeys = listOf(
+            "RELEASE_ADMOB_ID" to "app id",
+            "ADMOB_BANNER_ID" to "banner unit",
+            "ADMOB_INTERSTITIAL_ID" to "interstitial unit",
+            "ADMOB_REWARDED_ID" to "rewarded unit",
+            "ADMOB_REWARDED_INTERSTITIAL_ID" to "rewarded interstitial unit"
+        )
+        val missingAds = adKeys.filter { (key, _) ->
+            val v = System.getenv(key)
+                ?: localProps.getProperty(key)
+                ?: if (key == "RELEASE_ADMOB_ID") {
+                    System.getenv("ADMOB_APP_ID") ?: localProps.getProperty("ADMOB_APP_ID")
+                } else {
+                    null
+                }
+            v.isNullOrBlank() || v.contains("PLACEHOLDER")
+        }
+        check(missingAds.isEmpty()) {
+            "Release AdMob ids unresolved (would ship the literal PLACEHOLDER " +
+                "and serve no ads): " + missingAds.joinToString { it.second } +
+                ". Provide the corresponding keys via local.properties or CI env."
+        }
+    }
+
+    tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
+        .configureEach { doFirst { requireReleaseInputs() } }
 
     lint {
         abortOnError = true

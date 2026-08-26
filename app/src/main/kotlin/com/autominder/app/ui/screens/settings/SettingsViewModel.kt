@@ -14,6 +14,7 @@ import com.autominder.app.billing.SubscriptionManager
 import com.autominder.app.data.backup.BackupRestoreSummary
 import com.autominder.app.data.backup.ManualBackupManager
 import com.autominder.app.data.local.preferences.UserPreferences
+import com.autominder.app.domain.usecase.DeleteAllDataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +27,37 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
+/**
+ * Whether maintenance reminders will actually arrive.
+ *
+ * The stored preference alone is not the answer. A user can grant
+ * POST_NOTIFICATIONS, switch reminders on, and later revoke the permission in
+ * Android settings - at which point the preference still says "on" while the
+ * OS silently drops every notification. Modelling both halves is what stops the
+ * switch from lying.
+ */
+sealed interface NotificationsState {
+    /** Preference on and the OS permission granted: reminders will arrive. */
+    data object Active : NotificationsState
+
+    /** Preference off. The user chose this; nothing is wrong. */
+    data object Off : NotificationsState
+
+    /**
+     * Preference on but the OS permission is denied. Reminders are silently
+     * dropped, so the UI must say so and offer the system settings screen -
+     * a permission request will not re-prompt once permanently denied.
+     */
+    data object BlockedBySystem : NotificationsState
+}
+
+sealed interface DeleteAllState {
+    data object Idle : DeleteAllState
+    data object InProgress : DeleteAllState
+    data object Success : DeleteAllState
+    data class Error(@StringRes val messageRes: Int) : DeleteAllState
+}
+
 sealed interface BackupOpState {
     data object Idle : BackupOpState
     data object InProgress : BackupOpState
@@ -36,16 +68,31 @@ sealed interface BackupOpState {
 
 data class SettingsUiState(
     val notificationsEnabled: Boolean = true,
+    /**
+     * True when the OS has granted POST_NOTIFICATIONS. Recomputed on every
+     * resume via [refreshNotificationPermission], because the user can change
+     * it in Android settings while this screen is in the background.
+     */
+    val hasNotificationPermission: Boolean = true,
     val themeMode: String = "system",
     val distanceUnit: String = "km",
-    val backupState: BackupOpState = BackupOpState.Idle
-)
+    val backupState: BackupOpState = BackupOpState.Idle,
+    val deleteAllState: DeleteAllState = DeleteAllState.Idle
+) {
+    val notificationsState: NotificationsState
+        get() = when {
+            !notificationsEnabled -> NotificationsState.Off
+            hasNotificationPermission -> NotificationsState.Active
+            else -> NotificationsState.BlockedBySystem
+        }
+}
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val subscriptionManager: SubscriptionManager,
-    private val manualBackupManager: ManualBackupManager
+    private val manualBackupManager: ManualBackupManager,
+    private val deleteAllData: DeleteAllDataUseCase
 ) : ViewModel() {
 
     val isProUser: StateFlow<Boolean> = subscriptionManager.isProUser
@@ -55,6 +102,15 @@ class SettingsViewModel @Inject constructor(
 
     private val _backupOpState = MutableStateFlow<BackupOpState>(BackupOpState.Idle)
     val backupOpState: StateFlow<BackupOpState> = _backupOpState.asStateFlow()
+
+    private val _deleteAllState = MutableStateFlow<DeleteAllState>(DeleteAllState.Idle)
+    val deleteAllState: StateFlow<DeleteAllState> = _deleteAllState.asStateFlow()
+
+    /**
+     * Seeded optimistically so the switch does not flash "blocked" for one
+     * frame before the first [refreshNotificationPermission] lands.
+     */
+    private val _hasNotificationPermission = MutableStateFlow(true)
 
     // Product-details-driven prices for the paywall — null until Play's
     // product query resolves. Never hardcoded, never assumed.
@@ -92,15 +148,19 @@ class SettingsViewModel @Inject constructor(
 
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferences.notificationsEnabled,
+        _hasNotificationPermission,
         userPreferences.themeMode,
         userPreferences.distanceUnit,
-        _backupOpState
-    ) { notificationsEnabled, themeMode, distanceUnit, backupState ->
+        _backupOpState,
+        _deleteAllState
+    ) { values ->
         SettingsUiState(
-            notificationsEnabled = notificationsEnabled,
-            themeMode = themeMode,
-            distanceUnit = distanceUnit,
-            backupState = backupState
+            notificationsEnabled = values[0] as Boolean,
+            hasNotificationPermission = values[1] as Boolean,
+            themeMode = values[2] as String,
+            distanceUnit = values[3] as String,
+            backupState = values[4] as BackupOpState,
+            deleteAllState = values[5] as DeleteAllState
         )
     }.stateIn(
         scope = viewModelScope,
@@ -130,6 +190,38 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferences.setNotificationsEnabled(enabled)
         }
+    }
+
+    /**
+     * Re-reads the OS permission. Must be called on every ON_RESUME: the user
+     * can revoke POST_NOTIFICATIONS in Android settings and return, and until
+     * this runs the switch still claims reminders are on.
+     */
+    fun refreshNotificationPermission(granted: Boolean) {
+        _hasNotificationPermission.value = granted
+    }
+
+    // ─── Erase everything ───────────────────────────────────────────────────
+
+    /**
+     * Deletes every vehicle and every record attached to one. Irreversible;
+     * the UI must have taken an explicit confirmation before calling this.
+     */
+    fun deleteAllData() {
+        if (_deleteAllState.value == DeleteAllState.InProgress) return
+        viewModelScope.launch {
+            _deleteAllState.value = DeleteAllState.InProgress
+            deleteAllData.invoke()
+                .onSuccess { _deleteAllState.value = DeleteAllState.Success }
+                .onFailure { error ->
+                    Timber.e(error, "Delete-all failed")
+                    _deleteAllState.value = DeleteAllState.Error(R.string.settings_delete_all_error)
+                }
+        }
+    }
+
+    fun clearDeleteAllState() {
+        _deleteAllState.value = DeleteAllState.Idle
     }
 
     fun setThemeMode(mode: String) {

@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 11 and below auto-backup config.
      The Room database and DataStore preferences ARE the user's data
-     (service records, reminders, fuel logs, settings) and contain no
-     secrets — backing them up is what makes records survive a device
-     upgrade. Nothing is excluded on purpose. -->
+     (service records, reminders, fuel logs, settings) and backing them up is
+     what makes records survive a device upgrade.
+
+     One file is excluded: the entitlement cache. An earlier version of this
+     comment claimed nothing local needed excluding, which stopped being true
+     the moment a cached Pro flag was written into datastore/. Restoring that
+     flag grants Pro, and the billing reconcile deliberately refuses to
+     downgrade without a successful Play query, so a restore plus airplane
+     mode would keep it forever. -->
 <full-backup-content>
     <include domain="database" path="." />
     <include domain="file" path="datastore/" />
@@ -15,4 +21,9 @@
          restoring a pair of files that disagree with each other. -->
     <exclude domain="database" path="autominder.db-wal" />
     <exclude domain="database" path="autominder.db-shm" />
+    <!-- Entitlement is per-device, per-Play-account state that Play alone
+         owns. It is re-established by queryPurchasesAsync on first connect,
+         so excluding it costs a genuine purchaser nothing beyond one online
+         launch, and closes a bypass that needs no tools at all. -->
+    <exclude domain="file" path="datastore/entitlement_cache.preferences_pb" />
 </full-backup-content>

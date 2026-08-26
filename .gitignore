@@ -48,6 +48,8 @@ findings.txt
 gate_full_log.txt
 gate_summary.txt
 *_gate.txt
+release_out.txt
+*_out.txt
 .tmp.driveupload/
 
 # ─── Agent / social media / non-project files ──────────────────────────────

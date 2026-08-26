@@ -582,11 +582,11 @@
 
     <!-- Accessibility -->
     <string name="cd_select_date">Select date</string>
+    <string name="cd_close">Close</string>
 
     <!-- Pro Paywall -->
     <string name="paywall_title">Own your car with confidence</string>
     <string name="paywall_subtitle">A smarter way to protect your vehicle\'s history, value, and future maintenance.</string>
-    <string name="paywall_trial_reassurance">Manage or cancel anytime in Google Play</string>
     <string name="paywall_feature_quote_auditor">Repair quote check (Fair price guide)</string>
     <string name="paywall_feature_garage">Unlimited family &amp; project vehicles</string>
     <string name="paywall_feature_passport">Service history export (CSV)</string>
@@ -597,14 +597,30 @@
     <string name="paywall_trust_cancel">Cancel anytime in Play Store</string>
     <!-- Prices are product-details-driven (Play formattedPrice), never
          hardcoded — see ProPaywall.kt. %1$s is the localized price string. -->
-    <string name="paywall_yearly_best_value">Save 37% · Best value</string>
+    <!-- Was "Save 37% · Best value". The percentage was hardcoded, so it was wrong
+         in every market where Play applies local pricing (the monthly:yearly ratio
+         is not preserved across currencies) and wrong the moment either price
+         changed. Restoring a real figure needs priceAmountMicros from both
+         ProductDetails plumbed through the ViewModel and computed at runtime. -->
+    <string name="paywall_yearly_best_value">Best value</string>
     <string name="paywall_price_loading">Loading price…</string>
     <string name="paywall_restore">Restore purchases</string>
     <string name="paywall_plan_monthly">Monthly</string>
     <string name="paywall_plan_yearly">Yearly</string>
     <string name="paywall_plan_lifetime">Lifetime</string>
     <string name="paywall_plan_lifetime_subtitle">Founder Edition · Pay once, own forever</string>
-    <string name="paywall_continue">Continue</string>
+    <!-- Subscription disclosure. Google Play's Subscriptions policy requires the
+         cost, the billing period and the automatic renewal terms to be visible
+         without further action from the user; unexpected auto-renewal is also the
+         top complaint in this category. %1$s is always Play's own localized
+         price string, never a hardcoded amount. -->
+    <string name="paywall_cta_subscribe">Get Pro — %1$s</string>
+    <string name="paywall_cta_lifetime">Buy Pro — %1$s</string>
+    <string name="paywall_cta_loading">Loading prices…</string>
+    <string name="paywall_renewal_monthly">Renews automatically at %1$s per month until you cancel. Cancel anytime in Google Play.</string>
+    <string name="paywall_renewal_yearly">Renews automatically at %1$s per year until you cancel. Cancel anytime in Google Play.</string>
+    <string name="paywall_renewal_lifetime">A single payment of %1$s. This is not a subscription — no recurring charges.</string>
+    <string name="paywall_price_pending_note">Prices are loading from Google Play. Nothing is charged until you confirm there.</string>
     <string name="paywall_price_unavailable">Unavailable</string>
     <string name="cd_paywall_included">Included</string>
     <string name="cd_paywall_not_included">Not included</string>
@@ -906,6 +922,22 @@
 
     <!-- Data Sovereignty & Manual Backup Strings -->
     <string name="settings_section_backup">Data &amp; Backup</string>
+    <!-- Notifications: the switch reports whether reminders will actually
+         arrive, which needs the OS permission as well as the preference. -->
+    <string name="settings_notifications_blocked">Android is blocking AutoMinder\'s notifications. Reminders will not appear until you allow them in system settings.</string>
+    <string name="settings_system_notifications">System notification settings</string>
+    <string name="settings_system_notifications_subtitle">Sound, importance and Do Not Disturb</string>
+    <!-- Subscription management -->
+    <string name="settings_manage_subscription">Manage subscription</string>
+    <string name="settings_manage_subscription_subtitle">Change plan or cancel in Google Play</string>
+    <!-- Erase everything -->
+    <string name="settings_delete_all_title">Delete all data</string>
+    <string name="settings_delete_all_subtitle">Permanent. This cannot be undone.</string>
+    <string name="settings_delete_all_confirm_title">Delete everything?</string>
+    <string name="settings_delete_all_confirm_message">This erases every vehicle, reminder, service record, fuel entry and mileage log on this phone. It cannot be undone.\n\nIf you want a copy first, cancel and use Back up everything.</string>
+    <string name="settings_delete_all_confirm_action">Delete everything</string>
+    <string name="settings_delete_all_success">All data deleted</string>
+    <string name="settings_delete_all_error">Could not delete your data. Nothing was changed.</string>
     <string name="settings_backup_export_title">Export full backup</string>
     <string name="settings_backup_export_subtitle">Save a complete JSON snapshot of all vehicles, services, and fuel history</string>
     <string name="settings_backup_import_title">Restore from backup</string>

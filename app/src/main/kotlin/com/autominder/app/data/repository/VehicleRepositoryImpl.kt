@@ -73,4 +73,8 @@ class VehicleRepositoryImpl @Inject constructor(
     override suspend fun updateOdometer(id: Long, odometer: Int) {
         vehicleDao.updateOdometer(id, odometer)
     }
+
+    override suspend fun deleteAllVehicles() {
+        vehicleDao.deleteAllVehicles()
+    }
 }

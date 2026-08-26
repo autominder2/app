@@ -19,6 +19,31 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "user_preferences"
 )
 
+/**
+ * Entitlement cache — deliberately a SEPARATE DataStore file from
+ * [dataStore] so that backup can exclude it by path.
+ *
+ * It cannot live in `user_preferences`. Auto Backup and device-to-device
+ * transfer include `datastore/` wholesale (see res/xml/backup_rules.xml and
+ * data_extraction_rules.xml), and everything else in `user_preferences` —
+ * theme, units, onboarding, records liveness — SHOULD be restored: losing it
+ * on a phone upgrade is the churn driver those rules exist to prevent.
+ *
+ * A cached Pro flag must not be, because restoring it grants Pro. The billing
+ * reconcile in SubscriptionManager only downgrades on complete evidence (both
+ * the SUBS and INAPP queries returning OK), which is the correct choice for a
+ * paying user on a flaky connection — but it also means a restored `true`
+ * survives indefinitely with no network to contradict it. Backup restore plus
+ * airplane mode would otherwise be a permanent, no-tools entitlement bypass.
+ *
+ * Anything else that gates paid value by counting — a free-tier audit meter,
+ * a trial start date — belongs in HERE, not in `user_preferences`, for exactly
+ * the same reason: a counter that restores is a counter that resets.
+ */
+private val Context.entitlementStore: DataStore<Preferences> by preferencesDataStore(
+    name = "entitlement_cache"
+)
+
 @Singleton
 class UserPreferences @Inject constructor(
     @ApplicationContext private val context: Context
@@ -102,13 +127,16 @@ class UserPreferences @Inject constructor(
      * Last entitlement Google Play confirmed. Lets a paying user keep Pro
      * features on an offline cold start; reconciled against Play whenever
      * the billing client connects.
+     *
+     * Reads and writes [entitlementStore], NOT [dataStore] — see that
+     * property for why this one file is excluded from backup.
      */
-    val isProCached: Flow<Boolean> = context.dataStore.data.map { preferences ->
+    val isProCached: Flow<Boolean> = context.entitlementStore.data.map { preferences ->
         preferences[IS_PRO_CACHED] ?: false
     }
 
     suspend fun setProCached(isPro: Boolean) {
-        context.dataStore.edit { preferences ->
+        context.entitlementStore.edit { preferences ->
             preferences[IS_PRO_CACHED] = isPro
         }
     }

@@ -10,6 +10,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,11 +27,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Star
@@ -58,6 +62,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,10 +73,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autominder.app.BuildConfig
 import com.autominder.app.R
@@ -195,9 +207,68 @@ fun SettingsScreen(
             contract = ActivityResultContracts.RequestPermission()
         ) { isGranted ->
             viewModel.setNotificationsEnabled(isGranted)
+            viewModel.refreshNotificationPermission(isGranted)
         }
     } else null
 
+    /**
+     * Re-reads POST_NOTIFICATIONS on every resume.
+     *
+     * Without this the switch reports a stored preference rather than reality:
+     * a user who grants the permission, turns reminders on, then revokes it in
+     * Android settings comes back to a switch that still says ON while the OS
+     * drops every notification. Below Android 13 the permission does not exist,
+     * so it is always granted.
+     */
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val granted =
+                    android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU ||
+                        androidx.core.content.ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.POST_NOTIFICATIONS
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                viewModel.refreshNotificationPermission(granted)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    /** Opens this app's notification page in Android settings. */
+    val openSystemNotificationSettings = {
+        val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+        runCatching { context.startActivity(intent) }
+        Unit
+    }
+
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
+
+    val deleteAllSuccessMessage = stringResource(R.string.settings_delete_all_success)
+    LaunchedEffect(uiState.deleteAllState) {
+        when (val state = uiState.deleteAllState) {
+            is DeleteAllState.Success -> {
+                snackbarHostState.showSnackbar(
+                    message = deleteAllSuccessMessage,
+                    duration = SnackbarDuration.Short
+                )
+                viewModel.clearDeleteAllState()
+            }
+            is DeleteAllState.Error -> {
+                snackbarHostState.showSnackbar(
+                    message = context.getString(state.messageRes),
+                    duration = SnackbarDuration.Long
+                )
+                viewModel.clearDeleteAllState()
+            }
+            else -> Unit
+        }
+    }
+
+    val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
     val themeSystem = stringResource(R.string.settings_theme_system)
     val themeLight = stringResource(R.string.settings_theme_light)
     val themeDark = stringResource(R.string.settings_theme_dark)
@@ -347,7 +418,9 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .semantics { heading() }
                 )
 
                 ElevatedCard(
@@ -358,11 +431,55 @@ fun SettingsScreen(
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        // Notifications toggle
+                        // Notifications toggle.
+                        //
+                        // The switch reflects NotificationsState, not the stored
+                        // preference: reminders only arrive when the preference is on
+                        // AND the OS permission is granted, so showing the preference
+                        // alone would tell the user reminders are running when Android
+                        // is silently dropping them.
+                        //
+                        // The whole row is one toggleable target (>=48dp) with
+                        // Role.Switch, and the Switch itself takes onCheckedChange =
+                        // null so it does not become a second focus stop. Before this
+                        // the row was three TalkBack stops and only the thumb was
+                        // tappable.
+                        val notificationsOn = uiState.notificationsState == NotificationsState.Active
+                        val notificationsBlocked =
+                            uiState.notificationsState == NotificationsState.BlockedBySystem
+
+                        val toggleNotifications: (Boolean) -> Unit = { enabled ->
+                            haptic.performHapticFeedback(
+                                if (enabled) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff
+                            )
+                            if (enabled &&
+                                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                                permissionLauncher != null
+                            ) {
+                                val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.POST_NOTIFICATIONS
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                                if (!hasPermission) {
+                                    permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    viewModel.setNotificationsEnabled(true)
+                                }
+                            } else {
+                                viewModel.setNotificationsEnabled(enabled)
+                            }
+                        }
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .toggleable(
+                                    value = notificationsOn,
+                                    role = Role.Switch,
+                                    onValueChange = toggleNotifications
+                                )
+                                .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
@@ -384,26 +501,83 @@ fun SettingsScreen(
                                 )
                             }
                             Switch(
-                                checked = uiState.notificationsEnabled,
-                                onCheckedChange = { enabled ->
-                                    haptic.performHapticFeedback(
-                                        if (enabled) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff
-                                    )
-                                    if (enabled && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && permissionLauncher != null) {
-                                        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-                                            context,
-                                            android.Manifest.permission.POST_NOTIFICATIONS
-                                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                checked = notificationsOn,
+                                onCheckedChange = null
+                            )
+                        }
 
-                                        if (!hasPermission) {
-                                            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                        } else {
-                                            viewModel.setNotificationsEnabled(true)
-                                        }
-                                    } else {
-                                        viewModel.setNotificationsEnabled(enabled)
-                                    }
+                        // Blocked-by-Android state. A permission request will not
+                        // re-prompt once permanently denied, so the only working
+                        // route is the system settings screen.
+                        if (notificationsBlocked) {
+                            Surface(
+                                onClick = openSystemNotificationSettings,
+                                shape = MaterialTheme.shapes.medium,
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.settings_notifications_blocked),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.OpenInNew,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                 }
+                            }
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Sound, importance and Do Not Disturb are the OS's job.
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(onClick = openSystemNotificationSettings)
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.settings_system_notifications),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = stringResource(R.string.settings_system_notifications_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.OpenInNew,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
 
@@ -479,6 +653,11 @@ fun SettingsScreen(
                                     "km" to stringResource(R.string.settings_unit_km),
                                     "mi" to stringResource(R.string.settings_unit_mi)
                                 )
+                                // Each segment announces the group it belongs to.
+                                // TalkBack reads the buttons without their preceding
+                                // label, so "Kilometres, selected" alone gives a blind
+                                // user no idea what is being set.
+                                val unitGroupLabel = stringResource(R.string.settings_distance_unit)
                                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                                     unitOptions.forEachIndexed { index, (value, label) ->
                                         SegmentedButton(
@@ -486,6 +665,9 @@ fun SettingsScreen(
                                             onClick = {
                                                 haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
                                                 viewModel.setDistanceUnit(value)
+                                            },
+                                            modifier = Modifier.semantics {
+                                                contentDescription = "$unitGroupLabel, $label"
                                             },
                                             shape = SegmentedButtonDefaults.itemShape(index = index, count = unitOptions.size)
                                         ) {
@@ -499,6 +681,59 @@ fun SettingsScreen(
                 }
             }
 
+            // Manage subscription. Without this a Pro user who wants to cancel
+            // has to go hunting through the Play Store, which is how quiet churn
+            // becomes a one-star review.
+            if (isProUser) {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val intent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    ("https://play.google.com/store/account/subscriptions" +
+                                        "?package=${context.packageName}").toUri()
+                                )
+                                runCatching { context.startActivity(intent) }
+                            }
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CardMembership,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_manage_subscription),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_manage_subscription_subtitle),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.OpenInNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
             // ─── DATA & BACKUP (DATA SOVEREIGNTY) ───────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -506,7 +741,9 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .semantics { heading() }
                 )
 
                 ElevatedCard(
@@ -639,6 +876,58 @@ fun SettingsScreen(
                 }
             }
 
+            // Erase everything. AutoMinder has no account and no server, so
+            // "delete my data" has to happen here, on the device, or the claim is
+            // empty. Kept visually separate from backup: those two rows are
+            // recoverable, this one is not.
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            enabled = uiState.deleteAllState != DeleteAllState.InProgress
+                        ) { showDeleteAllDialog = true }
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteForever,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_delete_all_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_delete_all_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (uiState.deleteAllState == DeleteAllState.InProgress) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    } else {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
             // About & Legal Section Group
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -646,7 +935,9 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .semantics { heading() }
                 )
 
                 ElevatedCard(
@@ -692,10 +983,11 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    val intent = Intent(
-                                        Intent.ACTION_VIEW,
-                                        "https://autominder.app/privacy".toUri()
-                                    )
+                                    // Was hardcoded to https://autominder.app/privacy while
+                                    // the About screen used about_privacy_policy_url. Two
+                                    // different domains for the same document in one app;
+                                    // a reviewer following this one landed nowhere.
+                                    val intent = Intent(Intent.ACTION_VIEW, privacyPolicyUrl.toUri())
                                     context.startActivity(intent)
                                 }
                                 .padding(vertical = 14.dp),
@@ -832,6 +1124,40 @@ fun SettingsScreen(
                         pendingImportUri = null
                     }
                 ) {
+                    Text(text = stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text(text = stringResource(R.string.settings_delete_all_confirm_title)) },
+            text = { Text(text = stringResource(R.string.settings_delete_all_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteAllDialog = false
+                        viewModel.deleteAllData()
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_delete_all_confirm_action),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllDialog = false }) {
                     Text(text = stringResource(R.string.action_cancel))
                 }
             }

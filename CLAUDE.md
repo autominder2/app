@@ -30,13 +30,14 @@ NOTE: a v1.0 home-screen widget IS shipped (widget/AutoMinderWidget.kt,
 Glance). It receives bug/a11y/stability fixes like any shipped surface —
 do not duplicate it or treat it as unbuilt.
 
-## SESSION VERIFICATION PROTOCOL — confirm all 5 or STOP
+## SESSION VERIFICATION PROTOCOL — confirm all 6 or STOP
 1. Package is com.autominder.app
 2. Annotation processing is KSP only (never kapt); KSP version mirrors the
    Kotlin prefix in gradle/libs.versions.toml
 3. gradle/libs.versions.toml checked for any version being relied on
 4. Files to be touched are listed before any code is written
 5. Current phase (incl. Billing deadline) acknowledged before scoping
+6. .claude/STATE.md inspected for active 5-7 step scope and invariants
 
 ## SOURCE-OF-TRUTH PRECEDENCE
 1. gradle/libs.versions.toml — sole authority for dependency versions.

@@ -1,7 +1,7 @@
 # Privacy Policy for AutoMinder
 
 **Effective Date:** May 17, 2026
-**Last Updated:** May 17, 2026
+**Last Updated:** August 26, 2026
 
 Abdul Ghani ("we," "us," or "our") operates the AutoMinder mobile application (the "App"). This Privacy Policy explains how we collect, use, and protect information when you use our App.
 
@@ -11,7 +11,7 @@ By using AutoMinder, you agree to the practices described in this Privacy Policy
 
 ## 1. Information We Collect
 
-AutoMinder is designed with privacy at its core. The App operates entirely offline, and the vast majority of your data never leaves your device.
+AutoMinder is designed with privacy at its core. Every record you enter stays on your device. The App does send a limited amount of diagnostic, analytics and advertising data, described below.
 
 ### Information You Provide
 
@@ -19,10 +19,16 @@ All data you enter into AutoMinder, including vehicle details, maintenance remin
 
 ### Information Collected Automatically
 
-The App itself does not collect any personal information automatically. However, our advertising partner may collect limited information as described below:
+The App does not automatically collect information that identifies you personally. It does send the following to the third-party services listed in section 3:
 
 - **Advertising Identifier**: Google AdMob, our advertising provider, may collect your device's advertising ID (Android Advertising ID) to serve advertisements within the App. This identifier is used solely for ad personalization and measurement purposes.
 - **Ad Interaction Data**: AdMob may collect information about your interactions with advertisements displayed in the App, such as impressions and clicks.
+- **Crash and Error Reports**: Firebase Crashlytics and Sentry collect anonymized stack traces and device information (model, operating system version) when the App crashes or hits an error.
+- **Usage Events**: Google Analytics for Firebase collects anonymized events describing how the App is used, such as "vehicle added".
+- **Performance Traces**: Firebase Performance Monitoring and Sentry collect anonymized timings — app start-up, screen rendering, screen transitions and user interactions.
+- **Purchase State**: Google Play Billing reports whether you hold an active subscription or one-time purchase. Payment details are handled by Google Play and are never sent to us.
+
+Screen contents are not transmitted. Screenshot capture is disabled in both crash reporters, so a VIN, licence plate or note you have entered is not included in a report.
 
 ### Information We Do NOT Collect
 
@@ -54,7 +60,7 @@ The advertising identifier collected by AdMob is used to:
 
 ## 3. Third-Party Services
 
-AutoMinder uses the following third-party service:
+AutoMinder uses the following third-party services:
 
 ### Google AdMob
 
@@ -75,7 +81,19 @@ You can opt out of personalized advertising by adjusting your device settings:
 
 When you opt out, AdMob will serve non-personalized advertisements instead.
 
-We do not use any other third-party analytics, crash reporting, or tracking services.
+### Firebase Crashlytics, Google Analytics for Firebase, and Firebase Performance Monitoring
+
+Operated by Google LLC and subject to Google's Privacy Policy (https://policies.google.com/privacy). Used for crash reporting, anonymized feature-usage analytics, and performance monitoring.
+
+### Sentry
+
+Operated by Functional Software, Inc. and subject to Sentry's Privacy Policy (https://sentry.io/privacy/). Used for error monitoring and performance tracing alongside Crashlytics.
+
+### Google Play Billing
+
+Operated by Google LLC. Processes subscriptions and one-time purchases. Google Play handles payment entirely; we never receive or store payment details. The App records only whether an entitlement is currently active, on your device. You can view or cancel a subscription at any time in the Google Play Store.
+
+We use no third-party analytics, crash reporting, advertising or tracking services other than those named above.
 
 ---
 
