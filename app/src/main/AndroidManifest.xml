@@ -22,10 +22,20 @@
         </intent>
     </queries>
 
+    <!-- android:fullBackupOnly is REQUIRED here because a custom backupAgent is
+         declared. Declaring an agent opts the app into legacy key/value backup,
+         and AutoMinderBackupAgent implements only onFullBackup - onBackup is
+         deliberately Unit. Without the attribute the system took the key/value
+         path, which wrote nothing, so backup reported success and restored
+         nothing. Verified on a device 2026-08-26: bmgr backupnow gave "Running
+         incremental backup ... Success", then pm clear + bmgr restore returned
+         no datastore and no database. Every record the app promises will
+         survive a phone upgrade was silently not being backed up at all. -->
     <application
         android:name=".AutoMinderApp"
         android:allowBackup="true"
         android:backupAgent=".data.backup.AutoMinderBackupAgent"
+        android:fullBackupOnly="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
