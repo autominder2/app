@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T15:05:22.826213+00:00",
+  "generated_at": "2026-08-26T16:40:12.574765+00:00",
   "nodes": {
     "app_src_main_kotlin_com_autominder_app_data_backup_manualbackupmanager_manualbackupmanager": {
       "code_fingerprint": "3bfc50d61b6f1d975ce19df0b8adb7ff7448753844b3f9d3d901fdd930af8b96",
@@ -12,7 +12,7 @@
           "q": "What breaks if I add Room composite indexes to ServiceEntity?"
         }
       ],
-      "score": 0.999999802,
+      "score": 0.975674117,
       "source_file": "app/src/main/kotlin/com/autominder/app/data/backup/ManualBackupManager.kt",
       "status": "tentative",
       "uses": 1
@@ -28,7 +28,7 @@
           "q": "What breaks if I add Room composite indexes to ServiceEntity?"
         }
       ],
-      "score": 0.999999802,
+      "score": 0.975674117,
       "source_file": "app/src/main/kotlin/com/autominder/app/data/local/dao/ServiceDao.kt",
       "status": "tentative",
       "uses": 1
@@ -44,7 +44,7 @@
           "q": "What breaks if I add Room composite indexes to ServiceEntity?"
         }
       ],
-      "score": 0.999999802,
+      "score": 0.975674117,
       "source_file": "app/src/main/kotlin/com/autominder/app/data/local/entity/ServiceEntity.kt",
       "status": "tentative",
       "uses": 1
@@ -60,7 +60,7 @@
           "q": "Where is vehicle health status computed and do the calculators agree?"
         }
       ],
-      "score": 0.99993465,
+      "score": 0.97561055,
       "source_file": "app/src/main/kotlin/com/autominder/app/domain/model/ServiceStatus.kt",
       "status": "tentative",
       "uses": 1
@@ -76,7 +76,7 @@
           "q": "Where is vehicle health status computed and do the calculators agree?"
         }
       ],
-      "score": 0.99993465,
+      "score": 0.97561055,
       "source_file": "app/src/main/kotlin/com/autominder/app/domain/usecase/GetDashboardDataUseCase.kt",
       "status": "tentative",
       "uses": 1
@@ -92,7 +92,7 @@
           "q": "Where is vehicle health status computed and do the calculators agree?"
         }
       ],
-      "score": 0.99993465,
+      "score": 0.97561055,
       "source_file": "app/src/main/kotlin/com/autominder/app/domain/usecase/StatusCalculator.kt",
       "status": "tentative",
       "uses": 1
@@ -108,7 +108,7 @@
           "q": "Where is vehicle health status computed and do the calculators agree?"
         }
       ],
-      "score": 0.99993465,
+      "score": 0.97561055,
       "source_file": "app/src/main/kotlin/com/autominder/app/ui/screens/dashboard/DashboardViewModel.kt",
       "status": "tentative",
       "uses": 1
@@ -124,7 +124,7 @@
           "q": "Where is vehicle health status computed and do the calculators agree?"
         }
       ],
-      "score": 0.99993465,
+      "score": 0.97561055,
       "source_file": "app/src/main/kotlin/com/autominder/app/ui/screens/vehicle/VehicleListViewModel.kt",
       "status": "tentative",
       "uses": 1
