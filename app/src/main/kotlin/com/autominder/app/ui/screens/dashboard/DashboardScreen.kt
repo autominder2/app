@@ -90,6 +90,7 @@ fun DashboardScreen(
     val haptic = LocalHapticFeedback.current
 
     var showVehicleSwitcherSheet by remember { mutableStateOf(false) }
+    var showNotificationsSheet by remember { mutableStateOf(false) }
     var selectedExplanation by remember { mutableStateOf<ReminderExplanation?>(null) }
 
     Box(
@@ -154,7 +155,7 @@ fun DashboardScreen(
                     item(key = "home_brand_header") {
                         HomeTopBrandBar(
                             alertsCount = state.alertsCount,
-                            onOpenNotifications = { /* Notifications center */ }
+                            onOpenNotifications = { showNotificationsSheet = true }
                         )
                     }
 
@@ -290,6 +291,20 @@ fun DashboardScreen(
                         }
                     }
                 }
+
+                // Notifications Center Bottom Sheet
+                if (showNotificationsSheet) {
+                    NotificationsCenterSheet(
+                        alertsCount = state.alertsCount,
+                        prioritizedReminders = state.prioritizedReminders,
+                        distanceUnit = distanceUnit,
+                        onDismiss = { showNotificationsSheet = false },
+                        onNavigateToDetails = {
+                            showNotificationsSheet = false
+                            onNavigateToVehicleDetail(activeVehicle.id)
+                        }
+                    )
+                }
             }
         }
     }
@@ -301,6 +316,8 @@ private fun HomeTopBrandBar(
     onOpenNotifications: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -317,9 +334,18 @@ private fun HomeTopBrandBar(
         )
 
         Surface(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onOpenNotifications()
+            },
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier
+                .size(40.dp)
+                .semantics {
+                    role = Role.Button
+                    contentDescription = "Notifications and alerts"
+                }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -328,6 +354,200 @@ private fun HomeTopBrandBar(
                     tint = if (alertsCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NotificationsCenterSheet(
+    alertsCount: Int,
+    prioritizedReminders: List<PrioritizedReminder>,
+    distanceUnit: String,
+    onDismiss: () -> Unit,
+    onNavigateToDetails: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = "Notifications & Alerts",
+                    fontFamily = Exo2,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            if (prioritizedReminders.isNotEmpty() && alertsCount > 0) {
+                Text(
+                    text = "Active Reminders",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                prioritizedReminders.take(3).forEach { item ->
+                    val reminder = item.reminderWithStatus.reminder
+                    val reminderTitle = reminder.customLabel?.takeIf { it.isNotBlank() }
+                        ?: reminder.serviceType.name.replace('_', ' ').lowercase()
+                            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+
+                    val urgencyLabel = when (item.urgency) {
+                        com.autominder.app.domain.usecase.ReminderUrgency.OVERDUE -> "Overdue"
+                        com.autominder.app.domain.usecase.ReminderUrgency.DUE_SOON -> "Due soon"
+                        com.autominder.app.domain.usecase.ReminderUrgency.SAFETY_CRITICAL -> "Safety check"
+                        com.autominder.app.domain.usecase.ReminderUrgency.TIME_SENSITIVE -> "Coming up"
+                        com.autominder.app.domain.usecase.ReminderUrgency.MILEAGE_BASED -> "Mileage check"
+                        com.autominder.app.domain.usecase.ReminderUrgency.FUTURE -> "All good"
+                    }
+                    Surface(
+                        onClick = onNavigateToDetails,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = reminderTitle,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = urgencyLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (item.urgency == com.autominder.app.domain.usecase.ReminderUrgency.OVERDUE) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    }
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Rounded.DirectionsCar,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Reassuring Empty State
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.4f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(64.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "All Systems Clear",
+                            fontFamily = Exo2,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "No overdue maintenance alerts or critical warnings. Your vehicle is healthy and ready to drive.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            // System Notification Status Card
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Security,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "Smart Background Reminders",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Milevora monitors maintenance intervals offline to protect your vehicle.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
