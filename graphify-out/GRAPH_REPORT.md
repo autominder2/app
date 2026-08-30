@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2317 nodes · 4613 edges · 180 communities (144 shown, 36 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 94 edges (avg confidence: 0.85)
+- 2332 nodes · 4609 edges · 178 communities (135 shown, 43 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 102 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `707202c8`
+- Built from commit: `f3ec291a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -20,22 +20,22 @@
 - SubscriptionManager
 - MileageLogEntry
 - OnboardingChrome.kt
-- AutoMinderApp
+- Timber
 - QuoteAuditorScreen.kt
 - ServiceHistoryViewModel.kt
 - OnboardingViewModelTest
 - VehicleDetailViewModel.kt
-- DashboardScreen.kt
+- MutableInteractionSource
 - AutoMinder 2026 Design Blueprint (Mobbin-Informed)
 - LocalDistanceUnit.kt
-- PremiumStatusStyle
+- ServiceStatus
 - AdManager.kt
+- MainActivity.kt
+- Result
 - AnalyticsHelper
-- AutoMinderBackupAgent.kt
-- AddFuelViewModel
 - Vehicle
 - AddServiceScreen.kt
-- MutableInteractionSource
+- WhatsNextSection.kt
 - VehicleBodyType
 - UserPreferences
 - ReminderDao
@@ -49,19 +49,19 @@
 - DashboardViewModelTest.kt
 - ManualBackupManager.kt
 - ServiceDao
-- ReminderDetailSheet.kt
+- RepositoryModule.kt
 - SettingsViewModel
 - NavRoutes
 - AppDatabase
 - ServiceRepositoryImplTest
-- AddServiceViewModelTest
+- ReminderRepositoryImpl
 - FuelDao
 - The Unseen American Psyche: Deep Cultural Brand Strategy
 - FuelEntry
 - ReminderCheckWorkerTest
 - AutoMinder PRD v4.0
 - ReminderPriorityEngine
-- AddServiceUiEvent
+- AddServiceViewModel.kt
 - ValidatorsTest
 - Counter Mode Flow & State Spec
 - CLAUDE.md Governance (v6.1)
@@ -73,7 +73,7 @@
 - ServiceHistoryViewModelTest
 - Composable
 - AddReminderViewModel.kt
-- AddServiceViewModel.kt
+- IVehicleRepository
 - AddReminderUiEvent
 - VehicleCatalogTest
 - .buildPlan
@@ -81,7 +81,7 @@
 - Premium Compose Components Skill
 - ServiceCompletionTransactionTest
 - CalculateEfficiencyUseCase
-- ReminderWithStatus
+- FuelHistoryViewModelTest
 - evaluateReminderStaleness
 - StatusCalculatorTest
 - AutoMinder 2026 MVP Plan
@@ -105,8 +105,8 @@
 - AutoMinderTestRunner.kt
 - VehicleListViewModelTest
 - OnboardingViewModel.kt
-- WidgetDataProviderTest
-- ServiceStatus
+- NotificationHelper
+- StatusChip
 - ScreenState
 - AutoMinder US Google Play Launch Scorecard
 - pressScale
@@ -117,9 +117,9 @@
 - gradlew
 - VehicleListViewModel.kt
 - PermissionUtils
-- AddFuelUiEvent
+- ExplainableReminderSheet.kt
 - DistanceUtil
-- MileageLogScreen.kt
+- EmptyState
 - BaselineProfileGenerator
 - firebase
 - Name Risk Report: AutoMinder & Global Brand Landscape
@@ -135,14 +135,14 @@
 - Motion
 - PredictDueUseCaseTest
 - ServiceHistoryScreen.kt
-- ConsentManager.kt
+- PremiumActionGrid
 - CoroutineDispatcher
 - OnboardingScreen.kt
 - FuelHistoryScreen.kt
 - DrivingAmount
-- VehicleOperationalStatus
+- OdometerUnitConversionTest
 - User Language Database: Automotive Ownership Psychology
-- BackupCoordinatorTest
+- UpdateHelper
 - ServiceDetailScreen.kt
 - ASO Keyword Matrix & Play Store Growth Blueprint
 - 3. The 5 Evaluative Pillars for AutoMinder's Brand Identity
@@ -162,42 +162,40 @@
 - AutoMinder Marketing Website Home
 - AddVehicleViewModel.kt
 - 2. Retention Lifecycle Breakdown: Time to Value (TTV)
-- NotificationActionReceiver.kt
-- Timber
+- BottomNavBar.kt
+- WeeklyDigestWorker.kt
 - Agent 5: 100-Name Master Database & 70-Point Evaluation Matrix
 - 2. Deep Dive: Google Play Policy Compliance Audits
 - ServiceChoicePicker.kt
 - Top 100 Global Brand Name Database & Scoring Matrix
-- ListSkeleton
+- Skeleton.kt
 - Play Store Mobile Search Intelligence & Autocomplete Database
 - AddVehicleScreen.kt
 - EditVehicleScreen.kt
-- ReminderAlarmScheduler
+- ServiceSortOrder
 - RecentActivitySection.kt
-- PowerSettings.kt
+- BannerAdView
 - ServiceTypeGrid.kt
-- Result
-- AppLifecycleObserver
+- ProFeatureGate
+- RemindersDelayedBanner.kt
 - Color.kt
 - NavGraph
-- ReminderAlarmReceiver.kt
-- SystemEventReceiver.kt
-- WorkScheduler
+- Context
+- ImageVector
 - FullBackupOnlyManifestTest
-- LoadingState.kt
 - FormSectionCard.kt
 
 ## God Nodes (most connected - your core abstractions)
-1. `ServiceType` - 87 edges
-2. `Vehicle` - 78 edges
+1. `ServiceType` - 85 edges
+2. `Vehicle` - 75 edges
 3. `Reminder` - 61 edges
-4. `Service` - 52 edges
-5. `ServiceStatus` - 48 edges
-6. `IVehicleRepository` - 47 edges
+4. `Service` - 49 edges
+5. `IVehicleRepository` - 47 edges
+6. `ServiceStatus` - 47 edges
 7. `UserPreferences` - 44 edges
 8. `FuelEntry` - 42 edges
-9. `DistanceUtil` - 36 edges
-10. `ReminderDao` - 34 edges
+9. `ReminderDao` - 34 edges
+10. `DistanceUtil` - 33 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Quote Auditor v0 (no OCR, no photo)` --semantically_similar_to--> `Counter Mode (Quote Auditor UI)`  [INFERRED] [semantically similar]
@@ -225,7 +223,7 @@
 - **Health Score Fabrication Evidence Trail** — docs_exec_plans_mobbin_design_blueprint_2026, concept_health_score_fabrication, app_src_main_kotlin_com_autominder_app_ui_components_premium_healthcockpitcard_healthcockpitcard, app_src_main_kotlin_com_autominder_app_ui_components_fleethealthscore_fleethealthscore [INFERRED 0.85]
 - **Blocking Release Gates (mvp-plan.html)** — docs_exec_plans_mvp_plan, concept_billing_migration_pbl9, concept_reminder_engine_reliability_risk, concept_locale_claims_mismatch, concept_demo_data_credibility, concept_data_safety_privacy_drift [INFERRED 0.85]
 
-## Communities (180 total, 36 thin omitted)
+## Communities (178 total, 43 thin omitted)
 
 ### Community 0 - "FuelHistoryViewModel.kt"
 Cohesion: 0.14
@@ -233,79 +231,79 @@ Nodes (15): DeleteEntry, EfficiencyExtreme, EfficiencyTrend, DECLINING, FLAT, IM
 
 ### Community 1 - "Reminder"
 Cohesion: 0.13
-Nodes (5): Flow, ReminderRepositoryImpl, Reminder, IReminderRepository, Flow
+Nodes (6): toDomain(), toEntity(), Reminder, IReminderRepository, Flow, ReminderPriorityEngineTest
 
 ### Community 2 - "SubscriptionManager"
 Cohesion: 0.10
 Nodes (22): Cancelled, Error, Idle, InProgress, Activity, ProductDetails, StateFlow, NotFound (+14 more)
 
 ### Community 3 - "MileageLogEntry"
-Cohesion: 0.07
+Cohesion: 0.06
 Nodes (23): toDomain(), toEntity(), Flow, MileageLogRepositoryImpl, MileageLogEntry, IMileageLogRepository, Flow, AddClicked (+15 more)
 
 ### Community 4 - "OnboardingChrome.kt"
-Cohesion: 0.47
-Nodes (8): GlowHero(), Color, ImageVector, Modifier, OnboardingProgressBar(), PillarItem, ValuePillarGroup(), ValuePillarRow()
+Cohesion: 0.36
+Nodes (11): GlowHero(), Color, ImageVector, Modifier, OnboardingProgressBar(), PillarItem, PrimaryCta(), ValuePillarGroup() (+3 more)
 
-### Community 5 - "AutoMinderApp"
-Cohesion: 0.27
-Nodes (5): AutoMinderApp, Application, Provider, Configuration, HiltWorkerFactory
+### Community 5 - "Timber"
+Cohesion: 0.06
+Nodes (26): AutoMinderApp, Application, Provider, AppLifecycleObserver, CrashlyticsTree, Context, Intent, PowerSettings (+18 more)
 
 ### Community 6 - "QuoteAuditorScreen.kt"
 Cohesion: 0.08
-Nodes (36): QuoteAuditResult, QuoteItem, QuoteLineVerdict, QuoteVerdictStatus, CAN_WAIT, LEGITIMATE_DUE, LIKELY_UPSELL, VERIFY_FIRST (+28 more)
+Nodes (35): QuoteAuditResult, QuoteItem, QuoteLineVerdict, QuoteVerdictStatus, CAN_WAIT, LEGITIMATE_DUE, LIKELY_UPSELL, VERIFY_FIRST (+27 more)
 
 ### Community 7 - "ServiceHistoryViewModel.kt"
-Cohesion: 0.19
-Nodes (11): StateFlow, ViewModel, ServiceFilterCriteria, ServiceGroup, ServiceHistoryUiState, ServiceHistoryViewModel, ServiceSortOrder, HIGHEST_COST (+3 more)
+Cohesion: 0.27
+Nodes (7): StateFlow, ViewModel, ServiceFilterCriteria, ServiceGroup, ServiceHistoryUiState, ServiceHistoryViewModel, ServiceWithVehicle
 
 ### Community 9 - "VehicleDetailViewModel.kt"
 Cohesion: 0.16
 Nodes (6): ActionState, com, StateFlow, ViewModel, VehicleDetailUiState, VehicleDetailViewModel
 
-### Community 10 - "DashboardScreen.kt"
-Cohesion: 0.18
-Nodes (15): ReminderExplanation, ActiveVehicleCard(), Modifier, ExplainableReminderSheet(), Modifier, ProofRow(), DashboardScreen(), HomeGreetingHeader() (+7 more)
+### Community 10 - "MutableInteractionSource"
+Cohesion: 0.14
+Nodes (24): VehicleOperationalStatus, DUE_SOON, HEALTHY, OVERDUE, SETUP_INCOMPLETE, UPCOMING, ActiveVehicleCard(), Modifier (+16 more)
 
 ### Community 11 - "AutoMinder 2026 Design Blueprint (Mobbin-Informed)"
 Cohesion: 0.10
 Nodes (33): FleetHealthScore, HealthCockpitCard, ImageVector, Modifier, RecordsTimelineCard(), Skeleton.kt (shimmer), AdMob ID Production Safety Gate Pattern, Play Billing 7.1.1 to 9.1.0 Migration (+25 more)
 
 ### Community 12 - "LocalDistanceUnit.kt"
-Cohesion: 0.19
-Nodes (9): VehicleDisplayNameFormatter, DiscardChangesDialog(), AddReminderScreen(), AddReminderVehicleHeader(), Modifier, EditReminderScreen(), EditReminderVehicleHeader(), com (+1 more)
+Cohesion: 0.21
+Nodes (9): VehicleDisplayNameFormatter, DiscardChangesDialog(), ServiceTypeGrid(), AddReminderScreen(), AddReminderVehicleHeader(), Modifier, EditReminderVehicleHeader(), com (+1 more)
 
-### Community 13 - "PremiumStatusStyle"
-Cohesion: 0.36
-Nodes (4): Color, Dp, Shape, PremiumStatusStyle
+### Community 13 - "ServiceStatus"
+Cohesion: 0.16
+Nodes (12): ServiceStatus, COMPLETED, DUE_SOON, OK, OVERDUE, SNOOZED, UNKNOWN, StatusCalculator (+4 more)
 
 ### Community 14 - "AdManager.kt"
 Cohesion: 0.11
 Nodes (14): AdError, AdManager, InterstitialAdLoadCallback, RewardedAdLoadCallback, RewardedInterstitialAdLoadCallback, FullScreenContentCallback, FullScreenContentCallback, FullScreenContentCallback (+6 more)
 
-### Community 15 - "AnalyticsHelper"
-Cohesion: 0.23
-Nodes (5): AnalyticsModule, AnalyticsEvents, AnalyticsHelper, AnalyticsParams, FirebaseAnalyticsHelper
+### Community 15 - "MainActivity.kt"
+Cohesion: 0.24
+Nodes (9): android, com, Provider, MainActivity, VehicleDeepLink, WidgetDeepLink, AutoMinderTheme(), Bundle (+1 more)
 
-### Community 16 - "AutoMinderBackupAgent.kt"
-Cohesion: 0.27
-Nodes (7): AutoMinderBackupAgent, BackupAgentEntryPoint, BackupAgent, BackupDataInput, BackupDataOutput, FullBackupDataOutput, ParcelFileDescriptor
+### Community 16 - "Result"
+Cohesion: 0.12
+Nodes (14): AutoMinderBackupAgent, BackupAgentEntryPoint, BackupCoordinator, Failed, Partial, Result, Success, BackupCoordinatorTest (+6 more)
 
-### Community 17 - "AddFuelViewModel"
-Cohesion: 0.23
-Nodes (4): AddFuelUiState, AddFuelViewModel, StateFlow, ViewModel
+### Community 17 - "AnalyticsHelper"
+Cohesion: 0.06
+Nodes (32): ConsentManager, Activity, AnalyticsModule, BroadcastReceiver, Context, Intent, NotificationActionReceiver, AnalyticsEvents (+24 more)
 
 ### Community 18 - "Vehicle"
-Cohesion: 0.10
-Nodes (8): toDomain(), toEntity(), Flow, VehicleRepositoryImpl, Vehicle, IVehicleRepository, Flow, ReminderPriorityEngineTest
+Cohesion: 0.21
+Nodes (5): toDomain(), toEntity(), Flow, VehicleRepositoryImpl, Vehicle
 
 ### Community 19 - "AddServiceScreen.kt"
-Cohesion: 0.18
-Nodes (16): Modifier, SaveButton(), SaveButtonState, Idle, Saving, Success, AddFuelBentoContent(), AddFuelScreen() (+8 more)
+Cohesion: 0.23
+Nodes (12): Modifier, SaveButton(), SaveButtonState, Idle, Saving, Success, AddServiceContent(), AddServiceScreen() (+4 more)
 
-### Community 20 - "MutableInteractionSource"
-Cohesion: 0.32
-Nodes (14): PrioritizedReminder, AttentionBanner(), HealthyBanner(), Modifier, SetupIncompleteBanner(), UpcomingBanner(), VehicleStatusCard(), buildSubtitle() (+6 more)
+### Community 20 - "WhatsNextSection.kt"
+Cohesion: 0.54
+Nodes (7): PrioritizedReminder, buildSubtitle(), getCategoryIcon(), ImageVector, Modifier, WhatsNextItemRow(), WhatsNextSection()
 
 ### Community 21 - "VehicleBodyType"
 Cohesion: 0.08
@@ -316,59 +314,59 @@ Cohesion: 0.15
 Nodes (4): Activity, ReviewHelper, Flow, UserPreferences
 
 ### Community 23 - "ReminderDao"
-Cohesion: 0.13
-Nodes (5): Flow, ReminderDao, ReminderEntity, toDomain(), toEntity()
+Cohesion: 0.16
+Nodes (3): Flow, ReminderDao, ReminderEntity
 
 ### Community 24 - "DashboardViewModel.kt"
 Cohesion: 0.19
 Nodes (10): DashboardUiState, DashboardViewModel, DataWithPrefs, Empty, Error, Activity, StateFlow, ViewModel (+2 more)
 
 ### Community 25 - "Service"
-Cohesion: 0.11
-Nodes (12): toDomain(), toEntity(), Flow, ServiceRepositoryImpl, Service, Failed, ServiceCompletion, ServiceCompletionResult (+4 more)
+Cohesion: 0.12
+Nodes (10): Flow, ServiceRepositoryImpl, Service, Failed, ServiceCompletion, ServiceCompletionResult, Success, VehicleNotFound (+2 more)
 
 ### Community 26 - "ServiceType"
 Cohesion: 0.10
 Nodes (18): Converters, ServiceType, AIR_FILTER, BATTERY, BRAKE_SERVICE, CABIN_FILTER, COOLANT, CUSTOM (+10 more)
 
 ### Community 28 - "VehicleListScreen.kt"
-Cohesion: 0.38
-Nodes (8): ErrorState(), Modifier, FleetHeroSummaryCard(), Modifier, labelRes(), VehicleListContent(), VehicleListRow(), VehicleListScreen()
+Cohesion: 0.36
+Nodes (7): FleetHeroSummaryCard(), Modifier, labelRes(), VehicleListContent(), VehicleListRow(), VehicleListItem, VehicleListUiState
 
 ### Community 29 - "ManualBackupManagerTest"
-Cohesion: 0.18
+Cohesion: 0.16
 Nodes (4): Flow, MileageLogDao, MileageLogEntity, ManualBackupManagerTest
 
 ### Community 30 - "VehicleDao"
-Cohesion: 0.16
+Cohesion: 0.17
 Nodes (3): Flow, VehicleDao, VehicleEntity
 
 ### Community 31 - "DashboardViewModelTest.kt"
-Cohesion: 0.26
-Nodes (6): AppInfo, DashboardData, GetDashboardDataUseCase, Flow, VehicleWithStatus, DashboardViewModelTest
+Cohesion: 0.21
+Nodes (11): AppInfo, DashboardData, GetDashboardDataUseCase, Flow, ReminderWithStatus, VehicleWithStatus, buildUpcomingSubtitle(), Modifier (+3 more)
 
 ### Community 32 - "ManualBackupManager.kt"
-Cohesion: 0.27
+Cohesion: 0.30
 Nodes (8): AutoMinderBackupData, BackupRestoreSummary, FuelEntryBackupDto, ManualBackupManager, MileageLogBackupDto, ReminderBackupDto, ServiceBackupDto, VehicleBackupDto
 
 ### Community 33 - "ServiceDao"
-Cohesion: 0.27
-Nodes (3): Flow, ServiceDao, ServiceEntity
+Cohesion: 0.21
+Nodes (5): Flow, ServiceDao, ServiceEntity, toDomain(), toEntity()
 
-### Community 34 - "ReminderDetailSheet.kt"
-Cohesion: 0.31
-Nodes (8): info(), Color, ReminderDetailSheet(), ServiceTypeInfo, SeverityBadge(), SheetSection(), overdueByText(), OverdueCopy
+### Community 34 - "RepositoryModule.kt"
+Cohesion: 0.18
+Nodes (3): RepositoryModule, FuelRepositoryImpl, Flow
 
 ### Community 35 - "SettingsViewModel"
 Cohesion: 0.05
 Nodes (44): Activity, GarageSummary, GetGarageSummaryUseCase, Modifier, PremiumPaywallPlanCard(), Available, Loading, PremiumPriceDisplay (+36 more)
 
 ### Community 36 - "NavRoutes"
-Cohesion: 0.06
-Nodes (36): android, BannerAdView(), Modifier, Context, NotificationHelper, Activity, UpdateHelper, com (+28 more)
+Cohesion: 0.11
+Nodes (18): About, AddFuel, AddReminder, AddService, AddVehicle, Dashboard, EditReminder, EditVehicle (+10 more)
 
 ### Community 37 - "AppDatabase"
-Cohesion: 0.19
+Cohesion: 0.16
 Nodes (5): MigrationTest, DatabaseModule, Context, AppDatabase, RoomDatabase
 
 ### Community 40 - "FuelDao"
@@ -380,20 +378,20 @@ Cohesion: 0.11
 Nodes (17): 1. What 99% of Agencies & AI Branders Skip About America, 2. The 4 Distinct American Driver Personas, 3. The Power of Physical Metaphors vs. Abstract Tech Jargon, 4. The 3 Breakthrough US Brand Concepts (Deep Creative Tear-Down), 5. The "Anti-Surveillance, Anti-Car-Payment" Marketing Hook, 6. The Verdict: The Strategic Choice, 7. Actionable Implementation: Elevating the Current App, 🏆 CANDIDATE 1: GLOVEBOX (The Cultural Holy Grail) (+9 more)
 
 ### Community 42 - "FuelEntry"
-Cohesion: 0.15
-Nodes (6): toDomain(), toEntity(), FuelRepositoryImpl, Flow, FuelEntry, CalculateEfficiencyUseCaseTest
+Cohesion: 0.21
+Nodes (4): toDomain(), toEntity(), FuelEntry, CalculateEfficiencyUseCaseTest
 
 ### Community 44 - "AutoMinder PRD v4.0"
 Cohesion: 0.12
 Nodes (17): What ships next (v1.1) — not now, Product identity & strategic positioning, Architecture laws (MVVM + Clean + Offline-First), 30-day build roadmap (P1-P12), Closing statement, Daily engagement / gamification system, Room entities v2 database design, AutoMinder PRD v4.0 (+9 more)
 
 ### Community 45 - "ReminderPriorityEngine"
-Cohesion: 0.24
-Nodes (6): DataConfidence, ESTIMATED, HIGH, INCOMPLETE_DATA, MEDIUM, ReminderPriorityEngine
+Cohesion: 0.19
+Nodes (7): DataConfidence, ESTIMATED, HIGH, INCOMPLETE_DATA, MEDIUM, ReminderExplanation, ReminderPriorityEngine
 
-### Community 46 - "AddServiceUiEvent"
-Cohesion: 0.11
-Nodes (19): AddServiceUiEvent, CostBreakdownToggled, CostChanged, CustomLabelChanged, LaborCostChanged, NotesChanged, OdometerAdjusted, OdometerChanged (+11 more)
+### Community 46 - "AddServiceViewModel.kt"
+Cohesion: 0.07
+Nodes (26): SuggestedInterval, AddServiceUiEvent, AddServiceUiState, AddServiceViewModel, CostBreakdownToggled, CostChanged, CustomLabelChanged, StateFlow (+18 more)
 
 ### Community 48 - "Counter Mode Flow & State Spec"
 Cohesion: 0.18
@@ -404,8 +402,8 @@ Cohesion: 0.19
 Nodes (15): Compose Performance Reviewer Agent, Visual QA Agent, AutoMinder Data & Domain Rules, AutoMinder Android Release Gate Skill, AutoMinder AVD Visual QA Skill, Compose Performance Guardian Skill, AutoMinder UI Diff Review Skill, AutoMinder CI Workflow (+7 more)
 
 ### Community 50 - "AutoMinderWidget.kt"
-Cohesion: 0.11
-Nodes (36): AutoMinderWidget, AutoMinderWidgetReceiver, createActionIntent(), createMainIntent(), Context, Intent, LargeWidgetContent(), MediumWidgetContent() (+28 more)
+Cohesion: 0.08
+Nodes (37): AutoMinderWidget, AutoMinderWidgetReceiver, createActionIntent(), createMainIntent(), Context, Intent, LargeWidgetContent(), MediumWidgetContent() (+29 more)
 
 ### Community 51 - "AutoMinder Play Store Release Checklist"
 Cohesion: 0.15
@@ -420,20 +418,16 @@ Cohesion: 0.14
 Nodes (14): AdMob ID policy, Active branches convention, Build variants (debug/release AdMob IDs), AutoMinder Project-Specific Overrides (GEMINI.md), Session verification protocol, Release signing policy, Technical foundation / exact versions table, Branch strategy (+6 more)
 
 ### Community 54 - "ExportServiceHistoryUseCase"
-Cohesion: 0.23
+Cohesion: 0.21
 Nodes (4): ExportServiceHistoryUseCase, Uri, ExportServiceHistoryUseCaseTest, Context
 
 ### Community 56 - "Composable"
-Cohesion: 0.25
-Nodes (14): CompactContent(), ExpandedContent(), androidx, Color, com, Modifier, VehicleAvatar(), VehicleHeroCard() (+6 more)
+Cohesion: 0.23
+Nodes (14): Modifier, LoadingState(), CompactContent(), ExpandedContent(), androidx, Color, com, Modifier (+6 more)
 
 ### Community 57 - "AddReminderViewModel.kt"
 Cohesion: 0.28
 Nodes (5): AddReminderUiState, AddReminderViewModel, DefaultInterval, StateFlow, ViewModel
-
-### Community 58 - "AddServiceViewModel.kt"
-Cohesion: 0.29
-Nodes (6): SuggestedInterval, AddServiceUiState, AddServiceViewModel, StateFlow, ViewModel, Job
 
 ### Community 59 - "AddReminderUiEvent"
 Cohesion: 0.17
@@ -452,12 +446,8 @@ Cohesion: 0.18
 Nodes (11): Fleet Design Inspiration (behance.net/gallery/250251481 — translated to Racing Teal M3, never copy Fleet's yellow/purple palette or fake content), FormSectionCard spec (title+helper+content+error slot), HealthCockpitCard spec (human-verdict headline, score ring demoted to instrument, never a lone giant '0'), InsightMetricCard spec (eyebrow label + Mono value + unit), Premium Compose Components Skill, PremiumActionGrid spec (2x2 FilledTonal tiles, ≥56dp), PremiumPaywallPlanCard spec (Mono price or loading, badge, selected = tonal lift + 1.02 scale), PremiumSectionHeader spec (title+count badge+trailing action, heading() semantics) (+3 more)
 
 ### Community 65 - "CalculateEfficiencyUseCase"
-Cohesion: 0.15
-Nodes (8): CalculateEfficiencyUseCase, EfficiencyUnit, KM_L, L_100KM, MPG_UK, MPG_US, FuelHistoryViewModelTest, SavedStateHandle
-
-### Community 66 - "ReminderWithStatus"
-Cohesion: 0.73
-Nodes (5): ReminderWithStatus, buildUpcomingSubtitle(), Modifier, MaintenanceRow(), UpcomingMaintenanceSection()
+Cohesion: 0.22
+Nodes (6): CalculateEfficiencyUseCase, EfficiencyUnit, KM_L, L_100KM, MPG_UK, MPG_US
 
 ### Community 67 - "evaluateReminderStaleness"
 Cohesion: 0.33
@@ -495,10 +485,6 @@ Nodes (6): DeleteClicked, StateFlow, ViewModel, ServiceDetailUiEvent, ServiceDet
 Cohesion: 0.15
 Nodes (13): ClearExportUri, ClearFilters, DeleteService, ExportHistory, ExportPassport, Retry, SelectCategory, SelectVehicle (+5 more)
 
-### Community 77 - "IFuelRepository"
-Cohesion: 0.16
-Nodes (3): RepositoryModule, IFuelRepository, Flow
-
 ### Community 81 - "VehicleDataConfidence"
 Cohesion: 0.25
 Nodes (6): VehicleDataConfidence, ESTIMATED, HIGH, INCOMPLETE, MEDIUM, MISSING_MILEAGE
@@ -524,12 +510,12 @@ Cohesion: 0.43
 Nodes (5): AndroidJUnitRunner, AutoMinderTestRunner, Application, Context, ClassLoader
 
 ### Community 89 - "OnboardingViewModel.kt"
-Cohesion: 0.24
-Nodes (4): StateFlow, ViewModel, OnboardingUiState, OnboardingViewModel
+Cohesion: 0.23
+Nodes (5): AddCarStep(), StateFlow, ViewModel, OnboardingUiState, OnboardingViewModel
 
-### Community 91 - "ServiceStatus"
-Cohesion: 0.14
-Nodes (16): ServiceStatus, COMPLETED, DUE_SOON, OK, OVERDUE, SNOOZED, UNKNOWN, StatusCalculator (+8 more)
+### Community 91 - "StatusChip"
+Cohesion: 0.27
+Nodes (8): Modifier, MaintenanceVerdictCard(), Modifier, ProactiveAttentionCard(), Modifier, StatusReminderCard(), Modifier, StatusChip()
 
 ### Community 92 - "ScreenState"
 Cohesion: 0.40
@@ -563,17 +549,17 @@ Nodes (3): gradlew script, die(), warn()
 Cohesion: 0.27
 Nodes (9): Empty, Error, StateFlow, ViewModel, Loading, Success, VehicleListItem, VehicleListUiState (+1 more)
 
-### Community 102 - "AddFuelUiEvent"
-Cohesion: 0.13
-Nodes (15): AddFuelUiEvent, CostChanged, DateChanged, ErrorDismissed, FullTankToggled, GasStationChanged, NotesChanged, OdometerChanged (+7 more)
+### Community 102 - "ExplainableReminderSheet.kt"
+Cohesion: 0.53
+Nodes (4): ExplainableReminderSheet(), Modifier, ProofRow(), ReminderExplanation
 
 ### Community 103 - "DistanceUtil"
-Cohesion: 0.18
-Nodes (3): DistanceUtil, com, DateFormatUtil
+Cohesion: 0.19
+Nodes (6): DistanceUtil, com, AddFuelBentoContent(), FuelStatPill(), Modifier, DateFormatUtil
 
-### Community 104 - "MileageLogScreen.kt"
-Cohesion: 0.44
-Nodes (7): Modifier, SwipeToDeleteContainer(), Modifier, MileageCockpitCard(), MileageLogScreen(), MileageTimelineCard(), MileageVehicleHeader()
+### Community 104 - "EmptyState"
+Cohesion: 0.40
+Nodes (8): EmptyState(), ImageVector, Modifier, Modifier, MileageCockpitCard(), MileageLogScreen(), MileageTimelineCard(), MileageVehicleHeader()
 
 ### Community 109 - "Name Risk Report: AutoMinder & Global Brand Landscape"
 Cohesion: 0.14
@@ -596,44 +582,44 @@ Cohesion: 0.15
 Nodes (12): 1. Executive Summary: The Category Evolution, 1. 🧠 Psychological Power & Dual Meaning, 2. Top 10 Shortlisted Brand Concepts & Memory Tests, 2. 💼 Venture & Investor Appeal, 3. Brand Architecture Expansion Matrix, 3. 🎯 Google Play Store ASO Formula, 4. The Grand Winner: 🏆 MOTIVE (or MOTIVE AUTO), 4. ⚖️ Trademark & Brand Ownership (+4 more)
 
 ### Community 125 - "VehicleDetailScreen.kt"
-Cohesion: 0.15
-Nodes (20): DuePrediction, Modifier, SpendingTrendChart(), ActionTile(), Modifier, PremiumAction, PremiumActionGrid(), Modifier (+12 more)
+Cohesion: 0.16
+Nodes (19): DuePrediction, Modifier, PremiumSectionHeader(), SheetState, QuickMileageSheet(), info(), Color, ReminderDetailSheet() (+11 more)
 
 ### Community 126 - "Motion"
-Cohesion: 0.20
-Nodes (7): FuelEfficiencyChart(), Modifier, FormField(), Modifier, Motion, FiniteAnimationSpec, T
+Cohesion: 0.16
+Nodes (10): FuelEfficiencyChart(), Modifier, Modifier, SpendingTrendChart(), FormField(), Modifier, MonthlySpend, Motion (+2 more)
 
 ### Community 127 - "PredictDueUseCaseTest"
 Cohesion: 0.15
 Nodes (4): OdometerPoint, PredictDueUseCase, PerformanceStressBenchmarkTest, PredictDueUseCaseTest
 
 ### Community 128 - "ServiceHistoryScreen.kt"
-Cohesion: 0.47
-Nodes (8): CategoryFilterRow(), com, Modifier, LifetimeSpendHeroCard(), ServiceHistoryScreen(), ServiceHistoryStream(), ServiceReceiptCard(), VehicleFilterRow()
+Cohesion: 0.36
+Nodes (9): Modifier, SwipeToDeleteContainer(), CategoryFilterRow(), com, Modifier, LifetimeSpendHeroCard(), ServiceHistoryStream(), ServiceReceiptCard() (+1 more)
+
+### Community 129 - "PremiumActionGrid"
+Cohesion: 0.80
+Nodes (4): ActionTile(), Modifier, PremiumAction, PremiumActionGrid()
 
 ### Community 131 - "OnboardingScreen.kt"
-Cohesion: 0.25
-Nodes (14): InsightMetricCard(), InsightMetricRow(), ImageVector, Modifier, PrimaryCta(), AddCarStep(), FirstReminderCard(), NotifyStep() (+6 more)
+Cohesion: 0.31
+Nodes (8): InsightMetricCard(), InsightMetricRow(), ImageVector, Modifier, FirstReminderCard(), PlanStep(), OnboardingUiState, PlannedReminder
 
 ### Community 132 - "FuelHistoryScreen.kt"
 Cohesion: 0.56
 Nodes (8): FuelEfficiencyTrendCard(), FuelHistoryScreen(), FuelIntelligenceCockpit(), FuelReceiptCard(), FuelSpendingBars(), FuelSpendingTrendCard(), FuelVehicleHeader(), Modifier
 
 ### Community 133 - "DrivingAmount"
-Cohesion: 0.21
+Cohesion: 0.23
 Nodes (10): DrivingAmount, HIGH, LOW, TYPICAL, DrivingAmountChips(), DrivingConfig, getDrivingAmountConfig(), Modifier (+2 more)
-
-### Community 134 - "VehicleOperationalStatus"
-Cohesion: 0.25
-Nodes (6): VehicleOperationalStatus, DUE_SOON, HEALTHY, OVERDUE, SETUP_INCOMPLETE, UPCOMING
 
 ### Community 135 - "User Language Database: Automotive Ownership Psychology"
 Cohesion: 0.15
 Nodes (12): 1. Executive Insight: The Emotional Gap in Car Ownership, 2. Real User Language vs. Corporate Jargon, 3. Direct Field Quotes from Communities, 4. Key Terminology & High-Signal Vocabulary, 5. Strategic Implications for Brand Strategy, Category A: The Frustration with Existing Apps, Category B: The Maintenance Anxiety & Forgetfulness, Category C: Resale & Proof of Care (+4 more)
 
 ### Community 137 - "ServiceDetailScreen.kt"
-Cohesion: 0.29
-Nodes (11): EmptyState(), ImageVector, Modifier, Context, ImageVector, Modifier, ServiceDetailBentoContent(), ServiceDetailScreen() (+3 more)
+Cohesion: 0.38
+Nodes (10): Modifier, ServiceDetailBentoContent(), serviceIconFor(), ServiceTelemetryPill(), shareServiceReceipt(), Context, ImageVector, Service (+2 more)
 
 ### Community 138 - "ASO Keyword Matrix & Play Store Growth Blueprint"
 Cohesion: 0.18
@@ -687,13 +673,9 @@ Nodes (14): AddVehicleUiEvent, AddVehicleUiState, AddVehicleViewModel, BrandChan
 Cohesion: 0.22
 Nodes (8): 1. The 3 Core Psychological Hurdles, 2. Retention Lifecycle Breakdown: Time to Value (TTV), 3. The 3 Pillars of Why Users Pay, A. The First 5 Seconds (The Install Hook & Immediate Relief), Agent 7: Product Psychology & User Retention Model, B. The First Day (The Setup Investment & Widget Delight), C. The First Week (The Daily / Weekly Habit Formation), D. The First Month (The First Service & Pro Paywall Conversion)
 
-### Community 156 - "NotificationActionReceiver.kt"
-Cohesion: 0.36
-Nodes (6): BroadcastReceiver, Context, Intent, NotificationActionReceiver, ReminderDao, Lesson: DAO Idempotency Before Background Actions
-
-### Community 157 - "Timber"
-Cohesion: 0.28
-Nodes (4): CrashlyticsTree, CoroutineWorker, WeeklyDigestWorker, Timber
+### Community 156 - "BottomNavBar.kt"
+Cohesion: 0.67
+Nodes (3): BottomNavBar(), BottomNavItem, NavHostController
 
 ### Community 158 - "Agent 5: 100-Name Master Database & 70-Point Evaluation Matrix"
 Cohesion: 0.25
@@ -711,61 +693,41 @@ Nodes (6): AllServicesRow(), ChoiceFlow(), Modifier, SectionLabel(), ServiceChoi
 Cohesion: 0.29
 Nodes (6): Category 1: Memory, Care & Trust (The Car Remembers), Category 2: Ownership Intelligence & Cockpit Assist, Category 3: Premium Automotive (BMW / Tesla / Rivian Heritage), Category 4: Journey, Road & Ownership Provenance, Top 100 Global Brand Name Database & Scoring Matrix, 🏆 Top 5 Ranked Overall Candidates
 
-### Community 162 - "ListSkeleton"
-Cohesion: 0.64
-Nodes (8): DashboardSkeleton(), Modifier, Shape, ListSkeleton(), SkeletonBar(), skeletonFill(), SkeletonScaffold(), VehicleCardSkeleton()
+### Community 162 - "Skeleton.kt"
+Cohesion: 0.68
+Nodes (7): DashboardSkeleton(), Modifier, Shape, SkeletonBar(), skeletonFill(), SkeletonScaffold(), VehicleCardSkeleton()
 
 ### Community 163 - "Play Store Mobile Search Intelligence & Autocomplete Database"
 Cohesion: 0.33
 Nodes (5): 1. Executive Search Findings, 2. Live Mobile Search Autocomplete Matrix, 3. High-Converting Keyword Gaps Ignored by Competitors, 4. Visual Evidence: Live Google Play Search Snapshot, Play Store Mobile Search Intelligence & Autocomplete Database
 
 ### Community 164 - "AddVehicleScreen.kt"
-Cohesion: 0.43
-Nodes (6): AddVehicleForm(), ImageVector, KeyboardType, Modifier, VehicleField(), VehiclePhotoHero()
+Cohesion: 0.46
+Nodes (7): AddVehicleForm(), AddVehicleScreen(), ImageVector, KeyboardType, Modifier, VehicleField(), VehiclePhotoHero()
 
 ### Community 165 - "EditVehicleScreen.kt"
-Cohesion: 0.46
-Nodes (7): EditVehicleField(), EditVehicleForm(), EditVehiclePhotoHero(), EditVehicleScreen(), ImageVector, KeyboardType, Modifier
+Cohesion: 0.43
+Nodes (6): EditVehicleField(), EditVehicleForm(), EditVehiclePhotoHero(), ImageVector, KeyboardType, Modifier
 
-### Community 166 - "ReminderAlarmScheduler"
+### Community 166 - "ServiceSortOrder"
 Cohesion: 0.50
-Nodes (3): Context, ReminderAlarmScheduler, PendingIntent
+Nodes (4): ServiceSortOrder, HIGHEST_COST, NEWEST_FIRST, OLDEST_FIRST
 
 ### Community 167 - "RecentActivitySection.kt"
 Cohesion: 0.33
 Nodes (8): Modifier, RecentActivityRow(), RecentActivitySection(), ActivityType, FUEL, MILEAGE, SERVICE, HomeActivityItem
 
-### Community 168 - "PowerSettings.kt"
-Cohesion: 0.57
-Nodes (3): Context, Intent, PowerSettings
-
 ### Community 169 - "ServiceTypeGrid.kt"
-Cohesion: 0.48
-Nodes (5): Modifier, ServiceChoice(), ServiceTypeGrid(), icon(), ImageVector
-
-### Community 170 - "Result"
-Cohesion: 0.48
-Nodes (5): BackupCoordinator, Failed, Partial, Result, Success
-
-### Community 171 - "AppLifecycleObserver"
-Cohesion: 0.53
-Nodes (3): AppLifecycleObserver, DefaultLifecycleObserver, LifecycleOwner
+Cohesion: 0.47
+Nodes (4): Modifier, ServiceChoice(), icon(), ImageVector
 
 ### Community 172 - "Color.kt"
 Cohesion: 0.60
 Nodes (4): AutoMinderServiceStatusBadge(), AutoMinderStatusBadge(), Modifier, StatusBadgeConfig
 
 ### Community 173 - "NavGraph"
-Cohesion: 0.60
-Nodes (5): Modifier, NavHostController, NavGraph(), AddVehicleScreen(), VehicleDetailScreen()
-
-### Community 174 - "ReminderAlarmReceiver.kt"
-Cohesion: 0.53
-Nodes (4): BroadcastReceiver, Context, Intent, ReminderAlarmReceiver
-
-### Community 175 - "SystemEventReceiver.kt"
-Cohesion: 0.53
-Nodes (4): BroadcastReceiver, Context, Intent, SystemEventReceiver
+Cohesion: 0.23
+Nodes (18): ErrorState(), Modifier, ListSkeleton(), Modifier, NavHostController, NavGraph(), AddFuelScreen(), OnboardingScreen() (+10 more)
 
 ## Ambiguous Edges - Review These
 - `AutoMinder Design System 2026` → `AutoMinder MVP Plan`  [AMBIGUOUS]
@@ -792,7 +754,7 @@ Nodes (4): BroadcastReceiver, Context, Intent, SystemEventReceiver
 ## Knowledge Gaps
 - **477 isolated node(s):** `DeleteEntry`, `Retry`, `UndoDelete`, `Empty`, `Error` (+472 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **36 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
