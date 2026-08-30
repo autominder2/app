@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Car Maintenance Schedule Generator — AutoMinder</title>
+    <title>Free Car Maintenance Schedule Generator — Milevora</title>
     <meta name="description" content="Enter your odometer reading and get a full maintenance schedule — oil change, tire rotation, brakes, and more. Runs entirely in your browser. Nothing is uploaded.">
     <meta name="theme-color" content="#0B4FC4">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Free Car Maintenance Schedule Generator — AutoMinder">
+    <meta property="og:title" content="Free Car Maintenance Schedule Generator — Milevora">
     <meta property="og:description" content="Enter your odometer reading and get a full maintenance schedule — oil change, tire rotation, brakes, and more. Runs entirely in your browser. Nothing is uploaded.">
     <meta property="og:url" content="https://com-autominder-app.web.app/tools/maintenance-schedule.html">
-    <meta property="og:site_name" content="AutoMinder">
+    <meta property="og:site_name" content="Milevora">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Free Car Maintenance Schedule Generator — AutoMinder">
+    <meta name="twitter:title" content="Free Car Maintenance Schedule Generator — Milevora">
     <meta name="twitter:description" content="Enter your odometer reading and get a full maintenance schedule — oil change, tire rotation, brakes, and more. Runs entirely in your browser. Nothing is uploaded.">
     <link rel="canonical" href="https://com-autominder-app.web.app/tools/maintenance-schedule.html">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2">
@@ -29,7 +29,7 @@
         "applicationCategory": "UtilityApplication",
         "operatingSystem": "Any (runs in browser)",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "publisher": { "@type": "Organization", "name": "AutoMinder" }
+        "publisher": { "@type": "Organization", "name": "Milevora" }
     }
     </script>
 </head>
@@ -38,7 +38,7 @@
         <div class="nav-inner">
             <a href="/" class="nav-brand">
                 <span class="nav-logo"><svg viewBox="0 0 108 108" fill="currentColor"><path d="M74,52 L68,38 C67,35 64,33 61,33 L47,33 C44,33 41,35 40,38 L34,52 L28,52 C26,52 24,54 24,56 L24,68 C24,70 26,72 28,72 L32,72 C32,75.3 34.7,78 38,78 C41.3,78 44,75.3 44,72 L64,72 C64,75.3 66.7,78 70,78 C73.3,78 76,75.3 76,72 L80,72 C82,72 84,70 84,68 L84,56 C84,54 82,52 80,52 Z M38,75 C36.3,75 35,73.7 35,72 C35,70.3 36.3,69 38,69 C39.7,69 41,70.3 41,72 C41,73.7 39.7,75 38,75 Z M70,75 C68.3,75 67,73.7 67,72 C67,70.3 68.3,69 70,69 C71.7,69 73,70.3 73,72 C73,73.7 71.7,75 70,75 Z M44,50 L48,38 L60,38 L64,50 Z"/></svg></span>
-                <span class="nav-title">AutoMinder</span>
+                <span class="nav-title">Milevora</span>
             </a>
             <div class="nav-links">
                 <a href="/#features">Features</a>
@@ -58,43 +58,42 @@
         <div class="container">
             <h1>Car Maintenance Schedule Generator</h1>
             <p class="subtitle">Enter your odometer reading and driving amount. Get a full schedule of what's due and when.</p>
-            <div class="tool-trust-badge">🔒 Runs entirely in your browser — nothing you type is sent anywhere</div>
         </div>
     </div>
 
-    <main class="tool-body">
+    <main class="tool-container container">
         <div class="tool-form">
-            <div class="tool-field">
+            <div class="tool-input-row">
                 <label for="odometer">Current odometer reading</label>
-                <div class="tool-odometer-row">
-                    <input type="number" id="odometer" min="0" step="1" placeholder="e.g. 45000" inputmode="numeric">
-                    <div class="unit-toggle" role="group" aria-label="Distance unit">
-                        <button type="button" id="unit-mi" class="active" data-unit="mi">mi</button>
-                        <button type="button" id="unit-km" data-unit="km">km</button>
-                    </div>
+                <div class="tool-unit-toggle">
+                    <button type="button" class="unit-btn active" id="unit-mi" aria-label="Use miles">Miles (mi)</button>
+                    <button type="button" class="unit-btn" id="unit-km" aria-label="Use kilometers">Kilometers (km)</button>
                 </div>
-                <p class="field-hint">Leave blank if you don't know it yet — you'll still get due dates, just not exact distances.</p>
             </div>
+            <input type="number" id="odometer" class="tool-input" placeholder="e.g. 45000" min="0" step="1000" inputmode="numeric">
 
-            <div class="tool-field">
-                <label>How much do you drive?</label>
-                <div class="driving-options" role="radiogroup" aria-label="Driving amount">
-                    <div class="driving-option" data-key="LOW" role="radio" aria-checked="false" tabindex="0">
-                        <span class="amount-label">Low</span>
-                        <span class="amount-hint" id="hint-LOW">~5,000 mi/yr</span>
-                    </div>
-                    <div class="driving-option active" data-key="TYPICAL" role="radio" aria-checked="true" tabindex="0">
-                        <span class="amount-label">Typical</span>
-                        <span class="amount-hint" id="hint-TYPICAL">~10,000 mi/yr</span>
-                    </div>
-                    <div class="driving-option" data-key="HIGH" role="radio" aria-checked="false" tabindex="0">
-                        <span class="amount-label">High</span>
-                        <span class="amount-hint" id="hint-HIGH">~17,500 mi/yr</span>
-                    </div>
+            <label class="tool-label-block">How much do you drive?</label>
+            <div class="driving-selector" role="radiogroup" aria-label="Annual driving rate">
+                <div class="driving-option" data-key="LOW" tabindex="0" role="radio" aria-checked="false">
+                    <span class="driving-option-title">Light</span>
+                    <span class="driving-option-desc">Short commute, weekend trips</span>
+                    <span class="driving-option-hint" id="hint-LOW">~5,000 mi/yr</span>
+                </div>
+                <div class="driving-option active" data-key="TYPICAL" tabindex="0" role="radio" aria-checked="true">
+                    <span class="driving-option-title">Typical</span>
+                    <span class="driving-option-desc">Daily commute, errands</span>
+                    <span class="driving-option-hint" id="hint-TYPICAL">~10,000 mi/yr</span>
+                </div>
+                <div class="driving-option" data-key="HIGH" tabindex="0" role="radio" aria-checked="false">
+                    <span class="driving-option-title">High</span>
+                    <span class="driving-option-desc">Long commute, rideshare, road trips</span>
+                    <span class="driving-option-hint" id="hint-HIGH">~17,500 mi/yr</span>
                 </div>
             </div>
 
-            <button type="button" id="generate-btn" class="btn btn-primary tool-submit">Generate my schedule</button>
+            <button type="button" class="btn btn-primary btn-lg tool-submit" id="generate-btn">
+                Generate Maintenance Schedule
+            </button>
         </div>
 
         <div class="tool-results" id="results">
@@ -110,8 +109,8 @@
 
             <div class="tool-cta">
                 <h3>This tab won't remind you in six months.</h3>
-                <p>AutoMinder saves this exact plan, reminds you before anything's due, and works completely offline — no account, ever.</p>
-                <a href="https://play.google.com/store/apps/details?id=com.autominder.app&referrer=utm_source%3Dwebsite_tool%26utm_medium%3Dschedule_generator" class="btn btn-primary btn-lg">Get AutoMinder Free</a>
+                <p>Milevora saves this exact plan, reminds you before anything's due, and works completely offline — no account, ever.</p>
+                <a href="https://play.google.com/store/apps/details?id=com.autominder.app&referrer=utm_source%3Dwebsite_tool%26utm_medium%3Dschedule_generator" class="btn btn-primary btn-lg">Get Milevora Free</a>
             </div>
         </div>
     </main>
@@ -120,14 +119,14 @@
         <div class="container footer-inner">
             <div class="footer-brand">
                 <span class="nav-logo"><svg viewBox="0 0 108 108" fill="currentColor"><path d="M74,52 L68,38 C67,35 64,33 61,33 L47,33 C44,33 41,35 40,38 L34,52 L28,52 C26,52 24,54 24,56 L24,68 C24,70 26,72 28,72 L32,72 C32,75.3 34.7,78 38,78 C41.3,78 44,75.3 44,72 L64,72 C64,75.3 66.7,78 70,78 C73.3,78 76,75.3 76,72 L80,72 C82,72 84,70 84,68 L84,56 C84,54 82,52 80,52 Z M38,75 C36.3,75 35,73.7 35,72 C35,70.3 36.3,69 38,69 C39.7,69 41,70.3 41,72 C41,73.7 39.7,75 38,75 Z M70,75 C68.3,75 67,73.7 67,72 C67,70.3 68.3,69 70,69 C71.7,69 73,70.3 73,72 C73,73.7 71.7,75 70,75 Z M44,50 L48,38 L60,38 L64,50 Z"/></svg></span>
-                <span>AutoMinder</span>
+                <span>Milevora</span>
             </div>
             <div class="footer-links">
                 <a href="/privacy.html">Privacy Policy</a>
                 <a href="/support.html">Support</a>
                 <a href="mailto:autominder2@gmail.com">Contact</a>
             </div>
-            <div class="footer-copy">&copy; 2026 AutoMinder. All rights reserved.</div>
+            <div class="footer-copy">&copy; 2026 Milevora. All rights reserved.</div>
         </div>
     </footer>
 

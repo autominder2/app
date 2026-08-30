@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources,PluralsCandidate">
-    <string name="app_name">AutoMinder</string>
+    <string name="app_name">Milevora</string>
 
     <!-- Bottom navigation — 4 tabs: Home / Vehicles / Records / Settings -->
     <string name="nav_home">Home</string>
@@ -112,8 +112,8 @@
          recently, which on aggressive-OEM devices means the reminder engine has
          been killed. Telling the user beats silently failing. -->
     <string name="reminders_delayed_title">Reminders may be delayed</string>
-    <string name="reminders_delayed_body">AutoMinder hasn\'t been able to check your vehicles since %1$s.</string>
-    <string name="reminders_delayed_body_never">AutoMinder hasn\'t been able to check your vehicles in the background yet.</string>
+    <string name="reminders_delayed_body">Milevora hasn\'t been able to check your vehicles since %1$s.</string>
+    <string name="reminders_delayed_body_never">Milevora hasn\'t been able to check your vehicles in the background yet.</string>
     <string name="reminders_delayed_action">How to fix this</string>
 
     <!-- Shared Actions -->
@@ -161,7 +161,7 @@
     <string name="vehicle_make_model">%1$s %2$s</string>
 
     <!-- Dashboard Screen -->
-    <string name="dashboard_top_bar_title">AutoMinder</string>
+    <string name="dashboard_top_bar_title">Milevora</string>
     <plurals name="dashboard_attention_headline">
         <item quantity="one">%1$d service needs attention</item>
         <item quantity="other">%1$d services need attention</item>
@@ -389,27 +389,27 @@
     <string name="settings_upgrade_title">Upgrade to Pro</string>
     <string name="settings_upgrade_subtitle">Unlock premium tools and remove ads</string>
     <string name="settings_upgrade_button">Upgrade</string>
-    <string name="settings_pro_active">AutoMinder Pro</string>
+    <string name="settings_pro_active">Milevora Pro</string>
     <string name="settings_pro_active_subtitle">All premium features unlocked</string>
-    <string name="settings_app_version">AutoMinder v%1$s</string>
+    <string name="settings_app_version">Milevora v%1$s</string>
 
     <!-- About Screen -->
     <string name="about_title">About</string>
     <string name="about_navigate_back">Navigate back</string>
-    <string name="about_app_name">AutoMinder</string>
+    <string name="about_app_name">Milevora</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_description">Your smart car maintenance companion</string>
     <string name="about_developer_label">Developer</string>
-    <string name="about_developer_name">AutoMinder Team</string>
+    <string name="about_developer_name">Milevora Team</string>
     <string name="about_privacy_policy_label">Privacy Policy</string>
     <string name="about_privacy_policy_url">https://com-autominder-app.web.app/privacy</string>
-    <string name="about_rate_title">Enjoying AutoMinder?</string>
+    <string name="about_rate_title">Enjoying Milevora?</string>
     <string name="about_rate_description">Consider rating us on the Play Store to help others discover the app!</string>
     <string name="about_feedback_title">Send Feedback</string>
     <string name="about_feedback_description">Found a bug or have a suggestion? We\'d love to hear from you.</string>
     <string name="about_feedback_email">autominder2@gmail.com</string>
-    <string name="about_feedback_subject">AutoMinder Feedback — v%1$s</string>
-    <string name="about_copyright">© %1$d AutoMinder. All rights reserved.</string>
+    <string name="about_feedback_subject">Milevora Feedback — v%1$s</string>
+    <string name="about_copyright">© %1$d Milevora. All rights reserved.</string>
 
     <!-- Onboarding Screen -->
     <string name="onboarding_tagline">Your car. Remembered.</string>
@@ -466,7 +466,7 @@
     <string name="widget_next_service">Next service</string>
     <string name="widget_all_caught_up">All caught up!</string>
     <string name="widget_due">Due: %1$s</string>
-    <string name="widget_tap_to_open">Tap to open AutoMinder</string>
+    <string name="widget_tap_to_open">Tap to open Milevora</string>
     <plurals name="widget_attention_label">
         <item quantity="one">Needs attention</item>
         <item quantity="other">Need attention</item>
@@ -481,7 +481,7 @@
 
     <!-- Vehicle Detail — reminder setup (shown when nothing is tracked yet) -->
     <string name="vehicle_reminders_setup_title">Start tracking maintenance</string>
-    <string name="vehicle_reminders_setup_subtitle">Add a reminder and AutoMinder will tell you when this vehicle is due.</string>
+    <string name="vehicle_reminders_setup_subtitle">Add a reminder and Milevora will tell you when this vehicle is due.</string>
 
     <!-- Vehicle Bento Cockpit & Confidence System -->
     <!-- Maintenance status card. No score, no verdict, no percentage: every
@@ -496,7 +496,7 @@
     <string name="vehicle_confidence_headline_ok">Nothing needs doing right now</string>
     <string name="vehicle_confidence_headline_due_soon">Service coming up</string>
     <string name="vehicle_confidence_headline_overdue">Maintenance needs attention</string>
-    <string name="vehicle_confidence_summary_setup">Add a reminder or log a service and AutoMinder will start tracking what is due.</string>
+    <string name="vehicle_confidence_summary_setup">Add a reminder or log a service and Milevora will start tracking what is due.</string>
     <string name="vehicle_confidence_summary_ok">Every reminder you set is still inside its interval.</string>
     <plurals name="vehicle_confidence_summary_due_soon">
         <item quantity="one">%1$d item is approaching its interval.</item>
@@ -509,14 +509,14 @@
     <string name="vehicle_confidence_next">Next: %1$s</string>
     <string name="vehicle_confidence_tap_to_explain">What this is based on</string>
     <string name="vehicle_confidence_sheet_title">What this is based on</string>
-    <string name="vehicle_confidence_sheet_sub">AutoMinder reports only what you have recorded. It does not inspect, connect to, or diagnose your vehicle.</string>
-    <string name="vehicle_confidence_factors_title">What AutoMinder can see</string>
+    <string name="vehicle_confidence_sheet_sub">Milevora reports only what you have recorded. It does not inspect, connect to, or diagnose your vehicle.</string>
+    <string name="vehicle_confidence_factors_title">What Milevora can see</string>
     <plurals name="vehicle_confidence_signal_schedule">
         <item quantity="one">%1$d reminder set</item>
         <item quantity="other">%1$d reminders set</item>
     </plurals>
     <string name="vehicle_confidence_signal_no_schedule">No reminders set</string>
-    <string name="vehicle_confidence_signal_no_schedule_detail">Reminders are how AutoMinder knows what is due.</string>
+    <string name="vehicle_confidence_signal_no_schedule_detail">Reminders are how Milevora knows what is due.</string>
     <plurals name="vehicle_confidence_signal_records">
         <item quantity="one">%1$d service record on file</item>
         <item quantity="other">%1$d service records on file</item>
@@ -658,7 +658,7 @@
 
     <!-- ASO — Play Store Metadata -->
     <string name="aso_short_description">Smart car maintenance reminders, fuel tracking &amp; cost analytics</string>
-    <string name="aso_full_description">AutoMinder helps you track vehicle maintenance, mileage, fuel, and service records without an account.\n\nKey Features:\n• Maintenance reminders with date and odometer triggers\n• Clear overdue, due soon, snoozed, completed, and unknown states\n• Service history with costs, notes, workshops, and mileage\n• Fuel logs with spending and efficiency trends\n• Multiple vehicle support\n• Home screen widget for quick maintenance status\n• Offline-first core tracking\n• CSV service-history sharing\n• Dark mode and Material Design\n• Optional Pro upgrade for premium features and an ad-free experience</string>
+    <string name="aso_full_description">Milevora helps you track vehicle maintenance, mileage, fuel, and service records without an account.\n\nKey Features:\n• Maintenance reminders with date and odometer triggers\n• Clear overdue, due soon, snoozed, completed, and unknown states\n• Service history with costs, notes, workshops, and mileage\n• Fuel logs with spending and efficiency trends\n• Multiple vehicle support\n• Home screen widget for quick maintenance status\n• Offline-first core tracking\n• CSV service-history sharing\n• Dark mode and Material Design\n• Optional Pro upgrade for premium features and an ad-free experience</string>
 
     <!-- Dashboard enhanced -->
     <string name="dashboard_add_first_vehicle_hint">Most users add their first vehicle in under 30 seconds</string>
@@ -798,7 +798,7 @@
     <!-- Service Detail 2026 Enhanced Strings -->
     <string name="service_detail_share_proof">Share service proof</string>
     <string name="service_detail_share_title">Service Record — %1$s (%2$s)</string>
-    <string name="service_detail_share_body">%1$s Service Record\nVehicle: %2$s\nDate: %3$s\nOdometer: %4$s %5$s\nCost: %6$s\nWorkshop: %7$s\nNotes: %8$s\n\nLogged via AutoMinder</string>
+    <string name="service_detail_share_body">%1$s Service Record\nVehicle: %2$s\nDate: %3$s\nOdometer: %4$s %5$s\nCost: %6$s\nWorkshop: %7$s\nNotes: %8$s\n\nLogged via Milevora</string>
     <string name="service_detail_diy_workshop">Self-Serviced / DIY</string>
     <string name="service_detail_no_cost">Free / Not recorded</string>
     <string name="service_detail_notes_title">Work notes &amp; details</string>
@@ -967,7 +967,7 @@
     <string name="settings_section_backup">Data &amp; Backup</string>
     <!-- Notifications: the switch reports whether reminders will actually
          arrive, which needs the OS permission as well as the preference. -->
-    <string name="settings_notifications_blocked">Android is blocking AutoMinder\'s notifications. Reminders will not appear until you allow them in system settings.</string>
+    <string name="settings_notifications_blocked">Android is blocking Milevora\'s notifications. Reminders will not appear until you allow them in system settings.</string>
     <string name="settings_system_notifications">System notification settings</string>
     <string name="settings_system_notifications_subtitle">Sound, importance and Do Not Disturb</string>
     <!-- Subscription management -->
@@ -1014,11 +1014,11 @@
     <string name="service_export_passport_title">Maintenance history export</string>
     <string name="service_export_passport_sharing">Share vehicle maintenance history</string>
     <string name="service_export_passport_desc">Export a record of logged maintenance for resale</string>
-    <string name="service_passport_header">AUTOMINDER VEHICLE MAINTENANCE HISTORY</string>
+    <string name="service_passport_header">MILEVORA VEHICLE MAINTENANCE HISTORY</string>
     <string name="service_passport_vehicle_details">VEHICLE SPECIFICATIONS</string>
     <string name="service_passport_summary">MAINTENANCE COST SUMMARY</string>
     <string name="service_passport_records">CHRONOLOGICAL SERVICE RECORDS</string>
-    <string name="service_passport_footer">Generated by AutoMinder from local records</string>
+    <string name="service_passport_footer">Generated by Milevora from local records</string>
 
     <!-- Mileage Pace & Steppers -->
     <string name="mileage_step_50">+50</string>
@@ -1050,7 +1050,7 @@
     <string name="home_status_duesoon_title">%1$d thing needs attention</string>
     <string name="home_status_overdue_title">%1$d overdue item</string>
     <string name="home_status_setup_incomplete_title">Finish setting up your car</string>
-    <string name="home_status_setup_incomplete_desc">Add your current mileage so AutoMinder can calculate maintenance reminders more accurately.</string>
+    <string name="home_status_setup_incomplete_desc">Add your current mileage so Milevora can calculate maintenance reminders more accurately.</string>
     <string name="home_status_update_mileage_cta">Update mileage</string>
 
     <string name="home_section_coming_up">Coming up</string>
@@ -1089,7 +1089,7 @@
     <string name="why_reminder_confidence_low">Low confidence · Odometer hasn\'t been updated recently</string>
     <string name="why_reminder_confidence_incomplete">Incomplete data · Current mileage missing</string>
     <string name="why_reminder_log_now_cta">Log this service</string>
-    <string name="brand_name">AutoMinder</string>
+    <string name="brand_name">Milevora</string>
     <string name="why_reminder_rule_desc">whichever comes first</string>
     <string name="why_reminder_mileage_current">Mileage data is current</string>
     <string name="why_reminder_log_completed">Log completed service</string>
