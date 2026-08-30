@@ -246,7 +246,15 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/INDEX.LIST",
+                "/META-INF/DEPENDENCIES",
+                "/META-INF/LICENSE*",
+                "/META-INF/NOTICE*",
+                "**/*.md",
+                "**/*.txt"
+            )
         }
         jniLibs {
             keepDebugSymbols += listOf("*/armeabi-v7a/*.so", "*/arm64-v8a/*.so", "*/x86/*.so", "*/x86_64/*.so")

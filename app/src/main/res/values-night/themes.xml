@@ -6,8 +6,8 @@
     <!-- Splash screen dark mode variant -->
     <style name="Theme.AutoMinder.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_app_icon</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
         <item name="postSplashScreenTheme">@style/Theme.AutoMinder</item>
     </style>
 </resources>

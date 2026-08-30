@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Launcher icon plate. Kept SEPARATE from the splash ground on purpose:
-         both adaptive icons previously pointed their background layer at
-         @color/splash_background, so changing the splash silently repainted
-         the home-screen icon too. A white car needs a plate that holds up
-         against any wallpaper in either theme, which the theme grounds — near
-         black, or near white — cannot do. Cobalt primary is the brand mark. -->
-    <color name="ic_launcher_background" tools:ignore="UnusedResources">#0B4FC4</color>
-
     <!-- Splash screen icon circle background (the disc behind the icon graphic).
          Cobalt primary: makes the white car+clock pop on both light and dark
          splash backgrounds. -->

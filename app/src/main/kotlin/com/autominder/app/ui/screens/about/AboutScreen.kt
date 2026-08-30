@@ -2,8 +2,10 @@ package com.autominder.app.ui.screens.about
 
 import android.content.Intent
 import androidx.core.net.toUri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -241,21 +243,14 @@ private fun AboutHeroCard(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Glowing Halo App Icon
-            Box(
+            // App Icon
+            Image(
+                painter = painterResource(R.mipmap.ic_launcher),
+                contentDescription = stringResource(R.string.about_app_name),
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DirectionsCar,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(42.dp)
-                )
-            }
+                    .clip(RoundedCornerShape(20.dp))
+            )
 
             // App Name
             Text(
