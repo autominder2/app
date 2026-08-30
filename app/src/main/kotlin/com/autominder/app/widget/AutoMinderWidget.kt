@@ -627,7 +627,7 @@ private fun WidgetErrorLayout(state: AutoMinderWidgetState, context: Context) {
 
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
-                text = "AutoMinder",
+                text = "Milevora",
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
                     fontSize = 13.sp,

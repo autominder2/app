@@ -309,7 +309,7 @@ private fun HomeTopBrandBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "AutoMinder",
+            text = stringResource(R.string.app_name),
             fontFamily = Exo2,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold,
